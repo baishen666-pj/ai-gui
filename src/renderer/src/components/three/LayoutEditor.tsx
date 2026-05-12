@@ -120,7 +120,7 @@ export function LayoutEditor({ onSave, onCancel }: LayoutEditorProps) {
         <button
           onClick={handleDelete}
           disabled={!selectedId}
-          className="rounded-lg border border-red-900/50 bg-surface-elevated px-3 py-2 text-xs text-red-400 transition-colors hover:bg-red-950/30 disabled:opacity-40"
+          className="rounded-lg border border-danger/30 bg-surface-elevated px-3 py-2 text-xs text-danger transition-colors hover:bg-danger/10 disabled:opacity-40"
         >
           删除
         </button>
@@ -157,13 +157,13 @@ export function LayoutEditor({ onSave, onCancel }: LayoutEditorProps) {
           snapGrid={[10, 10]}
           minZoom={0.3}
           maxZoom={2}
-          style={{ backgroundColor: '#18181b' }}
+          style={{ backgroundColor: 'var(--t-surface-elevated)' }}
           proOptions={{ hideAttribution: true }}
         >
-          <Background variant={BackgroundVariant.Lines} color="#27272a" gap={40} />
+          <Background variant={BackgroundVariant.Lines} color="var(--t-border-subtle)" gap={40} />
           <Controls
             showInteractive={false}
-            style={{ background: '#27272a', borderRadius: 8 }}
+            style={{ background: 'var(--t-surface-overlay)', borderRadius: 8 }}
           />
         </ReactFlow>
       </div>

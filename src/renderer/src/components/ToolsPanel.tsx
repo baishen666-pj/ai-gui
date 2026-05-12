@@ -28,8 +28,8 @@ const DEFAULT_TOOLS: ToolItem[] = [
 const CATEGORIES: Record<string, { label: string; color: string }> = {
   search: { label: '搜索', color: 'border-l-blue-500' },
   creation: { label: '创作', color: 'border-l-purple-500' },
-  execution: { label: '执行', color: 'border-l-emerald-500' },
-  system: { label: '系统', color: 'border-l-amber-500' }
+  execution: { label: '执行', color: 'border-l-success' },
+  system: { label: '系统', color: 'border-l-warning' }
 }
 
 export function ToolsPanel() {

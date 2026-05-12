@@ -196,7 +196,7 @@ export function SchedulePanel() {
         <div className="flex items-center gap-2">
           <h2 className="text-sm font-medium text-content-heading">定时任务</h2>
           {activeCount > 0 && (
-            <span className="rounded-full bg-emerald-900/30 px-2 py-0.5 text-[10px] font-medium text-emerald-400">
+            <span className="rounded-full bg-success-bg px-2 py-0.5 text-[10px] font-medium text-success">
               {activeCount} 运行中
             </span>
           )}
@@ -363,7 +363,7 @@ function TaskCard({ task, countdown, onToggle, onEdit, onDelete, onRunNow, forma
               onClick={onToggle}
               className={`flex h-5 w-5 items-center justify-center rounded border transition-colors ${
                 task.enabled
-                  ? 'border-emerald-500 bg-emerald-500/20 text-emerald-400'
+                  ? 'border-success bg-success-bg text-success'
                   : 'border-border-default text-content-subtle hover:border-border-subtle'
               }`}
               title={task.enabled ? '暂停' : '启用'}
@@ -388,7 +388,7 @@ function TaskCard({ task, countdown, onToggle, onEdit, onDelete, onRunNow, forma
         <div className={`flex shrink-0 gap-1 ${hovered ? 'opacity-100' : 'opacity-0'} transition-opacity`}>
           <button
             onClick={onRunNow}
-            className="rounded p-1.5 text-[10px] text-content-subtle hover:bg-surface-overlay hover:text-emerald-400"
+            className="rounded p-1.5 text-[10px] text-content-subtle hover:bg-surface-overlay hover:text-success"
             title="立即执行"
           >
             ▶
@@ -402,7 +402,7 @@ function TaskCard({ task, countdown, onToggle, onEdit, onDelete, onRunNow, forma
           </button>
           <button
             onClick={onDelete}
-            className="rounded p-1.5 text-[10px] text-content-subtle hover:bg-surface-overlay hover:text-red-400"
+            className="rounded p-1.5 text-[10px] text-content-subtle hover:bg-surface-overlay hover:text-danger"
             title="删除"
           >
             ✕

@@ -129,7 +129,7 @@ export function SoulEditorPanel() {
             onClick={handleSave}
             className={`rounded px-3 py-1 text-xs font-medium transition-colors ${
               saved
-                ? 'bg-emerald-600 text-white'
+                ? 'bg-success text-white'
                 : 'bg-accent text-white hover:bg-accent-hover'
             }`}
           >
@@ -173,12 +173,12 @@ export function SoulEditorPanel() {
               <div className="h-1.5 w-24 rounded-full bg-surface-overlay">
                 <div
                   className={`h-full rounded-full transition-all ${
-                    charPercent > 90 ? 'bg-red-500' : charPercent > 70 ? 'bg-amber-500' : 'bg-accent-hover'
+                    charPercent > 90 ? 'bg-danger' : charPercent > 70 ? 'bg-warning' : 'bg-accent-hover'
                   }`}
                   style={{ width: `${Math.min(charPercent, 100)}%` }}
                 />
               </div>
-              <span className={`text-[10px] ${charCount > MAX_CHARS ? 'text-red-400' : 'text-content-subtle'}`}>
+              <span className={`text-[10px] ${charCount > MAX_CHARS ? 'text-danger' : 'text-content-subtle'}`}>
                 {charCount}/{MAX_CHARS}
               </span>
             </div>

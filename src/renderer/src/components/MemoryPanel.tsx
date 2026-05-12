@@ -19,8 +19,8 @@ const MOCK_MEMORIES: MemoryEntry[] = [
 const TYPE_CONFIG: Record<string, { label: string; color: string }> = {
   fact: { label: '事实', color: 'bg-blue-500/20 text-blue-400' },
   preference: { label: '偏好', color: 'bg-purple-500/20 text-purple-400' },
-  context: { label: '上下文', color: 'bg-amber-500/20 text-amber-400' },
-  instruction: { label: '指令', color: 'bg-emerald-500/20 text-emerald-400' }
+  context: { label: '上下文', color: 'bg-warning-bg text-warning' },
+  instruction: { label: '指令', color: 'bg-success-bg text-success' }
 }
 
 export function MemoryPanel() {
@@ -145,7 +145,7 @@ export function MemoryPanel() {
                       </button>
                       <button
                         onClick={() => handleDelete(entry.id)}
-                        className="rounded p-1 text-xs text-content-subtle hover:bg-surface-overlay hover:text-red-400"
+                        className="rounded p-1 text-xs text-content-subtle hover:bg-surface-overlay hover:text-danger"
                       >
                         删除
                       </button>

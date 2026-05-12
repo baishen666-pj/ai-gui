@@ -184,14 +184,14 @@ export function WorkflowExecutor({ workflow }: Props) {
       {isRunning ? (
         <button
           onClick={abort}
-          className="rounded bg-red-600 px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-red-500"
+          className="rounded bg-danger px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-danger/80"
         >
           停止
         </button>
       ) : (
         <button
           onClick={run}
-          className="rounded bg-emerald-600 px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-emerald-500"
+          className="rounded bg-success px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-success/80"
         >
           ▶ 运行
         </button>

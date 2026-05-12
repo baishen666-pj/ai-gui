@@ -60,7 +60,7 @@ export function SettingsPanel() {
           onClick={handleSave}
           className={`rounded px-3 py-1 text-xs font-medium transition-colors ${
             saved
-              ? 'bg-emerald-600 text-white'
+              ? 'bg-success text-white'
               : 'bg-accent text-white hover:bg-accent-hover'
           }`}
         >
@@ -91,7 +91,7 @@ export function SettingsPanel() {
                   >
                     <span>{PROVIDER_ICONS[p.type] ?? '⚙️'}</span>
                     <span>{p.name}</span>
-                    {activeId === p.id && <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />}
+                    {activeId === p.id && <span className="h-1.5 w-1.5 rounded-full bg-success" />}
                   </button>
                 ))}
                 <button
@@ -122,7 +122,7 @@ export function SettingsPanel() {
             </h3>
             <div className="rounded-lg border border-border-subtle bg-surface-elevated p-4">
               <div className="flex items-center gap-2">
-                <div className="h-2 w-2 rounded-full bg-emerald-400" />
+                <div className="h-2 w-2 rounded-full bg-success" />
                 <span className="text-sm text-content-heading">{activeProvider?.defaultModel ?? '未选择'}</span>
                 <span className="text-xs text-content-subtle">({activeProvider?.name})</span>
               </div>
@@ -252,9 +252,9 @@ function ProviderConfigForm({ provider, onChange }: { provider: ProviderConfig; 
 
         {provider.apiKey ? (
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 rounded-lg border border-emerald-800/50 bg-emerald-950/30 px-3 py-2">
-              <span className="h-2 w-2 rounded-full bg-emerald-400" />
-              <span className="text-xs text-emerald-400">已登录</span>
+            <div className="flex items-center gap-2 rounded-lg border border-success/30 bg-success-bg px-3 py-2">
+              <span className="h-2 w-2 rounded-full bg-success" />
+              <span className="text-xs text-success">已登录</span>
             </div>
             <button
               onClick={handleLogout}
@@ -267,14 +267,14 @@ function ProviderConfigForm({ provider, onChange }: { provider: ProviderConfig; 
           <button
             onClick={handleLogin}
             disabled={loginStatus === 'logging'}
-            className="w-full rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-emerald-500 disabled:opacity-50"
+            className="w-full rounded-lg bg-success px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-success/80 disabled:opacity-50"
           >
             {loginStatus === 'logging' ? '等待登录...' : '登录 ChatGPT'}
           </button>
         )}
 
         {loginStatus === 'error' && (
-          <p className="text-xs text-red-400">登录失败，请重试</p>
+          <p className="text-xs text-danger">登录失败，请重试</p>
         )}
 
         <label className="flex items-center gap-3 text-sm">

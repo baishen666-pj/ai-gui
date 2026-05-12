@@ -4,9 +4,9 @@ import type { AgentNodeData } from './types'
 
 const STATUS_COLORS: Record<string, string> = {
   idle: 'bg-content-subtle',
-  running: 'bg-amber-400 animate-pulse',
-  error: 'bg-red-500',
-  success: 'bg-emerald-400'
+  running: 'bg-warning animate-pulse',
+  error: 'bg-danger',
+  success: 'bg-success'
 }
 
 export function AgentNodeComponent({ data: rawData, selected }: NodeProps) {

@@ -117,7 +117,7 @@ export function SessionSidebar({ activeSessionId, onSelectSession, onNewChat }: 
               )}
               <button
                 onClick={(e) => { e.stopPropagation(); handleDelete(s.id) }}
-                className="shrink-0 rounded p-0.5 text-[10px] text-content-subtle opacity-0 transition-opacity hover:text-red-400 group-hover:opacity-100"
+                className="shrink-0 rounded p-0.5 text-[10px] text-content-subtle opacity-0 transition-opacity hover:text-danger group-hover:opacity-100"
               >
                 ✕
               </button>

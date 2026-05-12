@@ -3,28 +3,18 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 
 const SyntaxHighlighter = lazy(() =>
-  import('react-syntax-highlighter/dist/esm/prism-light').then((m) => {
-    return import('react-syntax-highlighter/dist/esm/languages/prism/typescript').then((ts) => {
-      m.registerLanguage('typescript', ts.default)
-      return import('react-syntax-highlighter/dist/esm/languages/prism/python').then((py) => {
-        m.registerLanguage('python', py.default)
-        return import('react-syntax-highlighter/dist/esm/languages/prism/bash').then((bash) => {
-          m.registerLanguage('bash', bash.default)
-          return import('react-syntax-highlighter/dist/esm/languages/prism/json').then((json) => {
-            m.registerLanguage('json', json.default)
-            return import('react-syntax-highlighter/dist/esm/languages/prism/css').then((css) => {
-              m.registerLanguage('css', css.default)
-              return import('react-syntax-highlighter/dist/esm/languages/prism/markdown').then(
-                (md) => {
-                  m.registerLanguage('markdown', md.default)
-                  return { default: m.default || m }
-                }
-              )
-            })
-          })
-        })
-      })
-    })
+  import('react-syntax-highlighter/dist/esm/prism-light').then(async (m) => {
+    const languages = [
+      'typescript', 'javascript', 'python', 'bash', 'json', 'css', 'markdown',
+      'html', 'sql', 'yaml', 'rust', 'go', 'java', 'c', 'cpp', 'shell'
+    ]
+    for (const lang of languages) {
+      try {
+        const mod = await import(/* @vite-ignore */ `react-syntax-highlighter/dist/esm/languages/prism/${lang}`)
+        m.registerLanguage(lang, mod.default)
+      } catch { /* skip unavailable */ }
+    }
+    return { default: m.default || m }
   })
 )
 
@@ -58,9 +48,9 @@ function CodeBlock({ language, children }: CodeBlockProps) {
               key={i}
               className={
                 line.startsWith('+')
-                  ? 'text-green-400'
+                  ? 'bg-success/10 text-success'
                   : line.startsWith('-')
-                    ? 'text-red-400'
+                    ? 'bg-danger/10 text-danger'
                     : 'text-content-heading'
               }
             >
@@ -100,8 +90,13 @@ function CopyButton({ copied, onClick }: { copied: boolean; onClick: () => void 
   return (
     <button
       onClick={onClick}
-      className="rounded px-2 py-0.5 text-xs text-content-subtle hover:bg-surface-inset hover:text-content-heading"
+      className="flex items-center gap-1 rounded px-2 py-0.5 text-xs text-content-subtle transition-colors hover:bg-surface-inset hover:text-content-heading"
     >
+      {copied ? (
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>
+      ) : (
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+      )}
       {copied ? '已复制' : '复制'}
     </button>
   )

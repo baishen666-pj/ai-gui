@@ -41,7 +41,7 @@ export function WorkflowProperties({ node, onSave, onClose, onDelete }: Props) {
       <div className="flex items-center justify-between border-b border-border-subtle px-3 py-2">
         <h3 className="text-xs font-medium text-content-heading">节点属性</h3>
         <div className="flex gap-1">
-          <button onClick={onDelete} className="rounded p-1 text-[10px] text-content-subtle hover:text-red-400" title="删除节点">✕</button>
+          <button onClick={onDelete} className="rounded p-1 text-[10px] text-content-subtle hover:text-danger" title="删除节点">✕</button>
           <button onClick={onClose} className="rounded p-1 text-[10px] text-content-subtle hover:text-content-heading" title="关闭">✕</button>
         </div>
       </div>

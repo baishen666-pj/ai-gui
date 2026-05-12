@@ -22,12 +22,12 @@ import type { WorkflowNode as WFNode, WorkflowEdge as WFEdge } from '../../../..
 
 const defaultEdgeOptions: DefaultEdgeOptions = {
   type: 'smoothstep',
-  style: { stroke: '#52525b', strokeWidth: 1.5 },
-  labelStyle: { fill: '#71717a', fontSize: 10 },
-  labelBgStyle: { fill: '#18181b', fillOpacity: 0.9 },
+  style: { stroke: 'var(--t-border-default)', strokeWidth: 1.5 },
+  labelStyle: { fill: 'var(--t-content-subtle)', fontSize: 10 },
+  labelBgStyle: { fill: 'var(--t-surface-elevated)', fillOpacity: 0.9 },
   labelBgPadding: [6, 3] as [number, number],
   labelBgBorderRadius: 4,
-  markerEnd: { type: 'arrowclosed' as const, color: '#52525b' }
+  markerEnd: { type: 'arrowclosed' as const, color: 'var(--t-border-default)' }
 }
 
 export function WorkflowEditor() {
@@ -211,7 +211,7 @@ export function WorkflowEditor() {
                 </button>
                 <button
                   onClick={() => deleteWorkflow(wf.id)}
-                  className="rounded p-1 text-[10px] text-content-subtle opacity-0 transition-opacity group-hover:opacity-100 hover:text-red-400"
+                  className="rounded p-1 text-[10px] text-content-subtle opacity-0 transition-opacity group-hover:opacity-100 hover:text-danger"
                 >
                   ✕
                 </button>
@@ -241,9 +241,9 @@ export function WorkflowEditor() {
           <h2 className="text-sm font-medium text-content-heading">{activeWorkflow.name}</h2>
           {workflowExecution && (
             <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
-              workflowExecution.status === 'running' ? 'bg-amber-900/30 text-amber-400' :
-              workflowExecution.status === 'completed' ? 'bg-emerald-900/30 text-emerald-400' :
-              'bg-red-900/30 text-red-400'
+              workflowExecution.status === 'running' ? 'bg-warning-bg text-warning' :
+              workflowExecution.status === 'completed' ? 'bg-success-bg text-success' :
+              'bg-danger-bg text-danger'
             }`}>
               {workflowExecution.status === 'running' ? '执行中' : workflowExecution.status === 'completed' ? '已完成' : '失败'}
             </span>
@@ -254,7 +254,7 @@ export function WorkflowEditor() {
           {!hasStart && (
             <button
               onClick={() => addNode('start')}
-              className="rounded px-2 py-1 text-xs text-emerald-500 hover:bg-surface-overlay"
+              className="rounded px-2 py-1 text-xs text-success hover:bg-surface-overlay"
             >
               + 开始
             </button>
@@ -299,7 +299,7 @@ export function WorkflowEditor() {
               return '#6366f1'
             }}
           />
-          <Background color="#27272a" gap={20} size={1} />
+          <Background color="var(--t-border-subtle)" gap={20} size={1} />
         </ReactFlow>
 
         {wfNode && !isExecuting && (

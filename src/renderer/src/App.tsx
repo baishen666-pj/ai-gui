@@ -122,7 +122,7 @@ function ChatView() {
         onSelectSession={handleSelectSession}
         onNewChat={handleNewChat}
       />
-      <div className="flex-1">
+      <div className="flex-1 bg-surface-base">
         <ChatPanel />
       </div>
     </div>

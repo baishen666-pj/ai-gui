@@ -20,7 +20,7 @@ export function ChatPanel() {
   const [exportOpen, setExportOpen] = useState(false)
   const [exportFormat, setExportFormat] = useState<ExportFormat>('markdown')
   const bottomRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const agentBufferRef = useRef('')
   const streamBufferRef = useRef('')
@@ -208,7 +208,7 @@ export function ChatPanel() {
     inputRef.current?.focus()
   }, [clearMessages, setView, addMessage])
 
-  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const val = e.target.value; setInput(val)
     if (val === '/') { setSlashMenuOpen(true); setSlashFilter(''); updateMenuPosition() }
     else if (val.startsWith('/') && slashMenuOpen) setSlashFilter(val.slice(1))
@@ -222,6 +222,7 @@ export function ChatPanel() {
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (slashMenuOpen && ['ArrowDown', 'ArrowUp', 'Enter', 'Escape'].includes(e.key)) return
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (!input.startsWith('/')) handleSend() }
+    if (e.key === 'Enter' && e.shiftKey) { return }
   }, [slashMenuOpen, input, handleSend])
 
   const handleDeleteMessage = useCallback((id: string) => {
@@ -266,7 +267,7 @@ export function ChatPanel() {
           )}
           <div className="flex gap-2">
           {isLoading && (
-            <button onClick={() => window.aiGui?.chatAbort()} className="rounded px-2 py-1 text-xs text-red-400 hover:bg-surface-overlay">停止</button>
+            <button onClick={() => window.aiGui?.chatAbort()} className="rounded px-2 py-1 text-xs text-danger hover:bg-surface-overlay">停止</button>
           )}
           {messages.length > 0 && (
             <button onClick={() => setExportOpen(true)} className="rounded px-2 py-1 text-xs text-content-subtle hover:bg-surface-overlay hover:text-content-heading" title="导出对话">导出</button>
@@ -283,9 +284,23 @@ export function ChatPanel() {
         ))}
         {isLoading && reasoningContent && <ReasoningBlock content={reasoningContent} />}
         {isLoading && (
-          <div className="mb-3">
-            <div className="inline-block max-w-[75%] rounded-lg bg-surface-overlay px-3 py-2 text-sm text-content-muted">
-              {toolProgress ? `${toolProgress}...` : reasoningContent ? '生成中...' : '思考中...'}
+          <div className="mb-3 animate-msg-in">
+            <div className="flex items-center gap-2">
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-surface-overlay text-accent-text">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/><line x1="9" y1="19" x2="15" y2="19"/></svg>
+              </div>
+              <div className="rounded-lg bg-surface-overlay px-3 py-2 text-sm text-content-muted">
+                {toolProgress ? (
+                  <span>{toolProgress}...</span>
+                ) : (
+                  <span className="inline-flex items-center gap-1">
+                    {reasoningContent ? '生成中' : '思考中'}
+                    <span className="typing-dot" />
+                    <span className="typing-dot" />
+                    <span className="typing-dot" />
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -322,15 +337,15 @@ export function ChatPanel() {
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
           </button>
-          <input
+          <textarea
             ref={inputRef}
-            type="text"
             value={input}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             onPaste={handlePaste}
             placeholder={pendingImage ? '添加图片描述...' : '输入消息，/ 查看命令...'}
-            className="flex-1 rounded-lg border border-border-default bg-surface-elevated px-3 py-2 text-sm text-content-secondary placeholder-content-subtle outline-none focus:border-accent"
+            rows={1}
+            className="auto-resize flex-1 rounded-lg border border-border-default bg-surface-elevated px-3 py-2 text-sm text-content-secondary placeholder-content-subtle outline-none focus:border-accent"
           />
           <button
             onClick={handleSend}
@@ -369,29 +384,44 @@ function EmptyState() {
   )
 }
 
+const UserIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+)
+
+const BotIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/><line x1="9" y1="19" x2="15" y2="19"/></svg>
+)
+
 const MessageBubble = memo(function MessageBubble({ msg, onDelete, onCopy }: {
   msg: ChatMessage
   onDelete: (id: string) => void
   onCopy: (text: string) => void
 }) {
   const [showActions, setShowActions] = useState(false)
+  const time = new Date(msg.timestamp).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
 
   if (msg.role === 'user') {
     return (
-      <div className="group mb-3 text-right" onMouseEnter={() => setShowActions(true)} onMouseLeave={() => setShowActions(false)}>
-        {msg.imageBase64 && (
-          <div className="mb-1 inline-block">
-            <img src={msg.imageBase64} alt="" className="max-h-48 rounded-lg border border-accent/30" />
-          </div>
-        )}
-        <div className="flex items-center justify-end gap-1">
-          {showActions && (
-            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button onClick={() => onCopy(msg.content)} className="rounded p-1 text-[10px] text-content-subtle hover:bg-surface-overlay hover:text-content-muted">复制</button>
-              <button onClick={() => onDelete(msg.id)} className="rounded p-1 text-[10px] text-content-subtle hover:bg-surface-overlay hover:text-red-400">删除</button>
+      <div className="group mb-3 animate-msg-in" onMouseEnter={() => setShowActions(true)} onMouseLeave={() => setShowActions(false)}>
+        <div className="flex items-start justify-end gap-2">
+          <div className="flex flex-col items-end">
+            {msg.imageBase64 && (
+              <div className="mb-1">
+                <img src={msg.imageBase64} alt="" className="max-h-48 rounded-lg border border-accent/30" />
+              </div>
+            )}
+            <div className="flex items-center gap-1">
+              {showActions && (
+                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button onClick={() => onCopy(msg.content)} className="rounded p-1 text-[10px] text-content-subtle hover:bg-surface-overlay hover:text-content-muted">复制</button>
+                  <button onClick={() => onDelete(msg.id)} className="rounded p-1 text-[10px] text-content-subtle hover:bg-surface-overlay hover:text-danger">删除</button>
+                </div>
+              )}
+              <span className="inline-block max-w-[75%] rounded-2xl rounded-tr-sm bg-accent px-3 py-2 text-sm text-white shadow-sm">{msg.content}</span>
             </div>
-          )}
-          <span className="inline-block max-w-[75%] rounded-lg bg-accent px-3 py-2 text-sm text-white">{msg.content}</span>
+            <span className="mt-0.5 text-[10px] text-content-subtle opacity-0 group-hover:opacity-100 transition-opacity">{time}</span>
+          </div>
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent/20 text-accent-text"><UserIcon /></div>
         </div>
       </div>
     )
@@ -399,31 +429,43 @@ const MessageBubble = memo(function MessageBubble({ msg, onDelete, onCopy }: {
 
   if (msg.role === 'error') {
     return (
-      <div className="group mb-3" onMouseEnter={() => setShowActions(true)} onMouseLeave={() => setShowActions(false)}>
-        <div className="flex items-start gap-1">
-          <span className="inline-block max-w-[75%] rounded-lg bg-red-900/40 px-3 py-2 text-sm text-red-300">{msg.content}</span>
-          {showActions && <button onClick={() => onDelete(msg.id)} className="rounded p-1 text-[10px] text-content-subtle hover:text-red-400">删除</button>}
+      <div className="group mb-3 animate-msg-in" onMouseEnter={() => setShowActions(true)} onMouseLeave={() => setShowActions(false)}>
+        <div className="flex items-start gap-2">
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-danger-bg text-danger">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+          </div>
+          <div>
+            <span className="inline-block max-w-[75%] rounded-2xl rounded-tl-sm bg-danger-bg px-3 py-2 text-sm text-danger">{msg.content}</span>
+            <div className="mt-0.5 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <span className="text-[10px] text-content-subtle">{time}</span>
+              {showActions && <button onClick={() => onDelete(msg.id)} className="rounded p-0.5 text-[10px] text-content-subtle hover:text-danger">删除</button>}
+            </div>
+          </div>
         </div>
       </div>
     )
   }
 
   if (msg.role === 'system') {
-    return <div className="mb-3 text-center"><span className="inline-block rounded-full bg-surface-overlay px-3 py-1 text-xs text-content-subtle">{msg.content}</span></div>
+    return <div className="mb-3 animate-msg-in text-center"><span className="inline-block rounded-full bg-surface-overlay px-3 py-1 text-xs text-content-subtle">{msg.content}</span></div>
   }
 
   return (
-    <div className="group mb-3" onMouseEnter={() => setShowActions(true)} onMouseLeave={() => setShowActions(false)}>
-      <div className="flex items-start gap-1">
-        <div className="inline-block max-w-[85%] rounded-lg bg-surface-overlay/50 px-4 py-2">
-          <AgentMarkdown content={msg.content} />
-        </div>
-        {showActions && (
-          <div className="flex shrink-0 gap-1 pt-1">
-            <button onClick={() => onCopy(msg.content)} className="rounded p-1 text-[10px] text-content-subtle hover:bg-surface-overlay hover:text-content-muted">复制</button>
-            <button onClick={() => onDelete(msg.id)} className="rounded p-1 text-[10px] text-content-subtle hover:bg-surface-overlay hover:text-red-400">删除</button>
+    <div className="group mb-3 animate-msg-in" onMouseEnter={() => setShowActions(true)} onMouseLeave={() => setShowActions(false)}>
+      <div className="flex items-start gap-2">
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-surface-overlay text-accent-text"><BotIcon /></div>
+        <div>
+          <div className="inline-block max-w-[85%] rounded-2xl rounded-tl-sm bg-surface-overlay/50 px-4 py-2 shadow-sm">
+            <AgentMarkdown content={msg.content} />
           </div>
-        )}
+          <div className="mt-0.5 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+            <span className="text-[10px] text-content-subtle">{time}</span>
+            <div className="flex gap-1">
+              <button onClick={() => onCopy(msg.content)} className="rounded p-0.5 text-[10px] text-content-subtle hover:bg-surface-overlay hover:text-content-muted">复制</button>
+              <button onClick={() => onDelete(msg.id)} className="rounded p-0.5 text-[10px] text-content-subtle hover:bg-surface-overlay hover:text-danger">删除</button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )

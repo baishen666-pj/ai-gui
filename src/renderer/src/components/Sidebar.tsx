@@ -145,7 +145,7 @@ function ProfileMenu({ onClose }: { onClose: () => void }) {
                 {p.name.slice(0, 1)}
               </span>
               <span className="flex-1 truncate">{p.name}</span>
-              {activeProfileId === p.id && <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />}
+              {activeProfileId === p.id && <span className="h-1.5 w-1.5 rounded-full bg-success" />}
             </button>
           )}
 
@@ -161,7 +161,7 @@ function ProfileMenu({ onClose }: { onClose: () => void }) {
               {profiles.length > 1 && (
                 <button
                   onClick={() => { deleteProfile(p.id) }}
-                  className="rounded p-0.5 text-[10px] text-content-subtle hover:text-red-400"
+                  className="rounded p-0.5 text-[10px] text-content-subtle hover:text-danger"
                   title="删除"
                 >
                   ✕

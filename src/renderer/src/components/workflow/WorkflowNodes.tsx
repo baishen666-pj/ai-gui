@@ -6,16 +6,16 @@ type WFNodeData = WorkflowNode['data'] & { executionStatus?: string }
 
 const STATUS_COLORS: Record<string, string> = {
   idle: 'border-border-default bg-surface-elevated',
-  running: 'border-amber-500 bg-amber-950/40 shadow-[0_0_8px_rgba(245,158,11,0.3)]',
-  completed: 'border-emerald-500 bg-emerald-950/40',
-  failed: 'border-red-500 bg-red-950/40',
+  running: 'border-warning bg-warning-bg shadow-[0_0_8px_var(--t-warning)]',
+  completed: 'border-success bg-success-bg',
+  failed: 'border-danger bg-danger-bg',
   skipped: 'border-border-default bg-surface-elevated/50'
 }
 
 export const StartNode = memo(({ data }: NodeProps) => {
   return (
-    <div className={`flex h-10 min-w-[100px] items-center justify-center rounded-lg border-2 border-emerald-600 bg-emerald-950/40 px-4 text-xs font-medium text-emerald-400`}>
-      <Handle type="source" position={Position.Bottom} className="!bg-emerald-500 !border-emerald-700 !w-2 !h-2" />
+    <div className={`flex h-10 min-w-[100px] items-center justify-center rounded-lg border-2 border-success bg-success-bg px-4 text-xs font-medium text-success`}>
+      <Handle type="source" position={Position.Bottom} className="!bg-success !border-success/50 !w-2 !h-2" />
       {(data as WFNodeData).label || '开始'}
     </div>
   )
@@ -37,7 +37,7 @@ export const AgentWorkflowNode = memo(({ data, selected }: NodeProps) => {
         </span>
         <span className="text-xs font-medium text-content-secondary">{d.label || 'Agent'}</span>
         {status === 'running' && (
-          <span className="ml-auto h-2 w-2 animate-pulse rounded-full bg-amber-400" />
+          <span className="ml-auto h-2 w-2 animate-pulse rounded-full bg-warning" />
         )}
       </div>
 
@@ -67,7 +67,7 @@ export const ConditionNode = memo(({ data, selected }: NodeProps) => {
       <Handle type="target" position={Position.Top} className="!bg-content-subtle !border-border-default !w-2 !h-2" />
 
       <div className="flex items-center gap-2">
-        <span className="flex h-5 w-5 items-center justify-center rounded bg-amber-600/20 text-[10px] text-amber-400">
+        <span className="flex h-5 w-5 items-center justify-center rounded bg-warning-bg text-[10px] text-warning">
           ?
         </span>
         <span className="text-xs font-medium text-content-secondary">{d.label || '条件'}</span>
@@ -79,18 +79,18 @@ export const ConditionNode = memo(({ data, selected }: NodeProps) => {
 
       <Handle
         type="source" position={Position.Bottom} id="yes"
-        className="!bg-emerald-500 !border-emerald-700 !w-2 !h-2"
+        className="!bg-success !border-success/50 !w-2 !h-2"
         style={{ left: '30%' }}
       />
       <Handle
         type="source" position={Position.Bottom} id="no"
-        className="!bg-red-500 !border-red-700 !w-2 !h-2"
+        className="!bg-danger !border-danger/50 !w-2 !h-2"
         style={{ left: '70%' }}
       />
 
       <div className="mt-1 flex justify-between px-1 text-[9px]">
-        <span className="text-emerald-500">是</span>
-        <span className="text-red-500">否</span>
+        <span className="text-success">是</span>
+        <span className="text-danger">否</span>
       </div>
     </div>
   )
@@ -99,8 +99,8 @@ ConditionNode.displayName = 'ConditionNode'
 
 export const EndNode = memo(({ data }: NodeProps) => {
   return (
-    <div className="flex h-10 min-w-[100px] items-center justify-center rounded-lg border-2 border-red-600 bg-red-950/40 px-4 text-xs font-medium text-red-400">
-      <Handle type="target" position={Position.Top} className="!bg-red-500 !border-red-700 !w-2 !h-2" />
+    <div className="flex h-10 min-w-[100px] items-center justify-center rounded-lg border-2 border-danger bg-danger-bg px-4 text-xs font-medium text-danger">
+      <Handle type="target" position={Position.Top} className="!bg-danger !border-danger/50 !w-2 !h-2" />
       {(data as WFNodeData).label || '结束'}
     </div>
   )
