@@ -1,0 +1,32 @@
+appId: com.ai-gui.desktop
+productName: AI GUI
+directories:
+  buildResources: build
+files:
+  - '!**/.vscode/*'
+  - '!src/*'
+  - '!electron.vite.config.*'
+  - '!{.eslintignore,.eslintrc.cjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
+  - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
+asarUnpack:
+  - resources/**
+win:
+  executableName: ai-gui
+  target:
+    - nsis
+nsis:
+  oneClick: true
+  perMachine: false
+mac:
+  entitlementsInherit: build/entitlements.mac.plist
+  extendInfo:
+    NSDocumentsFolderUsageDescription: "AI GUI needs access to the Documents folder to save and load agent configurations."
+  notarize: false
+linux:
+  target:
+    - AppImage
+  maintainer: ai-gui
+  category: Development
+publish:
+  provider: github
+  owner: ai-gui
