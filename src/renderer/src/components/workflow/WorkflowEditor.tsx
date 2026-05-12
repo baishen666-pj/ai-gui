@@ -118,8 +118,10 @@ export function WorkflowEditor() {
     onNodesChange(changes)
     setTimeout(() => syncToStore(
       nodes.map((n) => {
-        const posChange = changes.find((c) => c.id === n.id && c.type === 'position' && c.position)
-        return posChange ? { ...n, position: posChange.position! } : n
+        const posChange = changes.find((c): c is typeof c & { id: string; type: 'position'; position: { x: number; y: number } } =>
+          'id' in c && c.id === n.id && c.type === 'position' && 'position' in c && !!c.position
+        )
+        return posChange ? { ...n, position: posChange.position } : n
       }),
       edges
     ), 0)

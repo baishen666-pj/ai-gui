@@ -1,19 +1,21 @@
-import { useEffect } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
 import { ReactFlowProvider } from '@xyflow/react'
 import { useAppStore } from './stores/app'
 import type { ViewMode } from '../../shared/types'
 import { Sidebar } from './components/Sidebar'
 import { ChatPanel } from './components/ChatPanel'
 import { SessionSidebar } from './components/SessionSidebar'
-import { AgentCanvas } from './components/canvas/AgentCanvas'
-import { AgentGraph3D } from './components/three/AgentGraph3D'
 import { MemoryPanel } from './components/MemoryPanel'
 import { ToolsPanel } from './components/ToolsPanel'
-import { SoulEditorPanel } from './components/SoulEditorPanel'
-import { SchedulePanel } from './components/SchedulePanel'
-import { WorkflowEditor } from './components/workflow/WorkflowEditor'
 import { SettingsPanel } from './components/SettingsPanel'
+import { ShortcutHelp } from './components/ShortcutHelp'
 import { usePersistence } from './hooks/usePersistence'
+
+const AgentCanvas = lazy(() => import('./components/canvas/AgentCanvas').then((m) => ({ default: m.AgentCanvas })))
+const AgentGraph3D = lazy(() => import('./components/three/AgentGraph3D').then((m) => ({ default: m.AgentGraph3D })))
+const SoulEditorPanel = lazy(() => import('./components/SoulEditorPanel').then((m) => ({ default: m.SoulEditorPanel })))
+const SchedulePanel = lazy(() => import('./components/SchedulePanel').then((m) => ({ default: m.SchedulePanel })))
+const WorkflowEditor = lazy(() => import('./components/workflow/WorkflowEditor').then((m) => ({ default: m.WorkflowEditor })))
 
 const VIEW_KEYS: Record<number, ViewMode> = {
   1: 'chat',
@@ -29,6 +31,7 @@ const VIEW_KEYS: Record<number, ViewMode> = {
 
 export function App() {
   const { view, setView, clearMessages } = useAppStore()
+  const [showHelp, setShowHelp] = useState(false)
   usePersistence()
 
   useEffect(() => {
@@ -43,6 +46,10 @@ export function App() {
           e.preventDefault()
           clearMessages()
         }
+        if (e.key === '/') {
+          e.preventDefault()
+          setShowHelp((v) => !v)
+        }
       }
     }
     window.addEventListener('keydown', handler)
@@ -53,24 +60,27 @@ export function App() {
     <div className="flex h-screen bg-zinc-950 text-zinc-100">
       <Sidebar activeView={view} onViewChange={setView} />
       <main className="flex-1 overflow-hidden">
-        {view === 'chat' && <ChatView />}
-        {view === 'canvas' && (
-          <ReactFlowProvider>
-            <AgentCanvas />
-          </ReactFlowProvider>
-        )}
-        {view === '3d' && <AgentGraph3D />}
-        {view === 'memory' && <MemoryPanel />}
-        {view === 'tools' && <ToolsPanel />}
-        {view === 'schedule' && <SchedulePanel />}
-        {view === 'workflow' && (
-          <ReactFlowProvider>
-            <WorkflowEditor />
-          </ReactFlowProvider>
-        )}
-        {view === 'soul' && <SoulEditorPanel />}
-        {view === 'settings' && <SettingsPanel />}
+        <Suspense fallback={<LoadingSpinner />}>
+          {view === 'chat' && <ChatView />}
+          {view === 'canvas' && (
+            <ReactFlowProvider>
+              <AgentCanvas />
+            </ReactFlowProvider>
+          )}
+          {view === '3d' && <AgentGraph3D />}
+          {view === 'memory' && <MemoryPanel />}
+          {view === 'tools' && <ToolsPanel />}
+          {view === 'schedule' && <SchedulePanel />}
+          {view === 'workflow' && (
+            <ReactFlowProvider>
+              <WorkflowEditor />
+            </ReactFlowProvider>
+          )}
+          {view === 'soul' && <SoulEditorPanel />}
+          {view === 'settings' && <SettingsPanel />}
+        </Suspense>
       </main>
+      {showHelp && <ShortcutHelp onClose={() => setShowHelp(false)} />}
     </div>
   )
 }
@@ -110,6 +120,17 @@ function ChatView() {
       />
       <div className="flex-1">
         <ChatPanel />
+      </div>
+    </div>
+  )
+}
+
+function LoadingSpinner() {
+  return (
+    <div className="flex h-full items-center justify-center">
+      <div className="flex flex-col items-center gap-2">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
+        <span className="text-xs text-zinc-600">加载中...</span>
       </div>
     </div>
   )

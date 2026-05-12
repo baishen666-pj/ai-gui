@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useAppStore } from '../stores/app'
-import type { ScheduleTask, Workflow, WorkflowNode, WorkflowEdge } from '../../shared/types'
+import type { ScheduleTask, Workflow, WorkflowNode, WorkflowEdge } from '../../../shared/types'
 
 interface TaskRow {
   id: string

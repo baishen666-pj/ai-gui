@@ -1,4 +1,4 @@
-import type { ChatMessage } from '../../shared/types'
+import type { ChatMessage } from '../../../shared/types'
 
 export type ExportFormat = 'markdown' | 'json' | 'txt'
 
@@ -15,11 +15,12 @@ export function exportAsMarkdown(messages: ChatMessage[], title: string): string
 
   for (const msg of messages) {
     const time = new Date(msg.timestamp).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
-    const roleLabel = { user: '用户', agent: 'AI', system: '系统', error: '错误' }[msg.role]
+    const roleLabels: Record<ChatMessage['role'], string> = { user: '用户', agent: 'AI', system: '系统', error: '错误' }
+    const roleLabel = roleLabels[msg.role]
 
     if (msg.role === 'system') {
-      lines.push(`*${msg.content}*')
-`)
+      lines.push(`*${msg.content}*`)
+      lines.push('')
       continue
     }
 
@@ -64,7 +65,8 @@ export function exportAsTxt(messages: ChatMessage[], title: string): string {
 
   for (const msg of messages) {
     const time = new Date(msg.timestamp).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
-    const roleLabel = { user: '用户', agent: 'AI', system: '系统', error: '错误' }[msg.role]
+    const roleLabels: Record<ChatMessage['role'], string> = { user: '用户', agent: 'AI', system: '系统', error: '错误' }
+    const roleLabel = roleLabels[msg.role]
     lines.push(`[${time}] ${roleLabel}:`)
     lines.push(msg.content)
     lines.push('')
