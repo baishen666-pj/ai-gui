@@ -16,8 +16,9 @@ import {
 import '@xyflow/react/dist/style.css'
 import { AgentNodeComponent } from './AgentNode'
 import { AgentEditPanel } from './AgentEditPanel'
+import { AIConfigDialog } from './AIConfigDialog'
 import { TEMPLATES } from './templates'
-import type { AgentNodeData } from './types'
+import type { AgentNodeData, FlowTemplate } from './types'
 import { useAppStore } from '../../stores/app'
 import type { CanvasAgent } from '../../stores/app'
 
@@ -25,18 +26,19 @@ const nodeTypes = { agent: AgentNodeComponent }
 
 const defaultEdgeOptions: DefaultEdgeOptions = {
   type: 'smoothstep',
-  style: { stroke: '#52525b', strokeWidth: 1.5 },
-  labelStyle: { fill: '#71717a', fontSize: 11 },
-  labelBgStyle: { fill: '#18181b', fillOpacity: 0.9 },
+  style: { stroke: 'var(--t-border-default)', strokeWidth: 1.5 },
+  labelStyle: { fill: 'var(--t-content-subtle)', fontSize: 11 },
+  labelBgStyle: { fill: 'var(--t-surface-elevated)', fillOpacity: 0.9 },
   labelBgPadding: [6, 3] as [number, number],
   labelBgBorderRadius: 4,
-  markerEnd: { type: 'arrowclosed' as const, color: '#52525b' }
+  markerEnd: { type: 'arrowclosed' as const, color: 'var(--t-border-default)' }
 }
 
 export function AgentCanvas() {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([])
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([])
   const [editingNodeId, setEditingNodeId] = useState<string | null>(null)
+  const [aiConfigOpen, setAiConfigOpen] = useState(false)
   const setCanvasAgents = useAppStore((s) => s.setCanvasAgents)
 
   const syncToStore = useCallback((nds: Node[], eds: Edge[]) => {
@@ -45,9 +47,13 @@ export function AgentCanvas() {
       return {
         id: n.id,
         label: (d.label as string) || 'Agent',
+        role: (d.role as string) || '',
+        model: (d.model as string) || 'gpt-4o',
         color: (d.color as string) || '#6366f1',
         position: n.position,
-        connections: eds.filter((e) => e.source === n.id).map((e) => e.target)
+        connections: eds.filter((e) => e.source === n.id).map((e) => e.target),
+        tools: (d.tools as string[]) || [],
+        status: (d.status as CanvasAgent['status']) || 'idle'
       }
     })
     setCanvasAgents(agents)
@@ -97,7 +103,7 @@ export function AgentCanvas() {
       data: {
         label: 'New Agent',
         role: '自定义 Agent',
-        model: 'gpt-4',
+        model: 'gpt-4o',
         status: 'idle',
         color: colors[Math.floor(Math.random() * colors.length)],
         tools: []
@@ -105,6 +111,24 @@ export function AgentCanvas() {
     }
     setNodes((nds) => [...nds, newNode])
   }, [setNodes])
+
+  const loadFlowTemplate = useCallback((tpl: FlowTemplate) => {
+    const newNodes: Node[] = tpl.nodes.map((n, i) => ({
+      id: `agent-${i}`,
+      type: 'agent',
+      position: { x: 300 + n.position.x, y: 80 + n.position.y },
+      data: { ...n.data }
+    }))
+    const newEdges: Edge[] = tpl.edges.map((e, i) => ({
+      id: `edge-${i}`,
+      source: e.source,
+      target: e.target,
+      data: e.data
+    }))
+    setNodes(newNodes)
+    setEdges(newEdges)
+    syncToStore(newNodes, newEdges)
+  }, [setNodes, setEdges, syncToStore])
 
   const handleSaveNode = useCallback((nodeId: string, newData: AgentNodeData) => {
     setNodes((nds) =>
@@ -135,6 +159,13 @@ export function AgentCanvas() {
             </button>
           ))}
           <div className="mx-1 h-4 w-px bg-surface-overlay" />
+          <button
+            onClick={() => setAiConfigOpen(true)}
+            className="rounded px-2 py-1 text-xs text-accent-text transition-colors hover:bg-accent/10"
+            title="AI 智能配置"
+          >
+            ✨ AI 配置
+          </button>
           <button
             onClick={addAgent}
             className="rounded bg-accent px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-accent-hover"
@@ -189,7 +220,7 @@ export function AgentCanvas() {
               className="!border-border-default !bg-surface-elevated"
               maskColor="rgba(0,0,0,0.7)"
             />
-            <Background color="#27272a" gap={20} size={1} />
+            <Background color="var(--t-border-subtle)" gap={20} size={1} />
           </ReactFlow>
         )}
 
@@ -201,6 +232,12 @@ export function AgentCanvas() {
           />
         )}
       </div>
+
+      <AIConfigDialog
+        open={aiConfigOpen}
+        onClose={() => setAiConfigOpen(false)}
+        onApply={loadFlowTemplate}
+      />
     </div>
   )
 }

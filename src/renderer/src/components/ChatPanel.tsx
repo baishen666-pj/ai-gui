@@ -52,13 +52,17 @@ export function ChatPanel() {
     }
   }, [messages, isLoading])
 
+  const isAiConfigMode = useAppStore((s) => s.isAiConfigMode)
+
   useEffect(() => {
     if (!window.aiGui) return
     const unsubChunk = window.aiGui.onChatChunk((chunk: string) => {
+      if (isAiConfigMode) return
       streamBufferRef.current += chunk
       scheduleFlush()
     })
     const unsubDone = () => {
+      if (isAiConfigMode) return
       if (rafIdRef.current) { cancelAnimationFrame(rafIdRef.current); rafIdRef.current = 0 }
       flushStreamBuffer()
       isStreamingRef.current = false
@@ -68,12 +72,13 @@ export function ChatPanel() {
       agentBufferRef.current = ''
     }
     const unsubError = (msg: string) => {
+      if (isAiConfigMode) return
       addMessage({ id: `error-${Date.now()}`, role: 'error', content: msg, timestamp: Date.now() })
       setLoading(false)
       notify('聊天错误', msg.slice(0, 100))
     }
-    const unsubTool = (tool: string) => setToolProgress(tool)
-    const unsubReasoning = (text: string) => appendReasoning(text)
+    const unsubTool = (tool: string) => { if (!isAiConfigMode) setToolProgress(tool) }
+    const unsubReasoning = (text: string) => { if (!isAiConfigMode) appendReasoning(text) }
     const doneHandler = (): void => { unsubDone(); clearReasoning() }
     const unsubDoneEvt = window.aiGui.onChatDone(doneHandler)
     const unsubErrorEvt = window.aiGui.onChatError(unsubError)
@@ -83,7 +88,7 @@ export function ChatPanel() {
     return () => {
       unsubDoneEvt(); unsubErrorEvt(); unsubChunkEvt(); unsubToolEvt(); unsubReasoningEvt()
     }
-  }, [appendToLastAgent, setLoading, setToolProgress, addMessage, appendReasoning, clearReasoning, flushStreamBuffer, scheduleFlush])
+  }, [appendToLastAgent, setLoading, setToolProgress, addMessage, appendReasoning, clearReasoning, flushStreamBuffer, scheduleFlush, isAiConfigMode])
 
   const persistAgentMessage = useCallback(async (content: string) => {
     if (!window.aiGui || !content || !sessionId) return

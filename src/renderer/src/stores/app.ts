@@ -6,9 +6,13 @@ import { DEFAULT_LAYOUT } from '../components/three/constants'
 export interface CanvasAgent {
   id: string
   label: string
+  role: string
+  model: string
   color: string
   position: { x: number; y: number }
   connections: string[]
+  tools: string[]
+  status: 'idle' | 'running' | 'error' | 'success'
 }
 
 export type ThemeMode = 'dark' | 'light' | 'cyberpunk'
@@ -48,6 +52,7 @@ interface AppState {
   workflows: Workflow[]
   activeWorkflowId: string | null
   workflowExecution: WorkflowExecution | null
+  isAiConfigMode: boolean
 
   setView: (view: ViewMode) => void
   addMessage: (msg: ChatMessage) => void
@@ -79,6 +84,7 @@ interface AppState {
   updateNodeExecution: (nodeId: string, status: NodeExecutionStatus, output?: string) => void
   completeWorkflowExecution: (status: 'completed' | 'failed') => void
   setTheme: (theme: ThemeMode) => void
+  setAiConfigMode: (mode: boolean) => void
   notify: (title: string, body: string) => void
 }
 
@@ -125,6 +131,7 @@ export const useAppStore = create<AppState>((set) => ({
   workflows: [],
   activeWorkflowId: null,
   workflowExecution: null,
+  isAiConfigMode: false,
 
   setView: (view) => set({ view }),
 
@@ -346,6 +353,8 @@ export const useAppStore = create<AppState>((set) => ({
     applyTheme(theme)
     set({ theme })
   },
+
+  setAiConfigMode: (mode) => set({ isAiConfigMode: mode }),
 
   notify: (title, body) => {
     if (window.aiGui?.sendNotification) {

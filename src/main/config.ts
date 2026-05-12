@@ -69,8 +69,8 @@ const BUILTIN_PROVIDERS: ProviderConfig[] = [
     type: 'chatgpt',
     baseUrl: 'https://chatgpt.com/backend-api',
     apiKey: '',
-    models: ['gpt-4o', 'o1-pro', 'o1', 'gpt-4o-mini'],
-    defaultModel: 'gpt-4o'
+    models: ['gpt-5.5', 'gpt-4o', 'o1-pro', 'o1', 'gpt-4o-mini'],
+    defaultModel: 'gpt-5.5'
   }
 ]
 
