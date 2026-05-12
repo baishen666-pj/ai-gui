@@ -1,5 +1,6 @@
-import { app, BrowserWindow, ipcMain, shell } from 'electron'
+import { app, BrowserWindow, ipcMain, shell, Notification, dialog } from 'electron'
 import { join } from 'path'
+import { writeFile } from 'fs/promises'
 
 import { enableGpuFlags } from './gpu'
 import { getLocale, setLocale } from './locale'
@@ -7,6 +8,7 @@ import { getConnectionConfig, setConnectionConfig, getActiveProvider, setActiveP
 import { sendMessage } from './chat'
 import { openChatGPTLogin, logoutChatGPT } from './auth'
 import * as sessions from './sessions'
+import * as persistence from './persistence'
 
 enableGpuFlags()
 
@@ -132,4 +134,43 @@ function registerIpcHandlers(): void {
   ipcMain.handle('sessions-delete', (_e, id: string) => sessions.deleteSession(id))
   ipcMain.handle('sessions-insert-message', (_e, msg) => sessions.insertMessage(msg))
   ipcMain.handle('sessions-search', (_e, query: string, limit?: number) => sessions.searchSessions(query, limit))
+
+  // Notifications
+  ipcMain.handle('send-notification', (_e, opts: { title: string; body: string; silent?: boolean }) => {
+    if (!Notification.isSupported()) return false
+    const notification = new Notification({
+      title: opts.title,
+      body: opts.body,
+      silent: opts.silent ?? false,
+      icon: join(__dirname, '../../resources/icon.png')
+    })
+    notification.show()
+    return true
+  })
+
+  // Export
+  ipcMain.handle('save-export', async (_e, opts: { content: string; fileName: string }) => {
+    const result = await dialog.showSaveDialog(mainWindow!, {
+      defaultPath: join(app.getPath('documents'), opts.fileName),
+      filters: [
+        { name: '所有文件', extensions: ['*'] },
+        { name: 'Markdown', extensions: ['md'] },
+        { name: 'JSON', extensions: ['json'] },
+        { name: '文本', extensions: ['txt'] }
+      ]
+    })
+    if (result.canceled || !result.filePath) return false
+    await writeFile(result.filePath, opts.content, 'utf-8')
+    return true
+  })
+
+  // Persistence — Scheduled Tasks
+  ipcMain.handle('persistence-get-tasks', () => persistence.getAllTasks())
+  ipcMain.handle('persistence-upsert-task', (_e, task) => persistence.upsertTask(task))
+  ipcMain.handle('persistence-delete-task', (_e, id: string) => persistence.deleteTask(id))
+
+  // Persistence — Workflows
+  ipcMain.handle('persistence-get-workflows', () => persistence.getAllWorkflows())
+  ipcMain.handle('persistence-upsert-workflow', (_e, wf) => persistence.upsertWorkflow(wf))
+  ipcMain.handle('persistence-delete-workflow', (_e, id: string) => persistence.deleteWorkflow(id))
 }

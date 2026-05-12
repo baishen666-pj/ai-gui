@@ -47,4 +47,61 @@ export interface AgentEdge {
   label?: string
 }
 
-export type ViewMode = 'chat' | 'canvas' | '3d' | 'memory' | 'tools' | 'soul' | 'settings'
+export interface ScheduleTask {
+  id: string
+  name: string
+  prompt: string
+  intervalSeconds: number
+  enabled: boolean
+  lastRunAt: number | null
+  nextRunAt: number | null
+  runCount: number
+  createdAt: number
+}
+
+export type WorkflowNodeType = 'start' | 'agent' | 'condition' | 'end'
+export type NodeExecutionStatus = 'idle' | 'running' | 'completed' | 'failed' | 'skipped'
+
+export interface WorkflowNode {
+  id: string
+  type: WorkflowNodeType
+  position: { x: number; y: number }
+  data: {
+    label: string
+    prompt?: string
+    model?: string
+    systemPrompt?: string
+    condition?: string
+    passOutput?: string
+  }
+}
+
+export interface WorkflowEdge {
+  id: string
+  source: string
+  target: string
+  sourceHandle?: 'yes' | 'no' | 'out'
+  label?: string
+}
+
+export interface WorkflowExecution {
+  id: string
+  workflowId: string
+  startedAt: number
+  completedAt: number | null
+  nodeStatuses: Record<string, NodeExecutionStatus>
+  nodeOutputs: Record<string, string>
+  status: 'running' | 'completed' | 'failed'
+}
+
+export interface Workflow {
+  id: string
+  name: string
+  description: string
+  nodes: WorkflowNode[]
+  edges: WorkflowEdge[]
+  createdAt: number
+  updatedAt: number
+}
+
+export type ViewMode = 'chat' | 'canvas' | '3d' | 'memory' | 'tools' | 'soul' | 'schedule' | 'workflow' | 'settings'

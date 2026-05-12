@@ -1,0 +1,331 @@
+import { useCallback, useState, useEffect } from 'react'
+import {
+  ReactFlow,
+  Controls,
+  Background,
+  MiniMap,
+  addEdge,
+  useNodesState,
+  useEdgesState,
+  type OnConnect,
+  type DefaultEdgeOptions,
+  type Node,
+  type Edge,
+  type NodeMouseHandler
+} from '@xyflow/react'
+import '@xyflow/react/dist/style.css'
+import { workflowNodeTypes } from './WorkflowNodes'
+import { WorkflowProperties } from './WorkflowProperties'
+import { WorkflowExecutor } from './WorkflowExecutor'
+import { useAppStore } from '../../stores/app'
+import type { WorkflowNode as WFNode, WorkflowEdge as WFEdge } from '../../../../shared/types'
+
+const defaultEdgeOptions: DefaultEdgeOptions = {
+  type: 'smoothstep',
+  style: { stroke: '#52525b', strokeWidth: 1.5 },
+  labelStyle: { fill: '#71717a', fontSize: 10 },
+  labelBgStyle: { fill: '#18181b', fillOpacity: 0.9 },
+  labelBgPadding: [6, 3] as [number, number],
+  labelBgBorderRadius: 4,
+  markerEnd: { type: 'arrowclosed' as const, color: '#52525b' }
+}
+
+export function WorkflowEditor() {
+  const { workflows, activeWorkflowId, createWorkflow, deleteWorkflow, setActiveWorkflow,
+    updateWorkflowNodes, updateWorkflowEdges, workflowExecution } = useAppStore()
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([])
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([])
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
+  const [showList, setShowList] = useState(false)
+
+  const activeWorkflow = workflows.find((w) => w.id === activeWorkflowId)
+
+  // Sync active workflow to React Flow
+  useEffect(() => {
+    if (!activeWorkflow) {
+      setNodes([])
+      setEdges([])
+      return
+    }
+
+    const rfNodes: Node[] = activeWorkflow.nodes.map((n) => ({
+      id: n.id,
+      type: n.type,
+      position: n.position,
+      data: {
+        ...n.data,
+        executionStatus: workflowExecution?.nodeStatuses[n.id] || 'idle'
+      }
+    }))
+
+    const rfEdges: Edge[] = activeWorkflow.edges.map((e) => ({
+      id: e.id,
+      source: e.source,
+      target: e.target,
+      sourceHandle: e.sourceHandle,
+      label: e.label
+    }))
+
+    setNodes(rfNodes)
+    setEdges(rfEdges)
+  }, [activeWorkflow?.id, activeWorkflow?.nodes.length, activeWorkflow?.edges.length, workflowExecution, setNodes, setEdges])
+
+  // Sync React Flow changes back to store
+  const syncToStore = useCallback((nds: Node[], eds: Edge[]) => {
+    if (!activeWorkflowId) return
+    const wfNodes: WFNode[] = nds.map((n) => ({
+      id: n.id,
+      type: n.type as WFNode['type'],
+      position: n.position,
+      data: {
+        label: (n.data as Record<string, unknown>).label as string || '',
+        prompt: (n.data as Record<string, unknown>).prompt as string || undefined,
+        model: (n.data as Record<string, unknown>).model as string || undefined,
+        systemPrompt: (n.data as Record<string, unknown>).systemPrompt as string || undefined,
+        condition: (n.data as Record<string, unknown>).condition as string || undefined
+      }
+    }))
+    const wfEdges: WFEdge[] = eds.map((e) => ({
+      id: e.id,
+      source: e.source,
+      target: e.target,
+      sourceHandle: e.sourceHandle as WFEdge['sourceHandle'],
+      label: e.label as string || undefined
+    }))
+    updateWorkflowNodes(activeWorkflowId, wfNodes)
+    updateWorkflowEdges(activeWorkflowId, wfEdges)
+  }, [activeWorkflowId, updateWorkflowNodes, updateWorkflowEdges])
+
+  const onConnect: OnConnect = useCallback(
+    (params) => {
+      setEdges((eds) => {
+        const updated = addEdge({
+          ...params,
+          label: params.sourceHandle === 'yes' ? '是' : params.sourceHandle === 'no' ? '否' : undefined
+        }, eds)
+        setTimeout(() => syncToStore(nodes, updated), 0)
+        return updated
+      })
+    },
+    [setEdges, nodes, syncToStore]
+  )
+
+  const onNodeClick: NodeMouseHandler = useCallback((_e, node) => {
+    setSelectedNodeId(node.id)
+  }, [])
+
+  const onNodesChangeWrapped = useCallback((changes: Parameters<typeof onNodesChange>[0]) => {
+    onNodesChange(changes)
+    setTimeout(() => syncToStore(
+      nodes.map((n) => {
+        const posChange = changes.find((c) => c.id === n.id && c.type === 'position' && c.position)
+        return posChange ? { ...n, position: posChange.position! } : n
+      }),
+      edges
+    ), 0)
+  }, [onNodesChange, nodes, edges, syncToStore])
+
+  const addNode = useCallback((type: WFNode['type']) => {
+    if (!activeWorkflowId) return
+    const id = `${type}-${Date.now()}`
+    const positions = {
+      start: { x: 250, y: 50 },
+      agent: { x: 250, y: 200 },
+      condition: { x: 250, y: 350 },
+      end: { x: 250, y: 500 }
+    }
+    const newNode: Node = {
+      id,
+      type,
+      position: { ...positions[type], x: positions[type].x + Math.random() * 80 - 40 },
+      data: {
+        label: type === 'start' ? '开始' : type === 'end' ? '结束' : type === 'condition' ? '条件' : 'Agent'
+      }
+    }
+    setNodes((nds) => [...nds, newNode])
+    setTimeout(() => syncToStore([...nodes, newNode], edges), 0)
+  }, [activeWorkflowId, setNodes, nodes, edges, syncToStore])
+
+  const handleSaveNode = useCallback((nodeId: string, data: WFNode['data']) => {
+    setNodes((nds) => {
+      const updated = nds.map((n) =>
+        n.id === nodeId ? { ...n, data: { ...n.data, ...data, executionStatus: (n.data as Record<string, unknown>).executionStatus } } : n
+      )
+      setTimeout(() => syncToStore(updated, edges), 0)
+      return updated
+    })
+    setSelectedNodeId(null)
+  }, [setNodes, edges, syncToStore])
+
+  const handleDeleteNode = useCallback((nodeId: string) => {
+    setNodes((nds) => {
+      const updated = nds.filter((n) => n.id !== nodeId)
+      setEdges((eds) => {
+        const updatedEdges = eds.filter((e) => e.source !== nodeId && e.target !== nodeId)
+        setTimeout(() => syncToStore(updated, updatedEdges), 0)
+        return updatedEdges
+      })
+      return updated
+    })
+    setSelectedNodeId(null)
+  }, [setNodes, setEdges, syncToStore])
+
+  const selectedNode = nodes.find((n) => n.id === selectedNodeId)
+  const isExecuting = workflowExecution?.status === 'running'
+
+  // No active workflow — show list
+  if (!activeWorkflow) {
+    return (
+      <div className="flex h-full flex-col">
+        <header className="flex items-center justify-between border-b border-zinc-800 px-4 py-2">
+          <h2 className="text-sm font-medium text-zinc-300">工作流</h2>
+          <button
+            onClick={() => {
+              const name = `工作流 ${workflows.length + 1}`
+              createWorkflow(name)
+            }}
+            className="rounded bg-indigo-600 px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-indigo-500"
+          >
+            + 新建工作流
+          </button>
+        </header>
+
+        {workflows.length === 0 ? (
+          <EmptyWorkflowState />
+        ) : (
+          <div className="flex-1 overflow-y-auto">
+            {workflows.map((wf) => (
+              <div key={wf.id} className="group flex items-center justify-between border-b border-zinc-800/50 px-4 py-3 hover:bg-zinc-900/30">
+                <button
+                  onClick={() => setActiveWorkflow(wf.id)}
+                  className="flex-1 text-left"
+                >
+                  <div className="text-sm font-medium text-zinc-300">{wf.name}</div>
+                  <div className="mt-0.5 flex gap-3 text-[10px] text-zinc-600">
+                    <span>{wf.nodes.length} 节点</span>
+                    <span>{wf.edges.length} 连接</span>
+                    <span>{new Date(wf.updatedAt).toLocaleDateString('zh-CN')}</span>
+                  </div>
+                </button>
+                <button
+                  onClick={() => deleteWorkflow(wf.id)}
+                  className="rounded p-1 text-[10px] text-zinc-600 opacity-0 transition-opacity group-hover:opacity-100 hover:text-red-400"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // Active workflow — show editor
+  const wfNode = activeWorkflow.nodes.find((n) => n.id === selectedNodeId)
+  const hasStart = activeWorkflow.nodes.some((n) => n.type === 'start')
+
+  return (
+    <div className="flex h-full flex-col">
+      <header className="flex items-center justify-between border-b border-zinc-800 px-4 py-2">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setActiveWorkflow(null)}
+            className="rounded px-1 text-xs text-zinc-500 hover:text-zinc-300"
+            title="返回列表"
+          >
+            ←
+          </button>
+          <h2 className="text-sm font-medium text-zinc-300">{activeWorkflow.name}</h2>
+          {workflowExecution && (
+            <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
+              workflowExecution.status === 'running' ? 'bg-amber-900/30 text-amber-400' :
+              workflowExecution.status === 'completed' ? 'bg-emerald-900/30 text-emerald-400' :
+              'bg-red-900/30 text-red-400'
+            }`}>
+              {workflowExecution.status === 'running' ? '执行中' : workflowExecution.status === 'completed' ? '已完成' : '失败'}
+            </span>
+          )}
+        </div>
+
+        <div className="flex items-center gap-1">
+          {!hasStart && (
+            <button
+              onClick={() => addNode('start')}
+              className="rounded px-2 py-1 text-xs text-emerald-500 hover:bg-zinc-800"
+            >
+              + 开始
+            </button>
+          )}
+          <button onClick={() => addNode('agent')} disabled={isExecuting} className="rounded px-2 py-1 text-xs text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300 disabled:opacity-30">
+            + Agent
+          </button>
+          <button onClick={() => addNode('condition')} disabled={isExecuting} className="rounded px-2 py-1 text-xs text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300 disabled:opacity-30">
+            + 条件
+          </button>
+          <button onClick={() => addNode('end')} disabled={isExecuting} className="rounded px-2 py-1 text-xs text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300 disabled:opacity-30">
+            + 结束
+          </button>
+          <div className="mx-1 h-4 w-px bg-zinc-800" />
+          <WorkflowExecutor workflow={activeWorkflow} />
+        </div>
+      </header>
+
+      <div className="relative flex-1">
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChangeWrapped}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          onNodeClick={onNodeClick}
+          nodeTypes={workflowNodeTypes}
+          defaultEdgeOptions={defaultEdgeOptions}
+          fitView
+          className="bg-zinc-950"
+          proOptions={{ hideAttribution: true }}
+          nodesDraggable={!isExecuting}
+        >
+          <Controls className="!border-zinc-700 !bg-zinc-900 [&>button]:!border-zinc-700 [&>button]:!bg-zinc-800 [&>button]:!fill-zinc-400 [&>button:hover]:!bg-zinc-700" />
+          <MiniMap
+            className="!border-zinc-700 !bg-zinc-900"
+            maskColor="rgba(0,0,0,0.7)"
+            nodeColor={(n) => {
+              if (n.type === 'start') return '#10b981'
+              if (n.type === 'end') return '#ef4444'
+              if (n.type === 'condition') return '#f59e0b'
+              return '#6366f1'
+            }}
+          />
+          <Background color="#27272a" gap={20} size={1} />
+        </ReactFlow>
+
+        {wfNode && !isExecuting && (
+          <WorkflowProperties
+            node={wfNode}
+            onSave={(data) => handleSaveNode(wfNode.id, data)}
+            onClose={() => setSelectedNodeId(null)}
+            onDelete={() => handleDeleteNode(wfNode.id)}
+          />
+        )}
+      </div>
+    </div>
+  )
+}
+
+function EmptyWorkflowState() {
+  return (
+    <div className="flex h-full items-center justify-center">
+      <div className="text-center">
+        <div className="mb-3 text-4xl">🔀</div>
+        <p className="text-sm font-medium text-zinc-400">Agent 工作流引擎</p>
+        <p className="mt-2 text-xs text-zinc-600">可视化编排多 Agent 协作流程</p>
+        <div className="mt-4 space-y-1 text-[10px] text-zinc-700">
+          <p>串联/并联/条件分支</p>
+          <p>Agent 间自动传递上下文</p>
+          <p>实时监控执行状态</p>
+        </div>
+      </div>
+    </div>
+  )
+}

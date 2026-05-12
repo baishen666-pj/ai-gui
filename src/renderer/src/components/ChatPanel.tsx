@@ -4,18 +4,21 @@ import { AgentMarkdown } from './AgentMarkdown'
 import { SlashCommandMenu } from './SlashCommandMenu'
 import type { SlashCommand } from './SlashCommandMenu'
 import type { ChatMessage } from '../../../shared/types'
+import { getExportContent, getExportFileName, type ExportFormat } from '../lib/export'
 
 export function ChatPanel() {
   const {
     messages, isLoading, toolProgress, sessionId, reasoningContent, soulPrompt,
     addMessage, appendToLastAgent, setLoading, setToolProgress,
-    clearMessages, setSessionId, setView, appendReasoning, clearReasoning
+    clearMessages, setSessionId, setView, appendReasoning, clearReasoning, notify
   } = useAppStore()
   const [input, setInput] = useState('')
   const [slashMenuOpen, setSlashMenuOpen] = useState(false)
   const [slashFilter, setSlashFilter] = useState('')
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0 })
   const [pendingImage, setPendingImage] = useState<string | null>(null)
+  const [exportOpen, setExportOpen] = useState(false)
+  const [exportFormat, setExportFormat] = useState<ExportFormat>('markdown')
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -40,6 +43,7 @@ export function ChatPanel() {
     const unsubError = (msg: string) => {
       addMessage({ id: `error-${Date.now()}`, role: 'error', content: msg, timestamp: Date.now() })
       setLoading(false)
+      notify('聊天错误', msg.slice(0, 100))
     }
     const unsubTool = (tool: string) => setToolProgress(tool)
     const unsubReasoning = (text: string) => appendReasoning(text)
@@ -167,6 +171,8 @@ export function ChatPanel() {
       case '3d': setView('3d'); break
       case 'memory': setView('memory'); break
       case 'tools': setView('tools'); break
+      case 'schedule': setView('schedule'); break
+      case 'workflow': setView('workflow'); break
       case 'soul': setView('soul'); break
       case 'settings': setView('settings'); break
       default: addMessage({ id: `system-${Date.now()}`, role: 'system', content: `${cmd.label} — ${cmd.description}`, timestamp: Date.now() })
@@ -195,6 +201,27 @@ export function ChatPanel() {
     useAppStore.setState({ messages: store.messages.filter((m) => m.id !== id) })
   }, [])
 
+  const handleExport = useCallback(async () => {
+    const title = sessionId ? `对话 ${new Date().toLocaleDateString('zh-CN')}` : 'AI GUI 对话'
+    const content = getExportContent(messages, title, exportFormat)
+    const fileName = getExportFileName(title, exportFormat)
+
+    if (window.aiGui?.saveExport) {
+      const saved = await window.aiGui.saveExport({ content, fileName })
+      if (saved) {
+        notify('导出成功', `已保存为 ${fileName}`)
+        setExportOpen(false)
+      }
+    } else {
+      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url; a.download = fileName; a.click()
+      URL.revokeObjectURL(url)
+      setExportOpen(false)
+    }
+  }, [messages, sessionId, exportFormat, notify])
+
   return (
     <div className="flex h-full flex-col">
       <header className="flex items-center justify-between border-b border-zinc-800 px-4 py-2">
@@ -212,6 +239,9 @@ export function ChatPanel() {
           <div className="flex gap-2">
           {isLoading && (
             <button onClick={() => window.aiGui?.chatAbort()} className="rounded px-2 py-1 text-xs text-red-400 hover:bg-zinc-800">停止</button>
+          )}
+          {messages.length > 0 && (
+            <button onClick={() => setExportOpen(true)} className="rounded px-2 py-1 text-xs text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300" title="导出对话">导出</button>
           )}
           <button onClick={clearMessages} className="rounded px-2 py-1 text-xs text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300">新对话</button>
           </div>
@@ -233,6 +263,17 @@ export function ChatPanel() {
         )}
         <div ref={bottomRef} />
       </div>
+
+      {exportOpen && (
+        <ExportDialog
+          messages={messages}
+          sessionId={sessionId}
+          format={exportFormat}
+          onFormatChange={setExportFormat}
+          onExport={handleExport}
+          onClose={() => setExportOpen(false)}
+        />
+      )}
 
       <div className="relative border-t border-zinc-800 p-3">
         {pendingImage && (
@@ -378,6 +419,76 @@ function ReasoningBlock({ content }: { content: string }) {
           {content}
         </div>
       )}
+    </div>
+  )
+}
+
+function ExportDialog({ messages, sessionId, format, onFormatChange, onExport, onClose }: {
+  messages: ChatMessage[]
+  sessionId: string | null
+  format: ExportFormat
+  onFormatChange: (f: ExportFormat) => void
+  onExport: () => void
+  onClose: () => void
+}) {
+  const title = sessionId ? `对话 ${new Date().toLocaleDateString('zh-CN')}` : 'AI GUI 对话'
+  const preview = getExportContent(messages.slice(0, 3), title, format)
+
+  const formats: { value: ExportFormat; label: string; desc: string }[] = [
+    { value: 'markdown', label: 'Markdown', desc: '带格式的 .md 文件，适合阅读和博客' },
+    { value: 'json', label: 'JSON', desc: '结构化数据，适合程序处理和备份' },
+    { value: 'txt', label: '纯文本', desc: '简单文本格式，兼容性最好' }
+  ]
+
+  return (
+    <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <div className="w-[460px] rounded-xl border border-zinc-700 bg-zinc-900 shadow-2xl">
+        <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-3">
+          <h3 className="text-sm font-medium text-zinc-200">导出对话</h3>
+          <button onClick={onClose} className="rounded p-1 text-zinc-600 hover:text-zinc-300">✕</button>
+        </div>
+
+        <div className="p-4 space-y-4">
+          <div>
+            <label className="mb-2 block text-[10px] font-medium uppercase tracking-wider text-zinc-600">导出格式</label>
+            <div className="grid grid-cols-3 gap-2">
+              {formats.map((f) => (
+                <button
+                  key={f.value}
+                  onClick={() => onFormatChange(f.value)}
+                  className={`rounded-lg border p-2.5 text-left transition-colors ${
+                    format === f.value
+                      ? 'border-indigo-500 bg-indigo-600/10'
+                      : 'border-zinc-700 hover:border-zinc-600'
+                  }`}
+                >
+                  <div className={`text-xs font-medium ${format === f.value ? 'text-indigo-300' : 'text-zinc-400'}`}>{f.label}</div>
+                  <div className="mt-1 text-[10px] text-zinc-600">{f.desc}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="mb-2 block text-[10px] font-medium uppercase tracking-wider text-zinc-600">预览</label>
+            <pre className="max-h-32 overflow-y-auto rounded-lg border border-zinc-800 bg-zinc-950 p-3 text-[10px] leading-relaxed text-zinc-500 whitespace-pre-wrap">
+              {preview.slice(0, 500)}{preview.length > 500 ? '\n...' : ''}
+            </pre>
+          </div>
+
+          <div className="flex items-center justify-between text-[10px] text-zinc-600">
+            <span>共 {messages.length} 条消息</span>
+            <span>{getExportFileName(title, format)}</span>
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-2 border-t border-zinc-800 px-4 py-3">
+          <button onClick={onClose} className="rounded-lg px-4 py-1.5 text-xs text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300">取消</button>
+          <button onClick={onExport} className="rounded-lg bg-indigo-600 px-4 py-1.5 text-xs font-medium text-white transition-colors hover:bg-indigo-500">
+            保存文件
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

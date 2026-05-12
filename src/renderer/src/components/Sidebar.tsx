@@ -13,6 +13,8 @@ const NAV_ITEMS: { view: ViewMode; icon: string; labelZh: string }[] = [
   { view: '3d', icon: '🔮', labelZh: '3D' },
   { view: 'memory', icon: '🧠', labelZh: '记忆' },
   { view: 'tools', icon: '🔧', labelZh: '工具' },
+  { view: 'schedule', icon: '⏰', labelZh: '定时' },
+  { view: 'workflow', icon: '🔀', labelZh: '工作流' },
   { view: 'soul', icon: '🎭', labelZh: '角色' },
   { view: 'settings', icon: '⚙️', labelZh: '设置' }
 ]

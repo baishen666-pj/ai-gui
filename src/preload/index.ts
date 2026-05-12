@@ -74,7 +74,25 @@ const api = {
   sessionsDelete: (id: string) => ipcRenderer.invoke('sessions-delete', id),
   sessionsInsertMessage: (msg: { id: string; session_id: string; role: string; content: string; timestamp: number }) =>
     ipcRenderer.invoke('sessions-insert-message', msg),
-  sessionsSearch: (query: string, limit?: number) => ipcRenderer.invoke('sessions-search', query, limit)
+  sessionsSearch: (query: string, limit?: number) => ipcRenderer.invoke('sessions-search', query, limit),
+
+  // Notifications
+  sendNotification: (opts: { title: string; body: string; silent?: boolean }) =>
+    ipcRenderer.invoke('send-notification', opts),
+
+  // Export
+  saveExport: (opts: { content: string; fileName: string }) =>
+    ipcRenderer.invoke('save-export', opts),
+
+  // Persistence — Tasks
+  persistenceGetTasks: () => ipcRenderer.invoke('persistence-get-tasks'),
+  persistenceUpsertTask: (task: any) => ipcRenderer.invoke('persistence-upsert-task', task),
+  persistenceDeleteTask: (id: string) => ipcRenderer.invoke('persistence-delete-task', id),
+
+  // Persistence — Workflows
+  persistenceGetWorkflows: () => ipcRenderer.invoke('persistence-get-workflows'),
+  persistenceUpsertWorkflow: (wf: any) => ipcRenderer.invoke('persistence-upsert-workflow', wf),
+  persistenceDeleteWorkflow: (id: string) => ipcRenderer.invoke('persistence-delete-workflow', id)
 } as const
 
 export type AiGuiAPI = typeof api

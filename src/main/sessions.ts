@@ -5,7 +5,7 @@ import { existsSync, mkdirSync } from 'fs'
 
 let db: Database.Database | null = null
 
-function getDb(): Database.Database {
+export function getDb(): Database.Database {
   if (db) return db
   if (!existsSync(APP_HOME)) mkdirSync(APP_HOME, { recursive: true })
   db = new Database(join(APP_HOME, 'state.db'))

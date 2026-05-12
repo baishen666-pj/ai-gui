@@ -10,7 +10,10 @@ import { AgentGraph3D } from './components/three/AgentGraph3D'
 import { MemoryPanel } from './components/MemoryPanel'
 import { ToolsPanel } from './components/ToolsPanel'
 import { SoulEditorPanel } from './components/SoulEditorPanel'
+import { SchedulePanel } from './components/SchedulePanel'
+import { WorkflowEditor } from './components/workflow/WorkflowEditor'
 import { SettingsPanel } from './components/SettingsPanel'
+import { usePersistence } from './hooks/usePersistence'
 
 const VIEW_KEYS: Record<number, ViewMode> = {
   1: 'chat',
@@ -18,18 +21,21 @@ const VIEW_KEYS: Record<number, ViewMode> = {
   3: '3d',
   4: 'memory',
   5: 'tools',
-  6: 'soul',
-  7: 'settings'
+  6: 'schedule',
+  7: 'workflow',
+  8: 'soul',
+  9: 'settings'
 }
 
 export function App() {
   const { view, setView, clearMessages } = useAppStore()
+  usePersistence()
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.ctrlKey || e.metaKey) {
         const num = parseInt(e.key)
-        if (num >= 1 && num <= 7 && VIEW_KEYS[num]) {
+        if (num >= 1 && num <= 9 && VIEW_KEYS[num]) {
           e.preventDefault()
           setView(VIEW_KEYS[num])
         }
@@ -56,6 +62,12 @@ export function App() {
         {view === '3d' && <AgentGraph3D />}
         {view === 'memory' && <MemoryPanel />}
         {view === 'tools' && <ToolsPanel />}
+        {view === 'schedule' && <SchedulePanel />}
+        {view === 'workflow' && (
+          <ReactFlowProvider>
+            <WorkflowEditor />
+          </ReactFlowProvider>
+        )}
         {view === 'soul' && <SoulEditorPanel />}
         {view === 'settings' && <SettingsPanel />}
       </main>

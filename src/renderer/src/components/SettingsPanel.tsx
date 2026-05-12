@@ -156,6 +156,36 @@ export function SettingsPanel() {
             </div>
           </section>
 
+          {/* Notifications */}
+          <section>
+            <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-zinc-500">
+              通知
+            </h3>
+            <div className="space-y-3 rounded-lg border border-zinc-800 bg-zinc-900 p-4">
+              <button
+                onClick={() => {
+                  if (window.aiGui) {
+                    window.aiGui.sendNotification({ title: 'AI GUI 通知测试', body: '如果你看到这条系统通知，说明桌面通知工作正常！' })
+                  }
+                }}
+                className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-xs text-zinc-400 transition-colors hover:bg-zinc-700 hover:text-zinc-200"
+              >
+                发送测试通知
+              </button>
+              <div className="space-y-2 text-[10px] text-zinc-600">
+                <p>通知触发场景：</p>
+                <div className="grid grid-cols-2 gap-1">
+                  <span className="rounded bg-zinc-800 px-2 py-1">⏰ 定时任务触发</span>
+                  <span className="rounded bg-zinc-800 px-2 py-1">⏰ 定时任务失败</span>
+                  <span className="rounded bg-zinc-800 px-2 py-1">🔀 工作流完成</span>
+                  <span className="rounded bg-zinc-800 px-2 py-1">🔀 工作流失败</span>
+                  <span className="rounded bg-zinc-800 px-2 py-1">💬 聊天错误</span>
+                  <span className="rounded bg-zinc-800 px-2 py-1">🔄 长时任务完成</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
           {/* About */}
           <section>
             <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-zinc-500">
