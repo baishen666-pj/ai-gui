@@ -7,7 +7,7 @@ import type { ChatMessage } from '../../../shared/types'
 
 export function ChatPanel() {
   const {
-    messages, isLoading, toolProgress, sessionId, reasoningContent,
+    messages, isLoading, toolProgress, sessionId, reasoningContent, soulPrompt,
     addMessage, appendToLastAgent, setLoading, setToolProgress,
     clearMessages, setSessionId, setView, appendReasoning, clearReasoning
   } = useAppStore()
@@ -101,7 +101,8 @@ export function ChatPanel() {
   }, [])
 
   const buildApiMessages = useCallback((msgs: ChatMessage[], newUserMsg: ChatMessage) => {
-    return [...msgs, newUserMsg].map((m) => {
+    const soul = useAppStore.getState().soulPrompt
+    const apiMsgs = [...msgs, newUserMsg].map((m) => {
       if (m.imageBase64) {
         return {
           role: m.role === 'user' ? 'user' : 'assistant',
@@ -113,6 +114,11 @@ export function ChatPanel() {
       }
       return { role: m.role === 'user' ? 'user' : 'assistant', content: m.content }
     })
+
+    if (soul) {
+      return [{ role: 'system', content: soul }, ...apiMsgs]
+    }
+    return apiMsgs
   }, [])
 
   const handleSend = useCallback(async () => {
@@ -161,6 +167,7 @@ export function ChatPanel() {
       case '3d': setView('3d'); break
       case 'memory': setView('memory'); break
       case 'tools': setView('tools'); break
+      case 'soul': setView('soul'); break
       case 'settings': setView('settings'); break
       default: addMessage({ id: `system-${Date.now()}`, role: 'system', content: `${cmd.label} — ${cmd.description}`, timestamp: Date.now() })
     }
@@ -192,11 +199,22 @@ export function ChatPanel() {
     <div className="flex h-full flex-col">
       <header className="flex items-center justify-between border-b border-zinc-800 px-4 py-2">
         <h2 className="text-sm font-medium text-zinc-300">{sessionId ? '对话' : 'AI GUI'}</h2>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-3">
+          {soulPrompt && (
+            <button
+              onClick={() => setView('soul')}
+              className="flex items-center gap-1 rounded-full border border-zinc-800 bg-zinc-900 px-2 py-0.5 text-[10px] text-zinc-500 transition-colors hover:border-zinc-600 hover:text-zinc-300"
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-indigo-400" />
+              角色已启用
+            </button>
+          )}
+          <div className="flex gap-2">
           {isLoading && (
             <button onClick={() => window.aiGui?.chatAbort()} className="rounded px-2 py-1 text-xs text-red-400 hover:bg-zinc-800">停止</button>
           )}
           <button onClick={clearMessages} className="rounded px-2 py-1 text-xs text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300">新对话</button>
+          </div>
         </div>
       </header>
 

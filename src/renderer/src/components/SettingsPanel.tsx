@@ -1,48 +1,56 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { AppLocale } from '../../../shared/i18n/types'
+import type { ProviderConfig } from '../../../shared/types'
 
-interface ConnectionConfig {
-  mode: 'local' | 'remote'
-  langgraphUrl: string
-  langgraphApiKey: string
-  defaultModel: string
-}
-
-interface ModelConfig {
-  provider: string
-  model: string
-  baseUrl: string
+const PROVIDER_ICONS: Record<string, string> = {
+  zhipu: '🟣',
+  openai: '🟢',
+  claude: '🟠',
+  ollama: '🦙',
+  openrouter: '🌐',
+  chatgpt: '💬',
+  custom: '⚙️'
 }
 
 export function SettingsPanel() {
   const [locale, setLocalLocale] = useState<AppLocale>('zh-CN')
-  const [connection, setConnection] = useState<ConnectionConfig>({
-    mode: 'remote',
-    langgraphUrl: 'https://open.bigmodel.cn/api/paas/v4',
-    langgraphApiKey: '',
-    defaultModel: 'GLM-5V-Turbo'
-  })
-  const [model, setModel] = useState<ModelConfig>({ provider: 'auto', model: '', baseUrl: '' })
+  const [providers, setProviders] = useState<ProviderConfig[]>([])
+  const [activeId, setActiveId] = useState('zhipu')
+  const [editingProvider, setEditingProvider] = useState<ProviderConfig | null>(null)
   const [saved, setSaved] = useState(false)
 
   useEffect(() => {
     if (!window.aiGui) return
     window.aiGui.getLocale().then(setLocalLocale).catch(() => {})
-    window.aiGui.getConnectionConfig().then(setConnection).catch(() => {})
-    window.aiGui.getModelConfig().then(setModel).catch(() => {})
+    window.aiGui.getConnectionConfig().then((config: any) => {
+      setProviders(config.providers ?? [])
+      setActiveId(config.activeProviderId ?? 'zhipu')
+    }).catch(() => {})
   }, [])
 
   const handleSave = useCallback(async () => {
     if (!window.aiGui) return
     try {
-      await window.aiGui.setConnectionConfig(connection)
+      await window.aiGui.setConnectionConfig({ providers, activeProviderId: activeId })
       await window.aiGui.setLocale(locale)
+      if (editingProvider) {
+        await window.aiGui.updateProvider(editingProvider)
+      }
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
     } catch {
       // silently fail
     }
-  }, [connection, locale])
+  }, [providers, activeId, locale, editingProvider])
+
+  const handleSetActive = useCallback(async (id: string) => {
+    setActiveId(id)
+    if (window.aiGui) {
+      await window.aiGui.setActiveProvider(id)
+    }
+  }, [])
+
+  const activeProvider = providers.find((p) => p.id === activeId) ?? providers[0]
 
   return (
     <div className="flex h-full flex-col">
@@ -62,106 +70,66 @@ export function SettingsPanel() {
 
       <div className="flex-1 overflow-y-auto p-4">
         <div className="mx-auto max-w-lg space-y-6">
+
+          {/* API Provider */}
           <section>
             <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-zinc-500">
-              Agent 连接
+              API Provider
             </h3>
             <div className="space-y-3 rounded-lg border border-zinc-800 bg-zinc-900 p-4">
-              <label className="flex items-center gap-3 text-sm">
-                <span className="w-20 shrink-0 text-zinc-500">运行模式</span>
-                <div className="flex gap-1">
-                  {(['local', 'remote'] as const).map((m) => (
-                    <button
-                      key={m}
-                      onClick={() => setConnection((c) => ({ ...c, mode: m }))}
-                      className={`rounded px-3 py-1.5 text-xs transition-colors ${
-                        connection.mode === m
-                          ? 'bg-indigo-600 text-white'
-                          : 'bg-zinc-800 text-zinc-500 hover:text-zinc-300'
-                      }`}
-                    >
-                      {m === 'local' ? '本地模式' : '远程模式'}
-                    </button>
-                  ))}
-                </div>
-              </label>
-
-              <label className="flex items-center gap-3 text-sm">
-                <span className="w-20 shrink-0 text-zinc-500">API URL</span>
-                <input
-                  type="text"
-                  value={connection.langgraphUrl}
-                  onChange={(e) => setConnection((c) => ({ ...c, langgraphUrl: e.target.value }))}
-                  className="flex-1 rounded border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-zinc-300 outline-none focus:border-indigo-500"
-                />
-              </label>
-
-              {connection.mode === 'remote' && (
-                <label className="flex items-center gap-3 text-sm">
-                  <span className="w-20 shrink-0 text-zinc-500">API Key</span>
-                  <input
-                    type="password"
-                    value={connection.langgraphApiKey}
-                    onChange={(e) => setConnection((c) => ({ ...c, langgraphApiKey: e.target.value }))}
-                    placeholder="粘贴你的 API Key..."
-                    className="flex-1 rounded border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-zinc-300 outline-none focus:border-indigo-500"
-                  />
-                </label>
-              )}
-
-              <label className="flex items-center gap-3 text-sm">
-                <span className="w-20 shrink-0 text-zinc-500">模型</span>
-                <select
-                  value={connection.defaultModel}
-                  onChange={(e) => setConnection((c) => ({ ...c, defaultModel: e.target.value }))}
-                  className="rounded border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm text-zinc-300"
+              {/* Provider tabs */}
+              <div className="flex flex-wrap gap-1.5">
+                {providers.map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => handleSetActive(p.id)}
+                    className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs transition-colors ${
+                      activeId === p.id
+                        ? 'border-indigo-600/50 bg-indigo-600/15 text-indigo-300'
+                        : 'border-zinc-700 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300'
+                    }`}
+                  >
+                    <span>{PROVIDER_ICONS[p.type] ?? '⚙️'}</span>
+                    <span>{p.name}</span>
+                    {activeId === p.id && <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />}
+                  </button>
+                ))}
+                <button
+                  onClick={() => setEditingProvider({
+                    id: `custom-${Date.now()}`, name: '自定义', type: 'custom',
+                    baseUrl: '', apiKey: '', models: [''], defaultModel: ''
+                  })}
+                  className="rounded-lg border border-dashed border-zinc-700 px-3 py-1.5 text-xs text-zinc-600 hover:border-zinc-500 hover:text-zinc-400"
                 >
-                  <option value="GLM-5V-Turbo">GLM-5V-Turbo</option>
-                  <option value="glm-4-flash">GLM-4-Flash (免费)</option>
-                  <option value="glm-4-flash-250414">GLM-4-Flash-250414 (免费)</option>
-                  <option value="glm-4-air">GLM-4-Air</option>
-                  <option value="glm-4-air-250414">GLM-4-Air-250414</option>
-                  <option value="glm-4-plus">GLM-4-Plus</option>
-                  <option value="glm-4-long">GLM-4-Long</option>
-                  <option value="glm-4.7">GLM-4.7 (思考模式)</option>
-                  <option value="glm-4.6">GLM-4.6</option>
-                  <option value="glm-4">GLM-4</option>
-                  <option value="glm-3-turbo">GLM-3-Turbo</option>
-                </select>
-              </label>
-
-              <div className="flex items-center gap-2 rounded bg-indigo-600/10 px-3 py-2">
-                <span className="text-xs text-indigo-400">智谱AI</span>
-                <span className="text-[10px] text-zinc-600">
-                  {connection.defaultModel.includes('flash') ? '免费模型 · 无需充值' : '按量计费'}
-                  {connection.defaultModel === 'glm-4.7' ? ' · 支持思考模式' : ''}
-                </span>
+                  + 添加
+                </button>
               </div>
+
+              {/* Active provider config */}
+              {activeProvider && (
+                <ProviderConfigForm
+                  provider={editingProvider && editingProvider.id === activeProvider.id ? editingProvider : activeProvider}
+                  onChange={setEditingProvider}
+                />
+              )}
             </div>
           </section>
 
+          {/* Model selection */}
           <section>
             <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-zinc-500">
-              模型配置
+              当前模型
             </h3>
-            <div className="space-y-3 rounded-lg border border-zinc-800 bg-zinc-900 p-4">
+            <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-4">
               <div className="flex items-center gap-2">
-                <div className={`h-2 w-2 rounded-full ${model.provider !== 'auto' ? 'bg-emerald-400' : 'bg-zinc-600'}`} />
-                <span className="text-xs text-zinc-500">
-                  {model.provider !== 'auto'
-                    ? `${model.provider} / ${model.model || 'default'}`
-                    : '未配置 — 使用默认模型'}
-                </span>
+                <div className="h-2 w-2 rounded-full bg-emerald-400" />
+                <span className="text-sm text-zinc-300">{activeProvider?.defaultModel ?? '未选择'}</span>
+                <span className="text-xs text-zinc-600">({activeProvider?.name})</span>
               </div>
-              {model.baseUrl && (
-                <p className="text-xs text-zinc-600">Base URL: {model.baseUrl}</p>
-              )}
-              <p className="text-[10px] text-zinc-700">
-                模型配置通过 .env 文件管理，路径：~/.ai-gui/.env
-              </p>
             </div>
           </section>
 
+          {/* UI settings */}
           <section>
             <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-zinc-500">
               界面设置
@@ -188,30 +156,154 @@ export function SettingsPanel() {
             </div>
           </section>
 
+          {/* About */}
           <section>
             <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-zinc-500">
               关于
             </h3>
             <div className="space-y-2 rounded-lg border border-zinc-800 bg-zinc-900 p-4">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-zinc-500">版本</span>
-                <span className="text-zinc-400">0.1.0</span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-zinc-500">Electron</span>
-                <span className="text-zinc-400">39</span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-zinc-500">React</span>
-                <span className="text-zinc-400">19</span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-zinc-500">Three.js</span>
-                <span className="text-zinc-400">0.175</span>
-              </div>
+              {[
+                ['版本', '0.1.0'],
+                ['Electron', '39'],
+                ['React', '19'],
+                ['Three.js', '0.175']
+              ].map(([k, v]) => (
+                <div key={k} className="flex items-center justify-between text-sm">
+                  <span className="text-zinc-500">{k}</span>
+                  <span className="text-zinc-400">{v}</span>
+                </div>
+              ))}
             </div>
           </section>
         </div>
+      </div>
+    </div>
+  )
+}
+
+function ProviderConfigForm({ provider, onChange }: { provider: ProviderConfig; onChange: (p: ProviderConfig) => void }) {
+  const [loginStatus, setLoginStatus] = useState<'idle' | 'logging' | 'done' | 'error'>('idle')
+  const update = (field: keyof ProviderConfig, value: string) => {
+    onChange({ ...provider, [field]: value })
+  }
+
+  const handleLogin = async () => {
+    if (!window.aiGui) return
+    setLoginStatus('logging')
+    try {
+      const session = await window.aiGui.chatgptLogin()
+      if (session?.accessToken) {
+        onChange({ ...provider, apiKey: session.accessToken })
+        setLoginStatus('done')
+      } else {
+        setLoginStatus('error')
+      }
+    } catch {
+      setLoginStatus('error')
+    }
+  }
+
+  const handleLogout = async () => {
+    if (!window.aiGui) return
+    await window.aiGui.chatgptLogout()
+    onChange({ ...provider, apiKey: '' })
+    setLoginStatus('idle')
+  }
+
+  // ChatGPT subscription uses browser login, no manual URL/Key fields
+  if (provider.type === 'chatgpt') {
+    return (
+      <div className="space-y-3 border-t border-zinc-800 pt-3">
+        <div className="rounded-lg bg-zinc-800/50 p-3">
+          <p className="text-xs text-zinc-400">
+            使用你的 ChatGPT Plus/Pro 订阅直接登录，无需 API Key。
+          </p>
+        </div>
+
+        {provider.apiKey ? (
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 rounded-lg border border-emerald-800/50 bg-emerald-950/30 px-3 py-2">
+              <span className="h-2 w-2 rounded-full bg-emerald-400" />
+              <span className="text-xs text-emerald-400">已登录</span>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-xs text-zinc-400 transition-colors hover:bg-zinc-700"
+            >
+              退出登录
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={handleLogin}
+            disabled={loginStatus === 'logging'}
+            className="w-full rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-emerald-500 disabled:opacity-50"
+          >
+            {loginStatus === 'logging' ? '等待登录...' : '登录 ChatGPT'}
+          </button>
+        )}
+
+        {loginStatus === 'error' && (
+          <p className="text-xs text-red-400">登录失败，请重试</p>
+        )}
+
+        <label className="flex items-center gap-3 text-sm">
+          <span className="w-20 shrink-0 text-zinc-500">模型</span>
+          <select
+            value={provider.defaultModel}
+            onChange={(e) => update('defaultModel', e.target.value)}
+            className="rounded border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm text-zinc-300"
+          >
+            {provider.models.map((m) => (
+              <option key={m} value={m}>{m}{m === 'o1-pro' ? ' (Pro)' : ''}</option>
+            ))}
+          </select>
+        </label>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-3 border-t border-zinc-800 pt-3">
+      <label className="flex items-center gap-3 text-sm">
+        <span className="w-20 shrink-0 text-zinc-500">API URL</span>
+        <input
+          type="text"
+          value={provider.baseUrl}
+          onChange={(e) => update('baseUrl', e.target.value)}
+          className="flex-1 rounded border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-zinc-300 outline-none focus:border-indigo-500"
+        />
+      </label>
+
+      <label className="flex items-center gap-3 text-sm">
+        <span className="w-20 shrink-0 text-zinc-500">API Key</span>
+        <input
+          type="password"
+          value={provider.apiKey}
+          onChange={(e) => update('apiKey', e.target.value)}
+          placeholder={provider.type === 'ollama' ? '无需 Key' : '粘贴你的 API Key...'}
+          className="flex-1 rounded border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-zinc-300 outline-none focus:border-indigo-500"
+        />
+      </label>
+
+      <label className="flex items-center gap-3 text-sm">
+        <span className="w-20 shrink-0 text-zinc-500">模型</span>
+        <select
+          value={provider.defaultModel}
+          onChange={(e) => update('defaultModel', e.target.value)}
+          className="rounded border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm text-zinc-300"
+        >
+          {provider.models.map((m) => (
+            <option key={m} value={m}>{m}</option>
+          ))}
+        </select>
+      </label>
+
+      <div className="flex items-center gap-2 rounded bg-indigo-600/10 px-3 py-2">
+        <span className="text-xs text-indigo-400">{PROVIDER_ICONS[provider.type]} {provider.name}</span>
+        <span className="text-[10px] text-zinc-600">
+          {provider.type === 'ollama' ? '本地运行 · 无需 API Key' : provider.type === 'zhipu' ? '按量计费 · flash 模型免费' : '按量计费'}
+        </span>
       </div>
     </div>
   )

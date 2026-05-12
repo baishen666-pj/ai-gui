@@ -9,6 +9,7 @@ import { AgentCanvas } from './components/canvas/AgentCanvas'
 import { AgentGraph3D } from './components/three/AgentGraph3D'
 import { MemoryPanel } from './components/MemoryPanel'
 import { ToolsPanel } from './components/ToolsPanel'
+import { SoulEditorPanel } from './components/SoulEditorPanel'
 import { SettingsPanel } from './components/SettingsPanel'
 
 const VIEW_KEYS: Record<number, ViewMode> = {
@@ -17,7 +18,8 @@ const VIEW_KEYS: Record<number, ViewMode> = {
   3: '3d',
   4: 'memory',
   5: 'tools',
-  6: 'settings'
+  6: 'soul',
+  7: 'settings'
 }
 
 export function App() {
@@ -27,7 +29,7 @@ export function App() {
     const handler = (e: KeyboardEvent) => {
       if (e.ctrlKey || e.metaKey) {
         const num = parseInt(e.key)
-        if (num >= 1 && num <= 6 && VIEW_KEYS[num]) {
+        if (num >= 1 && num <= 7 && VIEW_KEYS[num]) {
           e.preventDefault()
           setView(VIEW_KEYS[num])
         }
@@ -51,9 +53,10 @@ export function App() {
             <AgentCanvas />
           </ReactFlowProvider>
         )}
-        {view === '3d' && <AgentGraph3DWrapper />}
+        {view === '3d' && <AgentGraph3D />}
         {view === 'memory' && <MemoryPanel />}
         {view === 'tools' && <ToolsPanel />}
+        {view === 'soul' && <SoulEditorPanel />}
         {view === 'settings' && <SettingsPanel />}
       </main>
     </div>
@@ -95,20 +98,6 @@ function ChatView() {
       />
       <div className="flex-1">
         <ChatPanel />
-      </div>
-    </div>
-  )
-}
-
-function AgentGraph3DWrapper() {
-  return (
-    <div className="flex h-full flex-col">
-      <header className="flex items-center justify-between border-b border-zinc-800 px-4 py-2">
-        <h2 className="text-sm font-medium text-zinc-300">3D Agent Graph</h2>
-        <span className="text-xs text-zinc-600">拖拽旋转 · 滚轮缩放 · 自动旋转</span>
-      </header>
-      <div className="flex-1">
-        <AgentGraph3D />
       </div>
     </div>
   )

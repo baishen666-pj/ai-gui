@@ -15,6 +15,7 @@ const COMMANDS: SlashCommand[] = [
   { key: 'canvas', label: '/canvas', description: '切换到 Agent 画布', category: 'agent' },
   { key: 'memory', label: '/memory', description: '查看记忆', category: 'info' },
   { key: 'tools', label: '/tools', description: '查看工具集', category: 'info' },
+  { key: 'soul', label: '/soul', description: '编辑角色 (SOUL)', category: 'info' },
   { key: 'settings', label: '/settings', description: '打开设置', category: 'info' },
   { key: 'reset', label: '/reset', description: '重置会话', category: 'agent' },
   { key: 'compact', label: '/compact', description: '压缩上下文', category: 'agent' },

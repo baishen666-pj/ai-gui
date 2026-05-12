@@ -14,6 +14,20 @@ const api = {
   getModelConfig: (profile?: string): Promise<ModelConfig> =>
     ipcRenderer.invoke('get-model-config', profile),
 
+  getActiveProvider: (): Promise<any> =>
+    ipcRenderer.invoke('get-active-provider'),
+  setActiveProvider: (id: string): Promise<void> =>
+    ipcRenderer.invoke('set-active-provider', id),
+  updateProvider: (provider: any): Promise<void> =>
+    ipcRenderer.invoke('update-provider', provider),
+  removeProvider: (id: string): Promise<void> =>
+    ipcRenderer.invoke('remove-provider', id),
+
+  chatgptLogin: (): Promise<any> =>
+    ipcRenderer.invoke('chatgpt-login'),
+  chatgptLogout: (): Promise<void> =>
+    ipcRenderer.invoke('chatgpt-logout'),
+
   openExternal: (url: string): Promise<void> =>
     ipcRenderer.invoke('open-external', url),
 

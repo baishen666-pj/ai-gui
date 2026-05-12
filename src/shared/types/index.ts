@@ -7,11 +7,23 @@ export interface ChatMessage {
   imageBase64?: string
 }
 
+export interface ProviderConfig {
+  id: string
+  name: string
+  type: 'zhipu' | 'openai' | 'claude' | 'ollama' | 'openrouter' | 'chatgpt' | 'custom'
+  baseUrl: string
+  apiKey: string
+  models: string[]
+  defaultModel: string
+}
+
 export interface ConnectionConfig {
   mode: 'local' | 'remote'
   langgraphUrl: string
   langgraphApiKey: string
   defaultModel: string
+  providers: ProviderConfig[]
+  activeProviderId: string
 }
 
 export interface ModelConfig {
@@ -35,4 +47,4 @@ export interface AgentEdge {
   label?: string
 }
 
-export type ViewMode = 'chat' | 'canvas' | '3d' | 'memory' | 'tools' | 'settings'
+export type ViewMode = 'chat' | 'canvas' | '3d' | 'memory' | 'tools' | 'soul' | 'settings'

@@ -11,6 +11,7 @@ const NAV_ITEMS: { view: ViewMode; icon: string; labelZh: string; labelEn: strin
   { view: '3d', icon: '🔮', labelZh: '3D', labelEn: '3D' },
   { view: 'memory', icon: '🧠', labelZh: '记忆', labelEn: 'Memory' },
   { view: 'tools', icon: '🔧', labelZh: '工具', labelEn: 'Tools' },
+  { view: 'soul', icon: '🎭', labelZh: '角色', labelEn: 'Soul' },
   { view: 'settings', icon: '⚙️', labelZh: '设置', labelEn: 'Settings' }
 ]
 

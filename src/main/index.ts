@@ -3,8 +3,9 @@ import { join } from 'path'
 
 import { enableGpuFlags } from './gpu'
 import { getLocale, setLocale } from './locale'
-import { getConnectionConfig, setConnectionConfig, getModelConfig } from './config'
+import { getConnectionConfig, setConnectionConfig, getActiveProvider, setActiveProvider, updateProvider, removeProvider } from './config'
 import { sendMessage } from './chat'
+import { openChatGPTLogin, logoutChatGPT } from './auth'
 import * as sessions from './sessions'
 
 enableGpuFlags()
@@ -68,7 +69,15 @@ function registerIpcHandlers(): void {
     setConnectionConfig(config)
     return true
   })
-  ipcMain.handle('get-model-config', (_e, profile?: string) => getModelConfig(profile))
+
+  ipcMain.handle('get-active-provider', () => getActiveProvider())
+  ipcMain.handle('set-active-provider', (_e, id: string) => setActiveProvider(id))
+  ipcMain.handle('update-provider', (_e, provider) => updateProvider(provider))
+  ipcMain.handle('remove-provider', (_e, id: string) => removeProvider(id))
+
+  // Auth
+  ipcMain.handle('chatgpt-login', () => openChatGPTLogin())
+  ipcMain.handle('chatgpt-logout', () => logoutChatGPT())
 
   // Shell
   ipcMain.handle('open-external', (_e, url: string) => {

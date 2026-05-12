@@ -1,5 +1,7 @@
 import { create } from 'zustand'
 import type { ChatMessage, ViewMode } from '../../../shared/types'
+import type { LayoutItem } from '../components/three/types'
+import { DEFAULT_LAYOUT } from '../components/three/constants'
 
 export interface CanvasAgent {
   id: string
@@ -17,6 +19,8 @@ interface AppState {
   sessionId: string | null
   canvasAgents: CanvasAgent[]
   reasoningContent: string
+  officeLayout: LayoutItem[]
+  soulPrompt: string
 
   setView: (view: ViewMode) => void
   addMessage: (msg: ChatMessage) => void
@@ -25,6 +29,8 @@ interface AppState {
   setToolProgress: (tool: string | null) => void
   setSessionId: (id: string | null) => void
   setCanvasAgents: (agents: CanvasAgent[]) => void
+  setOfficeLayout: (items: LayoutItem[]) => void
+  setSoulPrompt: (prompt: string) => void
   appendReasoning: (text: string) => void
   clearReasoning: () => void
   clearMessages: () => void
@@ -38,6 +44,8 @@ export const useAppStore = create<AppState>((set) => ({
   sessionId: null,
   canvasAgents: [],
   reasoningContent: '',
+  officeLayout: DEFAULT_LAYOUT,
+  soulPrompt: '',
 
   setView: (view) => set({ view }),
 
@@ -64,6 +72,8 @@ export const useAppStore = create<AppState>((set) => ({
   setToolProgress: (toolProgress) => set({ toolProgress }),
   setSessionId: (sessionId) => set({ sessionId }),
   setCanvasAgents: (canvasAgents) => set({ canvasAgents }),
+  setOfficeLayout: (officeLayout) => set({ officeLayout }),
+  setSoulPrompt: (soulPrompt) => set({ soulPrompt }),
   appendReasoning: (text) => set((s) => ({ reasoningContent: s.reasoningContent + text })),
   clearReasoning: () => set({ reasoningContent: '' }),
   clearMessages: () => set({ messages: [], isLoading: false, toolProgress: null, sessionId: null, reasoningContent: '' })
