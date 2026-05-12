@@ -192,9 +192,9 @@ export function SchedulePanel() {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex items-center justify-between border-b border-zinc-800 px-4 py-2">
+      <header className="flex items-center justify-between border-b border-border-subtle px-4 py-2">
         <div className="flex items-center gap-2">
-          <h2 className="text-sm font-medium text-zinc-300">定时任务</h2>
+          <h2 className="text-sm font-medium text-content-heading">定时任务</h2>
           {activeCount > 0 && (
             <span className="rounded-full bg-emerald-900/30 px-2 py-0.5 text-[10px] font-medium text-emerald-400">
               {activeCount} 运行中
@@ -203,7 +203,7 @@ export function SchedulePanel() {
         </div>
         <button
           onClick={() => { setShowForm(true); setEditingId(null); setForm(EMPTY_FORM) }}
-          className="rounded bg-indigo-600 px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-indigo-500"
+          className="rounded bg-accent px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-accent-hover"
         >
           + 新建任务
         </button>
@@ -232,8 +232,8 @@ export function SchedulePanel() {
       </div>
 
       {scheduledTasks.length > 0 && (
-        <div className="border-t border-zinc-800 px-4 py-2">
-          <p className="text-center text-[10px] text-zinc-600">
+        <div className="border-t border-border-subtle px-4 py-2">
+          <p className="text-center text-[10px] text-content-subtle">
             共 {scheduledTasks.length} 个任务 · {activeCount} 个运行中 · 按 Ctrl+7 切换到此视图
           </p>
         </div>
@@ -254,33 +254,33 @@ function TaskFormUI({ form, setForm, customInterval, setCustomInterval, customSe
   isEdit: boolean
 }) {
   return (
-    <div className="border-b border-zinc-800 bg-zinc-900/50 p-4">
-      <h3 className="mb-3 text-xs font-medium text-zinc-400">{isEdit ? '编辑任务' : '新建定时任务'}</h3>
+    <div className="border-b border-border-subtle bg-surface-elevated/50 p-4">
+      <h3 className="mb-3 text-xs font-medium text-content-muted">{isEdit ? '编辑任务' : '新建定时任务'}</h3>
 
       <div className="space-y-3">
         <div>
-          <label className="mb-1 block text-[10px] font-medium uppercase tracking-wider text-zinc-600">任务名称</label>
+          <label className="mb-1 block text-[10px] font-medium uppercase tracking-wider text-content-subtle">任务名称</label>
           <input
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
             placeholder="例：每日摘要"
-            className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-200 placeholder-zinc-600 outline-none focus:border-indigo-500"
+            className="w-full rounded-lg border border-border-default bg-surface-overlay px-3 py-2 text-sm text-content-secondary placeholder-content-subtle outline-none focus:border-accent"
           />
         </div>
 
         <div>
-          <label className="mb-1 block text-[10px] font-medium uppercase tracking-wider text-zinc-600">发送内容</label>
+          <label className="mb-1 block text-[10px] font-medium uppercase tracking-wider text-content-subtle">发送内容</label>
           <textarea
             value={form.prompt}
             onChange={(e) => setForm({ ...form, prompt: e.target.value })}
             placeholder="定时发送给 AI 的消息内容..."
             rows={3}
-            className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-200 placeholder-zinc-600 outline-none focus:border-indigo-500 resize-none"
+            className="w-full rounded-lg border border-border-default bg-surface-overlay px-3 py-2 text-sm text-content-secondary placeholder-content-subtle outline-none focus:border-accent resize-none"
           />
         </div>
 
         <div>
-          <label className="mb-1 block text-[10px] font-medium uppercase tracking-wider text-zinc-600">执行间隔</label>
+          <label className="mb-1 block text-[10px] font-medium uppercase tracking-wider text-content-subtle">执行间隔</label>
           <div className="flex flex-wrap gap-1.5">
             {INTERVAL_PRESETS.map((p) => (
               <button
@@ -288,8 +288,8 @@ function TaskFormUI({ form, setForm, customInterval, setCustomInterval, customSe
                 onClick={() => { setForm({ ...form, intervalSeconds: p.seconds }); setCustomInterval(false) }}
                 className={`rounded-md border px-2.5 py-1 text-xs transition-colors ${
                   !customInterval && form.intervalSeconds === p.seconds
-                    ? 'border-indigo-500 bg-indigo-600/20 text-indigo-300'
-                    : 'border-zinc-700 text-zinc-500 hover:border-zinc-600 hover:text-zinc-300'
+                    ? 'border-accent bg-accent/20 text-accent-text'
+                    : 'border-border-default text-content-subtle hover:border-border-subtle hover:text-content-heading'
                 }`}
               >
                 {p.label}
@@ -299,8 +299,8 @@ function TaskFormUI({ form, setForm, customInterval, setCustomInterval, customSe
               onClick={() => setCustomInterval(true)}
               className={`rounded-md border px-2.5 py-1 text-xs transition-colors ${
                 customInterval
-                  ? 'border-indigo-500 bg-indigo-600/20 text-indigo-300'
-                  : 'border-zinc-700 text-zinc-500 hover:border-zinc-600 hover:text-zinc-300'
+                  ? 'border-accent bg-accent/20 text-accent-text'
+                  : 'border-border-default text-content-subtle hover:border-border-subtle hover:text-content-heading'
               }`}
             >
               自定义
@@ -314,19 +314,19 @@ function TaskFormUI({ form, setForm, customInterval, setCustomInterval, customSe
                 max={86400}
                 value={customSeconds}
                 onChange={(e) => setCustomSeconds(Math.max(10, parseInt(e.target.value) || 10))}
-                className="w-24 rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm text-zinc-200 outline-none focus:border-indigo-500"
+                className="w-24 rounded-lg border border-border-default bg-surface-overlay px-3 py-1.5 text-sm text-content-secondary outline-none focus:border-accent"
               />
-              <span className="text-xs text-zinc-500">秒（10-86400）</span>
+              <span className="text-xs text-content-subtle">秒（10-86400）</span>
             </div>
           )}
         </div>
 
         <div className="flex justify-end gap-2 pt-1">
-          <button onClick={onCancel} className="rounded-lg px-3 py-1.5 text-xs text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300">取消</button>
+          <button onClick={onCancel} className="rounded-lg px-3 py-1.5 text-xs text-content-subtle hover:bg-surface-overlay hover:text-content-heading">取消</button>
           <button
             onClick={onSave}
             disabled={!form.name.trim() || !form.prompt.trim()}
-            className="rounded-lg bg-indigo-600 px-4 py-1.5 text-xs font-medium text-white transition-colors hover:bg-indigo-500 disabled:opacity-40"
+            className="rounded-lg bg-accent px-4 py-1.5 text-xs font-medium text-white transition-colors hover:bg-accent-hover disabled:opacity-40"
           >
             {isEdit ? '保存' : '创建'}
           </button>
@@ -352,8 +352,8 @@ function TaskCard({ task, countdown, onToggle, onEdit, onDelete, onRunNow, forma
     <div
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className={`group border-b border-zinc-800/50 px-4 py-3 transition-colors ${
-        task.enabled ? 'bg-zinc-900/30' : 'bg-zinc-950/50'
+      className={`group border-b border-border-subtle/50 px-4 py-3 transition-colors ${
+        task.enabled ? 'bg-surface-elevated/30' : 'bg-surface-base/50'
       }`}
     >
       <div className="flex items-start justify-between gap-3">
@@ -364,23 +364,23 @@ function TaskCard({ task, countdown, onToggle, onEdit, onDelete, onRunNow, forma
               className={`flex h-5 w-5 items-center justify-center rounded border transition-colors ${
                 task.enabled
                   ? 'border-emerald-500 bg-emerald-500/20 text-emerald-400'
-                  : 'border-zinc-700 text-zinc-600 hover:border-zinc-500'
+                  : 'border-border-default text-content-subtle hover:border-border-subtle'
               }`}
               title={task.enabled ? '暂停' : '启用'}
             >
               {task.enabled && <span className="text-[10px]">✓</span>}
             </button>
-            <span className={`text-sm font-medium ${task.enabled ? 'text-zinc-200' : 'text-zinc-500'}`}>
+            <span className={`text-sm font-medium ${task.enabled ? 'text-content-secondary' : 'text-content-subtle'}`}>
               {task.name}
             </span>
           </div>
-          <p className="mt-1 truncate text-xs text-zinc-600">{task.prompt}</p>
-          <div className="mt-2 flex flex-wrap items-center gap-3 text-[10px] text-zinc-600">
+          <p className="mt-1 truncate text-xs text-content-subtle">{task.prompt}</p>
+          <div className="mt-2 flex flex-wrap items-center gap-3 text-[10px] text-content-subtle">
             <span>间隔 {formatInterval(task.intervalSeconds)}</span>
             {task.runCount > 0 && <span>已执行 {task.runCount} 次</span>}
             {task.lastRunAt && <span>上次 {formatTime(task.lastRunAt)}</span>}
             {task.enabled && countdown && (
-              <span className="text-indigo-400">下次 {countdown}</span>
+              <span className="text-accent-text">下次 {countdown}</span>
             )}
           </div>
         </div>
@@ -388,21 +388,21 @@ function TaskCard({ task, countdown, onToggle, onEdit, onDelete, onRunNow, forma
         <div className={`flex shrink-0 gap-1 ${hovered ? 'opacity-100' : 'opacity-0'} transition-opacity`}>
           <button
             onClick={onRunNow}
-            className="rounded p-1.5 text-[10px] text-zinc-600 hover:bg-zinc-800 hover:text-emerald-400"
+            className="rounded p-1.5 text-[10px] text-content-subtle hover:bg-surface-overlay hover:text-emerald-400"
             title="立即执行"
           >
             ▶
           </button>
           <button
             onClick={onEdit}
-            className="rounded p-1.5 text-[10px] text-zinc-600 hover:bg-zinc-800 hover:text-zinc-300"
+            className="rounded p-1.5 text-[10px] text-content-subtle hover:bg-surface-overlay hover:text-content-heading"
             title="编辑"
           >
             ✎
           </button>
           <button
             onClick={onDelete}
-            className="rounded p-1.5 text-[10px] text-zinc-600 hover:bg-zinc-800 hover:text-red-400"
+            className="rounded p-1.5 text-[10px] text-content-subtle hover:bg-surface-overlay hover:text-red-400"
             title="删除"
           >
             ✕
@@ -418,9 +418,9 @@ function EmptyScheduleState() {
     <div className="flex h-full items-center justify-center">
       <div className="text-center">
         <div className="mb-3 text-4xl">⏰</div>
-        <p className="text-sm font-medium text-zinc-400">定时任务管理</p>
-        <p className="mt-2 text-xs text-zinc-600">创建定时任务，自动向 AI 发送消息</p>
-        <div className="mt-4 space-y-1 text-[10px] text-zinc-700">
+        <p className="text-sm font-medium text-content-muted">定时任务管理</p>
+        <p className="mt-2 text-xs text-content-subtle">创建定时任务，自动向 AI 发送消息</p>
+        <div className="mt-4 space-y-1 text-[10px] text-content-subtle">
           <p>支持间隔 30秒 ~ 24小时</p>
           <p>可随时暂停、编辑或手动触发</p>
           <p>任务触发时会自动发送到当前聊天</p>

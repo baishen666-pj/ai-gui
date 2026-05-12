@@ -55,21 +55,21 @@ export function ShortcutHelp({ onClose }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div ref={ref} className="w-[480px] max-h-[80vh] overflow-y-auto rounded-xl border border-zinc-700 bg-zinc-900 shadow-2xl">
-        <div className="sticky top-0 flex items-center justify-between border-b border-zinc-800 bg-zinc-900 px-5 py-3">
-          <h2 className="text-sm font-medium text-zinc-200">键盘快捷键</h2>
-          <button onClick={onClose} className="rounded p-1 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300">Esc</button>
+      <div ref={ref} className="w-[480px] max-h-[80vh] overflow-y-auto rounded-xl border border-border-default bg-surface-elevated shadow-2xl">
+        <div className="sticky top-0 flex items-center justify-between border-b border-border-subtle bg-surface-elevated px-5 py-3">
+          <h2 className="text-sm font-medium text-content-secondary">键盘快捷键</h2>
+          <button onClick={onClose} className="rounded p-1 text-content-subtle hover:bg-surface-overlay hover:text-content-heading">Esc</button>
         </div>
 
         <div className="p-5 space-y-5">
           {SHORTCUTS.map((group) => (
             <div key={group.category}>
-              <h3 className="mb-2 text-[10px] font-medium uppercase tracking-wider text-zinc-600">{group.category}</h3>
+              <h3 className="mb-2 text-[10px] font-medium uppercase tracking-wider text-content-subtle">{group.category}</h3>
               <div className="space-y-1">
                 {group.items.map((item) => (
-                  <div key={item.keys} className="flex items-center justify-between rounded-lg px-2 py-1.5 hover:bg-zinc-800/50">
-                    <span className="text-xs text-zinc-400">{item.desc}</span>
-                    <kbd className="rounded border border-zinc-700 bg-zinc-800 px-2 py-0.5 font-mono text-[10px] text-zinc-300">{item.keys}</kbd>
+                  <div key={item.keys} className="flex items-center justify-between rounded-lg px-2 py-1.5 hover:bg-surface-overlay/50">
+                    <span className="text-xs text-content-muted">{item.desc}</span>
+                    <kbd className="rounded border border-border-default bg-surface-overlay px-2 py-0.5 font-mono text-[10px] text-content-heading">{item.keys}</kbd>
                   </div>
                 ))}
               </div>
@@ -77,7 +77,7 @@ export function ShortcutHelp({ onClose }: Props) {
           ))}
         </div>
 
-        <div className="border-t border-zinc-800 px-5 py-3 text-center text-[10px] text-zinc-600">
+        <div className="border-t border-border-subtle px-5 py-3 text-center text-[10px] text-content-subtle">
           按 Esc 关闭
         </div>
       </div>

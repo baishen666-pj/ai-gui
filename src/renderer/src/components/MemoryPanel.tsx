@@ -60,16 +60,16 @@ export function MemoryPanel() {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="border-b border-zinc-800 px-4 py-2">
-        <h2 className="text-sm font-medium text-zinc-300">记忆管理</h2>
+      <header className="border-b border-border-subtle px-4 py-2">
+        <h2 className="text-sm font-medium text-content-heading">记忆管理</h2>
       </header>
 
-      <div className="border-b border-zinc-800 p-3">
+      <div className="border-b border-border-subtle p-3">
         <div className="flex gap-2">
           <select
             value={newType}
             onChange={(e) => setNewType(e.target.value as MemoryEntry['type'])}
-            className="rounded border border-zinc-700 bg-zinc-800 px-2 py-1.5 text-xs text-zinc-400"
+            className="rounded border border-border-default bg-surface-overlay px-2 py-1.5 text-xs text-content-muted"
           >
             {Object.entries(TYPE_CONFIG).map(([key, cfg]) => (
               <option key={key} value={key}>{cfg.label}</option>
@@ -81,12 +81,12 @@ export function MemoryPanel() {
             onChange={(e) => setNewContent(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
             placeholder="添加新记忆..."
-            className="flex-1 rounded border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-sm text-zinc-200 placeholder-zinc-600 outline-none focus:border-indigo-500"
+            className="flex-1 rounded border border-border-default bg-surface-elevated px-3 py-1.5 text-sm text-content-secondary placeholder-content-subtle outline-none focus:border-accent"
           />
           <button
             onClick={handleAdd}
             disabled={!newContent.trim()}
-            className="rounded bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-40"
+            className="rounded bg-accent px-3 py-1.5 text-xs font-medium text-white disabled:opacity-40"
           >
             添加
           </button>
@@ -100,7 +100,7 @@ export function MemoryPanel() {
             return (
               <div
                 key={entry.id}
-                className="group rounded-lg border border-zinc-800 bg-zinc-900 p-3 transition-colors hover:border-zinc-700"
+                className="group rounded-lg border border-border-subtle bg-surface-elevated p-3 transition-colors hover:border-border-default"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1">
@@ -111,24 +111,24 @@ export function MemoryPanel() {
                           value={editContent}
                           onChange={(e) => setEditContent(e.target.value)}
                           onKeyDown={(e) => e.key === 'Enter' && handleSave(entry.id)}
-                          className="flex-1 rounded border border-indigo-500 bg-zinc-800 px-2 py-1 text-sm text-zinc-200 outline-none"
+                          className="flex-1 rounded border border-accent bg-surface-overlay px-2 py-1 text-sm text-content-secondary outline-none"
                           autoFocus
                         />
                         <button
                           onClick={() => handleSave(entry.id)}
-                          className="rounded bg-indigo-600 px-2 py-1 text-xs text-white"
+                          className="rounded bg-accent px-2 py-1 text-xs text-white"
                         >
                           保存
                         </button>
                       </div>
                     ) : (
                       <>
-                        <p className="text-sm text-zinc-300">{entry.content}</p>
+                        <p className="text-sm text-content-heading">{entry.content}</p>
                         <div className="mt-2 flex items-center gap-2">
                           <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${tc.color}`}>
                             {tc.label}
                           </span>
-                          <span className="text-[10px] text-zinc-600">
+                          <span className="text-[10px] text-content-subtle">
                             {new Date(entry.timestamp).toLocaleString('zh-CN')}
                           </span>
                         </div>
@@ -139,13 +139,13 @@ export function MemoryPanel() {
                     <div className="flex shrink-0 gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                       <button
                         onClick={() => handleEdit(entry)}
-                        className="rounded p-1 text-xs text-zinc-600 hover:bg-zinc-800 hover:text-zinc-400"
+                        className="rounded p-1 text-xs text-content-subtle hover:bg-surface-overlay hover:text-content-muted"
                       >
                         编辑
                       </button>
                       <button
                         onClick={() => handleDelete(entry.id)}
-                        className="rounded p-1 text-xs text-zinc-600 hover:bg-zinc-800 hover:text-red-400"
+                        className="rounded p-1 text-xs text-content-subtle hover:bg-surface-overlay hover:text-red-400"
                       >
                         删除
                       </button>
@@ -158,8 +158,8 @@ export function MemoryPanel() {
         </div>
       </div>
 
-      <div className="border-t border-zinc-800 px-4 py-2">
-        <p className="text-xs text-zinc-600">
+      <div className="border-t border-border-subtle px-4 py-2">
+        <p className="text-xs text-content-subtle">
           共 {memories.length} 条记忆 — 本地模拟数据，接入后端后自动同步
         </p>
       </div>

@@ -30,9 +30,13 @@ const VIEW_KEYS: Record<number, ViewMode> = {
 }
 
 export function App() {
-  const { view, setView, clearMessages } = useAppStore()
+  const { view, setView, clearMessages, theme } = useAppStore()
   const [showHelp, setShowHelp] = useState(false)
   usePersistence()
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme
+  }, [theme])
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -57,7 +61,7 @@ export function App() {
   }, [setView, clearMessages])
 
   return (
-    <div className="flex h-screen bg-zinc-950 text-zinc-100">
+    <div className="flex h-screen bg-surface-base text-content-primary">
       <Sidebar activeView={view} onViewChange={setView} />
       <main className="flex-1 overflow-hidden">
         <Suspense fallback={<LoadingSpinner />}>
@@ -129,8 +133,8 @@ function LoadingSpinner() {
   return (
     <div className="flex h-full items-center justify-center">
       <div className="flex flex-col items-center gap-2">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
-        <span className="text-xs text-zinc-600">加载中...</span>
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+        <span className="text-xs text-content-subtle">加载中...</span>
       </div>
     </div>
   )

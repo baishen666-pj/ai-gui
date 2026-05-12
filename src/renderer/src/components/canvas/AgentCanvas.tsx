@@ -121,23 +121,23 @@ export function AgentCanvas() {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex items-center justify-between border-b border-zinc-800 px-4 py-2">
-        <h2 className="text-sm font-medium text-zinc-300">Agent Canvas</h2>
+      <header className="flex items-center justify-between border-b border-border-subtle px-4 py-2">
+        <h2 className="text-sm font-medium text-content-heading">Agent Canvas</h2>
         <div className="flex items-center gap-1">
           {TEMPLATES.map((tpl) => (
             <button
               key={tpl.id}
               onClick={() => loadTemplate(tpl.id)}
               title={tpl.description}
-              className="rounded px-2 py-1 text-xs text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-300"
+              className="rounded px-2 py-1 text-xs text-content-subtle transition-colors hover:bg-surface-overlay hover:text-content-heading"
             >
               {tpl.name}
             </button>
           ))}
-          <div className="mx-1 h-4 w-px bg-zinc-800" />
+          <div className="mx-1 h-4 w-px bg-surface-overlay" />
           <button
             onClick={addAgent}
-            className="rounded bg-indigo-600 px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-indigo-500"
+            className="rounded bg-accent px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-accent-hover"
           >
             + Agent
           </button>
@@ -149,17 +149,17 @@ export function AgentCanvas() {
           <div className="flex h-full items-center justify-center">
             <div className="text-center">
               <div className="mb-3 text-4xl">🕸️</div>
-              <p className="mb-4 text-sm text-zinc-500">选择模板或添加 Agent 开始构建工作流</p>
+              <p className="mb-4 text-sm text-content-subtle">选择模板或添加 Agent 开始构建工作流</p>
               <div className="flex flex-wrap justify-center gap-2">
                 {TEMPLATES.map((tpl) => (
                   <button
                     key={tpl.id}
                     onClick={() => loadTemplate(tpl.id)}
-                    className="rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-3 text-left transition-colors hover:border-indigo-500/50 hover:bg-zinc-800"
+                    className="rounded-lg border border-border-default bg-surface-elevated px-4 py-3 text-left transition-colors hover:border-accent/50 hover:bg-surface-overlay"
                   >
-                    <div className="text-sm font-medium text-zinc-300">{tpl.name}</div>
-                    <div className="mt-1 text-xs text-zinc-600">{tpl.description}</div>
-                    <div className="mt-2 text-xs text-zinc-600">
+                    <div className="text-sm font-medium text-content-heading">{tpl.name}</div>
+                    <div className="mt-1 text-xs text-content-subtle">{tpl.description}</div>
+                    <div className="mt-2 text-xs text-content-subtle">
                       {tpl.nodes.length} Agents / {tpl.edges.length} 连接
                     </div>
                   </button>
@@ -178,15 +178,15 @@ export function AgentCanvas() {
             nodeTypes={nodeTypes}
             defaultEdgeOptions={defaultEdgeOptions}
             fitView
-            className="bg-zinc-950"
+            className="bg-surface-base"
             proOptions={{ hideAttribution: true }}
           >
             <Controls
-              className="!border-zinc-700 !bg-zinc-900 [&>button]:!border-zinc-700 [&>button]:!bg-zinc-800 [&>button]:!fill-zinc-400 [&>button:hover]:!bg-zinc-700"
+              className="!border-border-default !bg-surface-elevated [&>button]:!border-border-default [&>button]:!bg-surface-overlay [&>button]:!fill-content-muted [&>button:hover]:!bg-surface-inset"
             />
             <MiniMap
               nodeColor={minimapNodeColor}
-              className="!border-zinc-700 !bg-zinc-900"
+              className="!border-border-default !bg-surface-elevated"
               maskColor="rgba(0,0,0,0.7)"
             />
             <Background color="#27272a" gap={20} size={1} />

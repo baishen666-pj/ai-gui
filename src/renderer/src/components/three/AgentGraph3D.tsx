@@ -12,9 +12,9 @@ export function AgentGraph3D() {
   if (editMode) {
     return (
       <div className="flex h-full flex-col">
-        <header className="flex items-center justify-between border-b border-zinc-800 px-4 py-2">
-          <h2 className="text-sm font-medium text-zinc-300">布局编辑器</h2>
-          <span className="text-xs text-zinc-600">拖拽移动 · 右侧添加家具 · 保存后生效</span>
+        <header className="flex items-center justify-between border-b border-border-subtle px-4 py-2">
+          <h2 className="text-sm font-medium text-content-heading">布局编辑器</h2>
+          <span className="text-xs text-content-subtle">拖拽移动 · 右侧添加家具 · 保存后生效</span>
         </header>
         <div className="flex-1">
           <ReactFlowProvider>
@@ -30,13 +30,13 @@ export function AgentGraph3D() {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex items-center justify-between border-b border-zinc-800 px-4 py-2">
-        <h2 className="text-sm font-medium text-zinc-300">3D 虚拟办公室</h2>
+      <header className="flex items-center justify-between border-b border-border-subtle px-4 py-2">
+        <h2 className="text-sm font-medium text-content-heading">3D 虚拟办公室</h2>
         <div className="flex items-center gap-3">
-          <span className="text-xs text-zinc-600">拖拽旋转 · 滚轮缩放 · 点击查看详情</span>
+          <span className="text-xs text-content-subtle">拖拽旋转 · 滚轮缩放 · 点击查看详情</span>
           <button
             onClick={() => setEditMode(true)}
-            className="rounded-md border border-zinc-700 bg-zinc-800 px-2.5 py-1 text-xs text-zinc-300 transition-colors hover:bg-zinc-700"
+            className="rounded-md border border-border-default bg-surface-overlay px-2.5 py-1 text-xs text-content-heading transition-colors hover:bg-surface-inset"
           >
             编辑布局
           </button>

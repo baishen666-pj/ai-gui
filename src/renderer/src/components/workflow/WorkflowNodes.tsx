@@ -5,11 +5,11 @@ import type { WorkflowNode } from '../../../../shared/types'
 type WFNodeData = WorkflowNode['data'] & { executionStatus?: string }
 
 const STATUS_COLORS: Record<string, string> = {
-  idle: 'border-zinc-600 bg-zinc-900',
+  idle: 'border-border-default bg-surface-elevated',
   running: 'border-amber-500 bg-amber-950/40 shadow-[0_0_8px_rgba(245,158,11,0.3)]',
   completed: 'border-emerald-500 bg-emerald-950/40',
   failed: 'border-red-500 bg-red-950/40',
-  skipped: 'border-zinc-700 bg-zinc-900/50'
+  skipped: 'border-border-default bg-surface-elevated/50'
 }
 
 export const StartNode = memo(({ data }: NodeProps) => {
@@ -28,30 +28,30 @@ export const AgentWorkflowNode = memo(({ data, selected }: NodeProps) => {
   const statusColor = STATUS_COLORS[status] || STATUS_COLORS.idle
 
   return (
-    <div className={`min-w-[160px] rounded-lg border-2 px-3 py-2 transition-all ${statusColor} ${selected ? 'ring-1 ring-indigo-500' : ''}`}>
-      <Handle type="target" position={Position.Top} className="!bg-zinc-500 !border-zinc-700 !w-2 !h-2" />
+    <div className={`min-w-[160px] rounded-lg border-2 px-3 py-2 transition-all ${statusColor} ${selected ? 'ring-1 ring-accent' : ''}`}>
+      <Handle type="target" position={Position.Top} className="!bg-content-subtle !border-border-default !w-2 !h-2" />
 
       <div className="flex items-center gap-2">
-        <span className="flex h-5 w-5 items-center justify-center rounded bg-indigo-600/20 text-[10px] text-indigo-400">
+        <span className="flex h-5 w-5 items-center justify-center rounded bg-accent/20 text-[10px] text-accent-text">
           AI
         </span>
-        <span className="text-xs font-medium text-zinc-200">{d.label || 'Agent'}</span>
+        <span className="text-xs font-medium text-content-secondary">{d.label || 'Agent'}</span>
         {status === 'running' && (
           <span className="ml-auto h-2 w-2 animate-pulse rounded-full bg-amber-400" />
         )}
       </div>
 
       {d.model && (
-        <div className="mt-1 text-[10px] text-zinc-500">{d.model}</div>
+        <div className="mt-1 text-[10px] text-content-subtle">{d.model}</div>
       )}
 
       {d.prompt && (
-        <div className="mt-1 line-clamp-2 text-[10px] leading-tight text-zinc-600">
+        <div className="mt-1 line-clamp-2 text-[10px] leading-tight text-content-subtle">
           {d.prompt}
         </div>
       )}
 
-      <Handle type="source" position={Position.Bottom} className="!bg-zinc-500 !border-zinc-700 !w-2 !h-2" />
+      <Handle type="source" position={Position.Bottom} className="!bg-content-subtle !border-border-default !w-2 !h-2" />
     </div>
   )
 })
@@ -63,18 +63,18 @@ export const ConditionNode = memo(({ data, selected }: NodeProps) => {
   const statusColor = STATUS_COLORS[status] || STATUS_COLORS.idle
 
   return (
-    <div className={`min-w-[140px] rounded-lg border-2 px-3 py-2 transition-all ${statusColor} ${selected ? 'ring-1 ring-indigo-500' : ''}`}>
-      <Handle type="target" position={Position.Top} className="!bg-zinc-500 !border-zinc-700 !w-2 !h-2" />
+    <div className={`min-w-[140px] rounded-lg border-2 px-3 py-2 transition-all ${statusColor} ${selected ? 'ring-1 ring-accent' : ''}`}>
+      <Handle type="target" position={Position.Top} className="!bg-content-subtle !border-border-default !w-2 !h-2" />
 
       <div className="flex items-center gap-2">
         <span className="flex h-5 w-5 items-center justify-center rounded bg-amber-600/20 text-[10px] text-amber-400">
           ?
         </span>
-        <span className="text-xs font-medium text-zinc-200">{d.label || '条件'}</span>
+        <span className="text-xs font-medium text-content-secondary">{d.label || '条件'}</span>
       </div>
 
       {d.condition && (
-        <div className="mt-1 text-[10px] text-zinc-500">{d.condition}</div>
+        <div className="mt-1 text-[10px] text-content-subtle">{d.condition}</div>
       )}
 
       <Handle

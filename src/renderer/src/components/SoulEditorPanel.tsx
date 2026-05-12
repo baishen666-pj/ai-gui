@@ -121,16 +121,16 @@ export function SoulEditorPanel() {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex items-center justify-between border-b border-zinc-800 px-4 py-2">
-        <h2 className="text-sm font-medium text-zinc-300">角色编辑器</h2>
+      <header className="flex items-center justify-between border-b border-border-subtle px-4 py-2">
+        <h2 className="text-sm font-medium text-content-heading">角色编辑器</h2>
         <div className="flex items-center gap-3">
-          <span className="text-xs text-zinc-600">定义 AI 的性格和行为方式</span>
+          <span className="text-xs text-content-subtle">定义 AI 的性格和行为方式</span>
           <button
             onClick={handleSave}
             className={`rounded px-3 py-1 text-xs font-medium transition-colors ${
               saved
                 ? 'bg-emerald-600 text-white'
-                : 'bg-indigo-600 text-white hover:bg-indigo-500'
+                : 'bg-accent text-white hover:bg-accent-hover'
             }`}
           >
             {saved ? '已保存' : '保存'}
@@ -140,8 +140,8 @@ export function SoulEditorPanel() {
 
       <div className="flex flex-1 overflow-hidden">
         {/* Template sidebar */}
-        <div className="w-52 shrink-0 overflow-y-auto border-r border-zinc-800 bg-zinc-950 p-3">
-          <div className="mb-3 text-xs font-medium uppercase tracking-wider text-zinc-500">
+        <div className="w-52 shrink-0 overflow-y-auto border-r border-border-subtle bg-surface-base p-3">
+          <div className="mb-3 text-xs font-medium uppercase tracking-wider text-content-subtle">
             角色模板
           </div>
           <div className="flex flex-col gap-1.5">
@@ -151,14 +151,14 @@ export function SoulEditorPanel() {
                 onClick={() => handleApplyTemplate(t)}
                 className={`flex items-start gap-2.5 rounded-lg px-3 py-2.5 text-left transition-colors ${
                   activeTemplate === t.id
-                    ? 'bg-indigo-600/15 border border-indigo-600/30'
-                    : 'border border-transparent hover:bg-zinc-900'
+                    ? 'bg-accent/15 border border-accent/30'
+                    : 'border border-transparent hover:bg-surface-elevated'
                 }`}
               >
                 <span className="mt-0.5 text-base">{t.icon}</span>
                 <div className="min-w-0">
-                  <div className="text-xs font-medium text-zinc-300">{t.name}</div>
-                  <div className="mt-0.5 text-[10px] leading-tight text-zinc-600">{t.description}</div>
+                  <div className="text-xs font-medium text-content-heading">{t.name}</div>
+                  <div className="mt-0.5 text-[10px] leading-tight text-content-subtle">{t.description}</div>
                 </div>
               </button>
             ))}
@@ -168,17 +168,17 @@ export function SoulEditorPanel() {
         {/* Editor area */}
         <div className="flex flex-1 flex-col overflow-hidden p-4">
           <div className="flex items-center justify-between">
-            <div className="text-xs font-medium text-zinc-400">System Prompt</div>
+            <div className="text-xs font-medium text-content-muted">System Prompt</div>
             <div className="flex items-center gap-2">
-              <div className="h-1.5 w-24 rounded-full bg-zinc-800">
+              <div className="h-1.5 w-24 rounded-full bg-surface-overlay">
                 <div
                   className={`h-full rounded-full transition-all ${
-                    charPercent > 90 ? 'bg-red-500' : charPercent > 70 ? 'bg-amber-500' : 'bg-indigo-500'
+                    charPercent > 90 ? 'bg-red-500' : charPercent > 70 ? 'bg-amber-500' : 'bg-accent-hover'
                   }`}
                   style={{ width: `${Math.min(charPercent, 100)}%` }}
                 />
               </div>
-              <span className={`text-[10px] ${charCount > MAX_CHARS ? 'text-red-400' : 'text-zinc-600'}`}>
+              <span className={`text-[10px] ${charCount > MAX_CHARS ? 'text-red-400' : 'text-content-subtle'}`}>
                 {charCount}/{MAX_CHARS}
               </span>
             </div>
@@ -187,24 +187,24 @@ export function SoulEditorPanel() {
           <textarea
             value={prompt}
             onChange={(e) => { setLocalPrompt(e.target.value.slice(0, MAX_CHARS)); setActiveTemplate(null) }}
-            className="mt-2 flex-1 resize-none rounded-lg border border-zinc-800 bg-zinc-900 p-4 font-mono text-sm leading-relaxed text-zinc-300 outline-none transition-colors focus:border-indigo-500/50"
+            className="mt-2 flex-1 resize-none rounded-lg border border-border-subtle bg-surface-elevated p-4 font-mono text-sm leading-relaxed text-content-heading outline-none transition-colors focus:border-accent/50"
             spellCheck={false}
           />
 
           {/* Preview */}
-          <div className="mt-3 rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
-            <div className="mb-1.5 text-[10px] font-medium uppercase tracking-wider text-zinc-600">
+          <div className="mt-3 rounded-lg border border-border-subtle bg-surface-elevated/50 p-3">
+            <div className="mb-1.5 text-[10px] font-medium uppercase tracking-wider text-content-subtle">
               预览
             </div>
             <div className="flex items-start gap-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-600/20 text-sm">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent/20 text-sm">
                 {TEMPLATES.find((t) => t.id === activeTemplate)?.icon ?? '🤖'}
               </div>
               <div className="min-w-0">
-                <div className="text-xs font-medium text-zinc-300">
+                <div className="text-xs font-medium text-content-heading">
                   {TEMPLATES.find((t) => t.id === activeTemplate)?.name ?? '自定义'}
                 </div>
-                <div className="mt-0.5 line-clamp-2 text-[10px] leading-relaxed text-zinc-600">
+                <div className="mt-0.5 line-clamp-2 text-[10px] leading-relaxed text-content-subtle">
                   {prompt.slice(0, 120)}{prompt.length > 120 ? '...' : ''}
                 </div>
               </div>

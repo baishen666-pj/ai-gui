@@ -179,14 +179,14 @@ export function WorkflowEditor() {
   if (!activeWorkflow) {
     return (
       <div className="flex h-full flex-col">
-        <header className="flex items-center justify-between border-b border-zinc-800 px-4 py-2">
-          <h2 className="text-sm font-medium text-zinc-300">工作流</h2>
+        <header className="flex items-center justify-between border-b border-border-subtle px-4 py-2">
+          <h2 className="text-sm font-medium text-content-heading">工作流</h2>
           <button
             onClick={() => {
               const name = `工作流 ${workflows.length + 1}`
               createWorkflow(name)
             }}
-            className="rounded bg-indigo-600 px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-indigo-500"
+            className="rounded bg-accent px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-accent-hover"
           >
             + 新建工作流
           </button>
@@ -197,13 +197,13 @@ export function WorkflowEditor() {
         ) : (
           <div className="flex-1 overflow-y-auto">
             {workflows.map((wf) => (
-              <div key={wf.id} className="group flex items-center justify-between border-b border-zinc-800/50 px-4 py-3 hover:bg-zinc-900/30">
+              <div key={wf.id} className="group flex items-center justify-between border-b border-border-subtle/50 px-4 py-3 hover:bg-surface-elevated/30">
                 <button
                   onClick={() => setActiveWorkflow(wf.id)}
                   className="flex-1 text-left"
                 >
-                  <div className="text-sm font-medium text-zinc-300">{wf.name}</div>
-                  <div className="mt-0.5 flex gap-3 text-[10px] text-zinc-600">
+                  <div className="text-sm font-medium text-content-heading">{wf.name}</div>
+                  <div className="mt-0.5 flex gap-3 text-[10px] text-content-subtle">
                     <span>{wf.nodes.length} 节点</span>
                     <span>{wf.edges.length} 连接</span>
                     <span>{new Date(wf.updatedAt).toLocaleDateString('zh-CN')}</span>
@@ -211,7 +211,7 @@ export function WorkflowEditor() {
                 </button>
                 <button
                   onClick={() => deleteWorkflow(wf.id)}
-                  className="rounded p-1 text-[10px] text-zinc-600 opacity-0 transition-opacity group-hover:opacity-100 hover:text-red-400"
+                  className="rounded p-1 text-[10px] text-content-subtle opacity-0 transition-opacity group-hover:opacity-100 hover:text-red-400"
                 >
                   ✕
                 </button>
@@ -229,16 +229,16 @@ export function WorkflowEditor() {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex items-center justify-between border-b border-zinc-800 px-4 py-2">
+      <header className="flex items-center justify-between border-b border-border-subtle px-4 py-2">
         <div className="flex items-center gap-2">
           <button
             onClick={() => setActiveWorkflow(null)}
-            className="rounded px-1 text-xs text-zinc-500 hover:text-zinc-300"
+            className="rounded px-1 text-xs text-content-subtle hover:text-content-heading"
             title="返回列表"
           >
             ←
           </button>
-          <h2 className="text-sm font-medium text-zinc-300">{activeWorkflow.name}</h2>
+          <h2 className="text-sm font-medium text-content-heading">{activeWorkflow.name}</h2>
           {workflowExecution && (
             <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
               workflowExecution.status === 'running' ? 'bg-amber-900/30 text-amber-400' :
@@ -254,21 +254,21 @@ export function WorkflowEditor() {
           {!hasStart && (
             <button
               onClick={() => addNode('start')}
-              className="rounded px-2 py-1 text-xs text-emerald-500 hover:bg-zinc-800"
+              className="rounded px-2 py-1 text-xs text-emerald-500 hover:bg-surface-overlay"
             >
               + 开始
             </button>
           )}
-          <button onClick={() => addNode('agent')} disabled={isExecuting} className="rounded px-2 py-1 text-xs text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300 disabled:opacity-30">
+          <button onClick={() => addNode('agent')} disabled={isExecuting} className="rounded px-2 py-1 text-xs text-content-subtle hover:bg-surface-overlay hover:text-content-heading disabled:opacity-30">
             + Agent
           </button>
-          <button onClick={() => addNode('condition')} disabled={isExecuting} className="rounded px-2 py-1 text-xs text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300 disabled:opacity-30">
+          <button onClick={() => addNode('condition')} disabled={isExecuting} className="rounded px-2 py-1 text-xs text-content-subtle hover:bg-surface-overlay hover:text-content-heading disabled:opacity-30">
             + 条件
           </button>
-          <button onClick={() => addNode('end')} disabled={isExecuting} className="rounded px-2 py-1 text-xs text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300 disabled:opacity-30">
+          <button onClick={() => addNode('end')} disabled={isExecuting} className="rounded px-2 py-1 text-xs text-content-subtle hover:bg-surface-overlay hover:text-content-heading disabled:opacity-30">
             + 结束
           </button>
-          <div className="mx-1 h-4 w-px bg-zinc-800" />
+          <div className="mx-1 h-4 w-px bg-surface-overlay" />
           <WorkflowExecutor workflow={activeWorkflow} />
         </div>
       </header>
@@ -284,13 +284,13 @@ export function WorkflowEditor() {
           nodeTypes={workflowNodeTypes}
           defaultEdgeOptions={defaultEdgeOptions}
           fitView
-          className="bg-zinc-950"
+          className="bg-surface-base"
           proOptions={{ hideAttribution: true }}
           nodesDraggable={!isExecuting}
         >
-          <Controls className="!border-zinc-700 !bg-zinc-900 [&>button]:!border-zinc-700 [&>button]:!bg-zinc-800 [&>button]:!fill-zinc-400 [&>button:hover]:!bg-zinc-700" />
+          <Controls className="!border-border-default !bg-surface-elevated [&>button]:!border-border-default [&>button]:!bg-surface-overlay [&>button]:!fill-content-muted [&>button:hover]:!bg-surface-inset" />
           <MiniMap
-            className="!border-zinc-700 !bg-zinc-900"
+            className="!border-border-default !bg-surface-elevated"
             maskColor="rgba(0,0,0,0.7)"
             nodeColor={(n) => {
               if (n.type === 'start') return '#10b981'
@@ -320,9 +320,9 @@ function EmptyWorkflowState() {
     <div className="flex h-full items-center justify-center">
       <div className="text-center">
         <div className="mb-3 text-4xl">🔀</div>
-        <p className="text-sm font-medium text-zinc-400">Agent 工作流引擎</p>
-        <p className="mt-2 text-xs text-zinc-600">可视化编排多 Agent 协作流程</p>
-        <div className="mt-4 space-y-1 text-[10px] text-zinc-700">
+        <p className="text-sm font-medium text-content-muted">Agent 工作流引擎</p>
+        <p className="mt-2 text-xs text-content-subtle">可视化编排多 Agent 协作流程</p>
+        <div className="mt-4 space-y-1 text-[10px] text-content-subtle">
           <p>串联/并联/条件分支</p>
           <p>Agent 间自动传递上下文</p>
           <p>实时监控执行状态</p>

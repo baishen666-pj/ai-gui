@@ -82,7 +82,7 @@ export function SlashCommandMenu({ filter, onSelect, onClose, position }: SlashC
   return (
     <div
       ref={menuRef}
-      className="fixed z-50 w-72 overflow-hidden rounded-lg border border-zinc-700 bg-zinc-900 shadow-xl"
+      className="fixed z-50 w-72 overflow-hidden rounded-lg border border-border-default bg-surface-elevated shadow-xl"
       style={{ top: position.top, left: position.left }}
     >
       <div className="max-h-64 overflow-y-auto py-1">
@@ -92,10 +92,10 @@ export function SlashCommandMenu({ filter, onSelect, onClose, position }: SlashC
             ref={(el) => { itemRefs.current[i] = el }}
             onClick={() => onSelect(cmd)}
             className={`flex w-full items-center gap-3 px-3 py-2 text-left transition-colors ${
-              i === selectedIndex ? 'bg-indigo-600/20 text-indigo-300' : 'text-zinc-400 hover:bg-zinc-800'
+              i === selectedIndex ? 'bg-accent/20 text-accent-text' : 'text-content-muted hover:bg-surface-overlay'
             }`}
           >
-            <span className="font-mono text-xs text-zinc-500">{cmd.label}</span>
+            <span className="font-mono text-xs text-content-subtle">{cmd.label}</span>
             <span className="text-xs">{cmd.description}</span>
           </button>
         ))}

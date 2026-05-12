@@ -27,41 +27,41 @@ export function AgentEditPanel({ data, onSave, onClose }: AgentEditPanelProps) {
   }
 
   return (
-    <div className="fixed right-0 top-0 z-50 flex h-full w-72 flex-col border-l border-zinc-700 bg-zinc-900 shadow-2xl">
-      <header className="flex items-center justify-between border-b border-zinc-700 px-4 py-3">
-        <h3 className="text-sm font-medium text-zinc-300">编辑 Agent</h3>
-        <button onClick={onClose} className="rounded p-1 text-xs text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300">
+    <div className="fixed right-0 top-0 z-50 flex h-full w-72 flex-col border-l border-border-default bg-surface-elevated shadow-2xl">
+      <header className="flex items-center justify-between border-b border-border-default px-4 py-3">
+        <h3 className="text-sm font-medium text-content-heading">编辑 Agent</h3>
+        <button onClick={onClose} className="rounded p-1 text-xs text-content-subtle hover:bg-surface-overlay hover:text-content-heading">
           ✕
         </button>
       </header>
 
       <div className="flex-1 space-y-4 overflow-y-auto p-4">
         <div>
-          <label className="mb-1 block text-xs text-zinc-500">名称</label>
+          <label className="mb-1 block text-xs text-content-subtle">名称</label>
           <input
             type="text"
             value={form.label as string}
             onChange={(e) => setForm((f) => ({ ...f, label: e.target.value }))}
-            className="w-full rounded border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm text-zinc-200 outline-none focus:border-indigo-500"
+            className="w-full rounded border border-border-default bg-surface-overlay px-3 py-1.5 text-sm text-content-secondary outline-none focus:border-accent"
           />
         </div>
 
         <div>
-          <label className="mb-1 block text-xs text-zinc-500">角色</label>
+          <label className="mb-1 block text-xs text-content-subtle">角色</label>
           <input
             type="text"
             value={form.role as string}
             onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}
-            className="w-full rounded border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm text-zinc-200 outline-none focus:border-indigo-500"
+            className="w-full rounded border border-border-default bg-surface-overlay px-3 py-1.5 text-sm text-content-secondary outline-none focus:border-accent"
           />
         </div>
 
         <div>
-          <label className="mb-1 block text-xs text-zinc-500">模型</label>
+          <label className="mb-1 block text-xs text-content-subtle">模型</label>
           <select
             value={form.model as string}
             onChange={(e) => setForm((f) => ({ ...f, model: e.target.value }))}
-            className="w-full rounded border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm text-zinc-200"
+            className="w-full rounded border border-border-default bg-surface-overlay px-3 py-1.5 text-sm text-content-secondary"
           >
             {AVAILABLE_MODELS.map((m) => (
               <option key={m} value={m}>{m}</option>
@@ -70,7 +70,7 @@ export function AgentEditPanel({ data, onSave, onClose }: AgentEditPanelProps) {
         </div>
 
         <div>
-          <label className="mb-1 block text-xs text-zinc-500">状态</label>
+          <label className="mb-1 block text-xs text-content-subtle">状态</label>
           <div className="flex gap-1">
             {STATUS_OPTIONS.map((opt) => (
               <button
@@ -78,8 +78,8 @@ export function AgentEditPanel({ data, onSave, onClose }: AgentEditPanelProps) {
                 onClick={() => setForm((f) => ({ ...f, status: opt.value }))}
                 className={`rounded px-2 py-1 text-xs transition-colors ${
                   form.status === opt.value
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-zinc-800 text-zinc-500 hover:text-zinc-300'
+                    ? 'bg-accent text-white'
+                    : 'bg-surface-overlay text-content-subtle hover:text-content-heading'
                 }`}
               >
                 {opt.label}
@@ -89,7 +89,7 @@ export function AgentEditPanel({ data, onSave, onClose }: AgentEditPanelProps) {
         </div>
 
         <div>
-          <label className="mb-1 block text-xs text-zinc-500">颜色</label>
+          <label className="mb-1 block text-xs text-content-subtle">颜色</label>
           <div className="flex gap-1.5">
             {['#6366f1', '#8b5cf6', '#a78bfa', '#f59e0b', '#10b981', '#ec4899', '#3b82f6', '#ef4444'].map((c) => (
               <button
@@ -105,7 +105,7 @@ export function AgentEditPanel({ data, onSave, onClose }: AgentEditPanelProps) {
         </div>
 
         <div>
-          <label className="mb-1 block text-xs text-zinc-500">工具</label>
+          <label className="mb-1 block text-xs text-content-subtle">工具</label>
           <div className="flex flex-wrap gap-1">
             {AVAILABLE_TOOLS.map((tool) => (
               <button
@@ -113,8 +113,8 @@ export function AgentEditPanel({ data, onSave, onClose }: AgentEditPanelProps) {
                 onClick={() => toggleTool(tool)}
                 className={`rounded px-2 py-1 text-xs transition-colors ${
                   form.tools.includes(tool)
-                    ? 'bg-indigo-600/20 text-indigo-400'
-                    : 'bg-zinc-800 text-zinc-600 hover:text-zinc-400'
+                    ? 'bg-accent/20 text-accent-text'
+                    : 'bg-surface-overlay text-content-subtle hover:text-content-muted'
                 }`}
               >
                 {tool}
@@ -124,10 +124,10 @@ export function AgentEditPanel({ data, onSave, onClose }: AgentEditPanelProps) {
         </div>
       </div>
 
-      <div className="border-t border-zinc-700 p-3">
+      <div className="border-t border-border-default p-3">
         <button
           onClick={() => { onSave(form); onClose() }}
-          className="w-full rounded-lg bg-indigo-600 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-500"
+          className="w-full rounded-lg bg-accent py-2 text-sm font-medium text-white transition-colors hover:bg-accent-hover"
         >
           保存
         </button>

@@ -224,26 +224,26 @@ export function ChatPanel() {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex items-center justify-between border-b border-zinc-800 px-4 py-2">
-        <h2 className="text-sm font-medium text-zinc-300">{sessionId ? '对话' : 'AI GUI'}</h2>
+      <header className="flex items-center justify-between border-b border-border-subtle px-4 py-2">
+        <h2 className="text-sm font-medium text-content-heading">{sessionId ? '对话' : 'AI GUI'}</h2>
         <div className="flex items-center gap-3">
           {soulPrompt && (
             <button
               onClick={() => setView('soul')}
-              className="flex items-center gap-1 rounded-full border border-zinc-800 bg-zinc-900 px-2 py-0.5 text-[10px] text-zinc-500 transition-colors hover:border-zinc-600 hover:text-zinc-300"
+              className="flex items-center gap-1 rounded-full border border-border-subtle bg-surface-elevated px-2 py-0.5 text-[10px] text-content-subtle transition-colors hover:border-border-default hover:text-content-heading"
             >
-              <span className="h-1.5 w-1.5 rounded-full bg-indigo-400" />
+              <span className="h-1.5 w-1.5 rounded-full bg-accent-text" />
               角色已启用
             </button>
           )}
           <div className="flex gap-2">
           {isLoading && (
-            <button onClick={() => window.aiGui?.chatAbort()} className="rounded px-2 py-1 text-xs text-red-400 hover:bg-zinc-800">停止</button>
+            <button onClick={() => window.aiGui?.chatAbort()} className="rounded px-2 py-1 text-xs text-red-400 hover:bg-surface-overlay">停止</button>
           )}
           {messages.length > 0 && (
-            <button onClick={() => setExportOpen(true)} className="rounded px-2 py-1 text-xs text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300" title="导出对话">导出</button>
+            <button onClick={() => setExportOpen(true)} className="rounded px-2 py-1 text-xs text-content-subtle hover:bg-surface-overlay hover:text-content-heading" title="导出对话">导出</button>
           )}
-          <button onClick={clearMessages} className="rounded px-2 py-1 text-xs text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300">新对话</button>
+          <button onClick={clearMessages} className="rounded px-2 py-1 text-xs text-content-subtle hover:bg-surface-overlay hover:text-content-heading">新对话</button>
           </div>
         </div>
       </header>
@@ -256,7 +256,7 @@ export function ChatPanel() {
         {isLoading && reasoningContent && <ReasoningBlock content={reasoningContent} />}
         {isLoading && (
           <div className="mb-3">
-            <div className="inline-block max-w-[75%] rounded-lg bg-zinc-800 px-3 py-2 text-sm text-zinc-400">
+            <div className="inline-block max-w-[75%] rounded-lg bg-surface-overlay px-3 py-2 text-sm text-content-muted">
               {toolProgress ? `${toolProgress}...` : reasoningContent ? '生成中...' : '思考中...'}
             </div>
           </div>
@@ -275,11 +275,11 @@ export function ChatPanel() {
         />
       )}
 
-      <div className="relative border-t border-zinc-800 p-3">
+      <div className="relative border-t border-border-subtle p-3">
         {pendingImage && (
           <div className="mb-2 flex items-center gap-2">
-            <img src={pendingImage} alt="待发送" className="h-16 w-16 rounded-lg border border-zinc-700 object-cover" />
-            <button onClick={() => setPendingImage(null)} className="rounded bg-zinc-800 px-2 py-1 text-xs text-zinc-500 hover:text-zinc-300">移除</button>
+            <img src={pendingImage} alt="待发送" className="h-16 w-16 rounded-lg border border-border-default object-cover" />
+            <button onClick={() => setPendingImage(null)} className="rounded bg-surface-overlay px-2 py-1 text-xs text-content-subtle hover:text-content-heading">移除</button>
           </div>
         )}
         {slashMenuOpen && (
@@ -289,7 +289,7 @@ export function ChatPanel() {
           <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="shrink-0 rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-2 text-sm text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300"
+            className="shrink-0 rounded-lg border border-border-default bg-surface-elevated px-2 py-2 text-sm text-content-subtle hover:bg-surface-overlay hover:text-content-heading"
             title="上传图片"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
@@ -302,12 +302,12 @@ export function ChatPanel() {
             onKeyDown={handleKeyDown}
             onPaste={handlePaste}
             placeholder={pendingImage ? '添加图片描述...' : '输入消息，/ 查看命令...'}
-            className="flex-1 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-200 placeholder-zinc-600 outline-none focus:border-indigo-500"
+            className="flex-1 rounded-lg border border-border-default bg-surface-elevated px-3 py-2 text-sm text-content-secondary placeholder-content-subtle outline-none focus:border-accent"
           />
           <button
             onClick={handleSend}
             disabled={isLoading || (!input.trim() && !pendingImage) || input.startsWith('/')}
-            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-500 disabled:opacity-40"
+            className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-hover disabled:opacity-40"
           >
             发送
           </button>
@@ -324,14 +324,14 @@ function EmptyState() {
     { text: '/canvas', icon: '#' },
   ]
   return (
-    <div className="flex h-full items-center justify-center text-zinc-600">
+    <div className="flex h-full items-center justify-center text-content-subtle">
       <div className="text-center">
         <div className="mb-3 text-4xl">🕸️</div>
-        <p className="text-sm font-medium text-zinc-400">多Agent桌面工作台</p>
-        <p className="mt-2 text-xs text-zinc-600">输入消息、粘贴/上传图片开始对话</p>
+        <p className="text-sm font-medium text-content-muted">多Agent桌面工作台</p>
+        <p className="mt-2 text-xs text-content-subtle">输入消息、粘贴/上传图片开始对话</p>
         <div className="mt-4 flex flex-wrap justify-center gap-2">
           {suggestions.map((s) => (
-            <span key={s.text} className="rounded-full border border-zinc-800 bg-zinc-900 px-3 py-1 text-xs text-zinc-500">
+            <span key={s.text} className="rounded-full border border-border-subtle bg-surface-elevated px-3 py-1 text-xs text-content-subtle">
               {s.text}
             </span>
           ))}
@@ -353,17 +353,17 @@ function MessageBubble({ msg, onDelete, onCopy }: {
       <div className="group mb-3 text-right" onMouseEnter={() => setShowActions(true)} onMouseLeave={() => setShowActions(false)}>
         {msg.imageBase64 && (
           <div className="mb-1 inline-block">
-            <img src={msg.imageBase64} alt="" className="max-h-48 rounded-lg border border-indigo-500/30" />
+            <img src={msg.imageBase64} alt="" className="max-h-48 rounded-lg border border-accent/30" />
           </div>
         )}
         <div className="flex items-center justify-end gap-1">
           {showActions && (
             <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button onClick={() => onCopy(msg.content)} className="rounded p-1 text-[10px] text-zinc-600 hover:bg-zinc-800 hover:text-zinc-400">复制</button>
-              <button onClick={() => onDelete(msg.id)} className="rounded p-1 text-[10px] text-zinc-600 hover:bg-zinc-800 hover:text-red-400">删除</button>
+              <button onClick={() => onCopy(msg.content)} className="rounded p-1 text-[10px] text-content-subtle hover:bg-surface-overlay hover:text-content-muted">复制</button>
+              <button onClick={() => onDelete(msg.id)} className="rounded p-1 text-[10px] text-content-subtle hover:bg-surface-overlay hover:text-red-400">删除</button>
             </div>
           )}
-          <span className="inline-block max-w-[75%] rounded-lg bg-indigo-600 px-3 py-2 text-sm text-white">{msg.content}</span>
+          <span className="inline-block max-w-[75%] rounded-lg bg-accent px-3 py-2 text-sm text-white">{msg.content}</span>
         </div>
       </div>
     )
@@ -374,26 +374,26 @@ function MessageBubble({ msg, onDelete, onCopy }: {
       <div className="group mb-3" onMouseEnter={() => setShowActions(true)} onMouseLeave={() => setShowActions(false)}>
         <div className="flex items-start gap-1">
           <span className="inline-block max-w-[75%] rounded-lg bg-red-900/40 px-3 py-2 text-sm text-red-300">{msg.content}</span>
-          {showActions && <button onClick={() => onDelete(msg.id)} className="rounded p-1 text-[10px] text-zinc-600 hover:text-red-400">删除</button>}
+          {showActions && <button onClick={() => onDelete(msg.id)} className="rounded p-1 text-[10px] text-content-subtle hover:text-red-400">删除</button>}
         </div>
       </div>
     )
   }
 
   if (msg.role === 'system') {
-    return <div className="mb-3 text-center"><span className="inline-block rounded-full bg-zinc-800 px-3 py-1 text-xs text-zinc-500">{msg.content}</span></div>
+    return <div className="mb-3 text-center"><span className="inline-block rounded-full bg-surface-overlay px-3 py-1 text-xs text-content-subtle">{msg.content}</span></div>
   }
 
   return (
     <div className="group mb-3" onMouseEnter={() => setShowActions(true)} onMouseLeave={() => setShowActions(false)}>
       <div className="flex items-start gap-1">
-        <div className="inline-block max-w-[85%] rounded-lg bg-zinc-800/50 px-4 py-2">
+        <div className="inline-block max-w-[85%] rounded-lg bg-surface-overlay/50 px-4 py-2">
           <AgentMarkdown content={msg.content} />
         </div>
         {showActions && (
           <div className="flex shrink-0 gap-1 pt-1">
-            <button onClick={() => onCopy(msg.content)} className="rounded p-1 text-[10px] text-zinc-600 hover:bg-zinc-800 hover:text-zinc-400">复制</button>
-            <button onClick={() => onDelete(msg.id)} className="rounded p-1 text-[10px] text-zinc-600 hover:bg-zinc-800 hover:text-red-400">删除</button>
+            <button onClick={() => onCopy(msg.content)} className="rounded p-1 text-[10px] text-content-subtle hover:bg-surface-overlay hover:text-content-muted">复制</button>
+            <button onClick={() => onDelete(msg.id)} className="rounded p-1 text-[10px] text-content-subtle hover:bg-surface-overlay hover:text-red-400">删除</button>
           </div>
         )}
       </div>
@@ -408,14 +408,14 @@ function ReasoningBlock({ content }: { content: string }) {
     <div className="mb-2 max-w-[85%]">
       <button
         onClick={() => setExpanded(!expanded)}
-        className="flex items-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-1.5 text-xs text-zinc-500 transition-colors hover:text-zinc-400"
+        className="flex items-center gap-1.5 rounded-lg border border-border-subtle bg-surface-elevated/50 px-3 py-1.5 text-xs text-content-subtle transition-colors hover:text-content-muted"
       >
         <span className={`transition-transform ${expanded ? 'rotate-90' : ''}`}>▸</span>
         <span>思考过程</span>
-        <span className="text-zinc-700">({content.length}字)</span>
+        <span className="text-content-subtle">({content.length}字)</span>
       </button>
       {expanded && (
-        <div className="mt-1 rounded-lg border border-zinc-800 bg-zinc-900/80 p-3 text-xs leading-relaxed text-zinc-500 whitespace-pre-wrap">
+        <div className="mt-1 rounded-lg border border-border-subtle bg-surface-elevated/80 p-3 text-xs leading-relaxed text-content-subtle whitespace-pre-wrap">
           {content}
         </div>
       )}
@@ -442,15 +442,15 @@ function ExportDialog({ messages, sessionId, format, onFormatChange, onExport, o
 
   return (
     <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="w-[460px] rounded-xl border border-zinc-700 bg-zinc-900 shadow-2xl">
-        <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-3">
-          <h3 className="text-sm font-medium text-zinc-200">导出对话</h3>
-          <button onClick={onClose} className="rounded p-1 text-zinc-600 hover:text-zinc-300">✕</button>
+      <div className="w-[460px] rounded-xl border border-border-default bg-surface-elevated shadow-2xl">
+        <div className="flex items-center justify-between border-b border-border-subtle px-4 py-3">
+          <h3 className="text-sm font-medium text-content-secondary">导出对话</h3>
+          <button onClick={onClose} className="rounded p-1 text-content-subtle hover:text-content-heading">✕</button>
         </div>
 
         <div className="p-4 space-y-4">
           <div>
-            <label className="mb-2 block text-[10px] font-medium uppercase tracking-wider text-zinc-600">导出格式</label>
+            <label className="mb-2 block text-[10px] font-medium uppercase tracking-wider text-content-subtle">导出格式</label>
             <div className="grid grid-cols-3 gap-2">
               {formats.map((f) => (
                 <button
@@ -458,33 +458,33 @@ function ExportDialog({ messages, sessionId, format, onFormatChange, onExport, o
                   onClick={() => onFormatChange(f.value)}
                   className={`rounded-lg border p-2.5 text-left transition-colors ${
                     format === f.value
-                      ? 'border-indigo-500 bg-indigo-600/10'
-                      : 'border-zinc-700 hover:border-zinc-600'
+                      ? 'border-accent bg-accent/10'
+                      : 'border-border-default hover:border-border-default'
                   }`}
                 >
-                  <div className={`text-xs font-medium ${format === f.value ? 'text-indigo-300' : 'text-zinc-400'}`}>{f.label}</div>
-                  <div className="mt-1 text-[10px] text-zinc-600">{f.desc}</div>
+                  <div className={`text-xs font-medium ${format === f.value ? 'text-accent-text' : 'text-content-muted'}`}>{f.label}</div>
+                  <div className="mt-1 text-[10px] text-content-subtle">{f.desc}</div>
                 </button>
               ))}
             </div>
           </div>
 
           <div>
-            <label className="mb-2 block text-[10px] font-medium uppercase tracking-wider text-zinc-600">预览</label>
-            <pre className="max-h-32 overflow-y-auto rounded-lg border border-zinc-800 bg-zinc-950 p-3 text-[10px] leading-relaxed text-zinc-500 whitespace-pre-wrap">
+            <label className="mb-2 block text-[10px] font-medium uppercase tracking-wider text-content-subtle">预览</label>
+            <pre className="max-h-32 overflow-y-auto rounded-lg border border-border-subtle bg-surface-base p-3 text-[10px] leading-relaxed text-content-subtle whitespace-pre-wrap">
               {preview.slice(0, 500)}{preview.length > 500 ? '\n...' : ''}
             </pre>
           </div>
 
-          <div className="flex items-center justify-between text-[10px] text-zinc-600">
+          <div className="flex items-center justify-between text-[10px] text-content-subtle">
             <span>共 {messages.length} 条消息</span>
             <span>{getExportFileName(title, format)}</span>
           </div>
         </div>
 
-        <div className="flex justify-end gap-2 border-t border-zinc-800 px-4 py-3">
-          <button onClick={onClose} className="rounded-lg px-4 py-1.5 text-xs text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300">取消</button>
-          <button onClick={onExport} className="rounded-lg bg-indigo-600 px-4 py-1.5 text-xs font-medium text-white transition-colors hover:bg-indigo-500">
+        <div className="flex justify-end gap-2 border-t border-border-subtle px-4 py-3">
+          <button onClick={onClose} className="rounded-lg px-4 py-1.5 text-xs text-content-subtle hover:bg-surface-overlay hover:text-content-heading">取消</button>
+          <button onClick={onExport} className="rounded-lg bg-accent px-4 py-1.5 text-xs font-medium text-white transition-colors hover:bg-accent-hover">
             保存文件
           </button>
         </div>

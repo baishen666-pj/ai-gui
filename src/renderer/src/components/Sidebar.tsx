@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import type { ViewMode } from '../../../shared/types'
-import { useAppStore } from '../stores/app'
+import { useAppStore, type ThemeMode } from '../stores/app'
 
 interface SidebarProps {
   activeView: ViewMode
@@ -19,10 +19,16 @@ const NAV_ITEMS: { view: ViewMode; icon: string; labelZh: string }[] = [
   { view: 'settings', icon: '⚙️', labelZh: '设置' }
 ]
 
+const THEME_ICONS: Record<ThemeMode, string> = { dark: '🌙', light: '☀️', cyberpunk: '🌃' }
+const THEME_LABELS: Record<ThemeMode, string> = { dark: '暗色', light: '亮色', cyberpunk: '赛博' }
+const THEME_CYCLE: ThemeMode[] = ['dark', 'light', 'cyberpunk']
+
 export function Sidebar({ activeView, onViewChange }: SidebarProps) {
   const profiles = useAppStore((s) => s.profiles)
   const activeProfileId = useAppStore((s) => s.activeProfileId)
   const activeProfile = profiles.find((p) => p.id === activeProfileId) ?? profiles[0]
+  const theme = useAppStore((s) => s.theme)
+  const setTheme = useAppStore((s) => s.setTheme)
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -36,12 +42,12 @@ export function Sidebar({ activeView, onViewChange }: SidebarProps) {
   }, [menuOpen])
 
   return (
-    <aside className="flex h-full w-14 flex-col items-center gap-1 border-r border-zinc-800 bg-zinc-950 py-3">
+    <aside className="flex h-full w-14 flex-col items-center gap-1 border-r border-border-subtle bg-surface-base py-3">
       {/* Logo / Profile switcher */}
       <div className="relative mb-4" ref={menuRef}>
         <button
           onClick={() => setMenuOpen(!menuOpen)}
-          className="flex h-8 w-10 items-center justify-center rounded-lg bg-indigo-600/20 text-xs font-bold text-indigo-400 transition-colors hover:bg-indigo-600/30"
+          className="flex h-8 w-10 items-center justify-center rounded-lg bg-accent/20 text-xs font-bold text-accent-text transition-colors hover:bg-accent/30"
           title={activeProfile.name}
         >
           {activeProfile.name.slice(0, 1)}
@@ -58,13 +64,27 @@ export function Sidebar({ activeView, onViewChange }: SidebarProps) {
           title={labelZh}
           className={`flex h-10 w-10 items-center justify-center rounded-lg text-lg transition-colors ${
             activeView === view
-              ? 'bg-indigo-600/20 text-indigo-400'
-              : 'text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300'
+              ? 'bg-accent/20 text-accent-text'
+              : 'text-content-subtle hover:bg-surface-overlay hover:text-content-heading'
           }`}
         >
           {icon}
         </button>
       ))}
+
+      {/* Theme toggle */}
+      <div className="mt-auto">
+        <button
+          onClick={() => {
+            const next = THEME_CYCLE[(THEME_CYCLE.indexOf(theme) + 1) % THEME_CYCLE.length]
+            setTheme(next)
+          }}
+          title={`主题: ${THEME_LABELS[theme]}`}
+          className="flex h-10 w-10 items-center justify-center rounded-lg text-lg transition-colors hover:bg-surface-overlay hover:text-content-heading"
+        >
+          {THEME_ICONS[theme]}
+        </button>
+      </div>
     </aside>
   )
 }
@@ -96,8 +116,8 @@ function ProfileMenu({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div className="absolute left-14 top-0 z-50 w-48 rounded-lg border border-zinc-700 bg-zinc-900 p-1.5 shadow-xl">
-      <div className="mb-1 px-2 text-[10px] font-medium uppercase tracking-wider text-zinc-600">
+    <div className="absolute left-14 top-0 z-50 w-48 rounded-lg border border-border-default bg-surface-elevated p-1.5 shadow-xl">
+      <div className="mb-1 px-2 text-[10px] font-medium uppercase tracking-wider text-content-subtle">
         配置文件
       </div>
 
@@ -110,18 +130,18 @@ function ProfileMenu({ onClose }: { onClose: () => void }) {
               onChange={(e) => setEditName(e.target.value)}
               onBlur={() => handleRename(p.id)}
               onKeyDown={(e) => e.key === 'Enter' && handleRename(p.id)}
-              className="flex-1 rounded bg-zinc-800 px-2 py-1 text-xs text-zinc-300 outline-none"
+              className="flex-1 rounded bg-surface-overlay px-2 py-1 text-xs text-content-heading outline-none"
             />
           ) : (
             <button
               onClick={() => { switchProfile(p.id); onClose() }}
               className={`flex flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors ${
                 activeProfileId === p.id
-                  ? 'bg-indigo-600/15 text-indigo-300'
-                  : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'
+                  ? 'bg-accent/15 text-accent-text'
+                  : 'text-content-muted hover:bg-surface-overlay hover:text-content-secondary'
               }`}
             >
-              <span className="flex h-5 w-5 items-center justify-center rounded bg-zinc-800 text-[10px] font-bold">
+              <span className="flex h-5 w-5 items-center justify-center rounded bg-surface-overlay text-[10px] font-bold">
                 {p.name.slice(0, 1)}
               </span>
               <span className="flex-1 truncate">{p.name}</span>
@@ -133,7 +153,7 @@ function ProfileMenu({ onClose }: { onClose: () => void }) {
             <div className="hidden gap-0.5 group-hover:flex">
               <button
                 onClick={() => { setEditingId(p.id); setEditName(p.name) }}
-                className="rounded p-0.5 text-[10px] text-zinc-600 hover:text-zinc-300"
+                className="rounded p-0.5 text-[10px] text-content-subtle hover:text-content-heading"
                 title="重命名"
               >
                 ✎
@@ -141,7 +161,7 @@ function ProfileMenu({ onClose }: { onClose: () => void }) {
               {profiles.length > 1 && (
                 <button
                   onClick={() => { deleteProfile(p.id) }}
-                  className="rounded p-0.5 text-[10px] text-zinc-600 hover:text-red-400"
+                  className="rounded p-0.5 text-[10px] text-content-subtle hover:text-red-400"
                   title="删除"
                 >
                   ✕
@@ -160,14 +180,14 @@ function ProfileMenu({ onClose }: { onClose: () => void }) {
             onChange={(e) => setNewName(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
             placeholder="名称..."
-            className="flex-1 rounded bg-zinc-800 px-2 py-1 text-xs text-zinc-300 outline-none"
+            className="flex-1 rounded bg-surface-overlay px-2 py-1 text-xs text-content-heading outline-none"
           />
-          <button onClick={handleCreate} className="text-xs text-indigo-400">✓</button>
+          <button onClick={handleCreate} className="text-xs text-accent-text">✓</button>
         </div>
       ) : (
         <button
           onClick={() => setCreating(true)}
-          className="mt-1 w-full rounded-md px-2 py-1.5 text-left text-xs text-zinc-600 transition-colors hover:bg-zinc-800 hover:text-zinc-400"
+          className="mt-1 w-full rounded-md px-2 py-1.5 text-left text-xs text-content-subtle transition-colors hover:bg-surface-overlay hover:text-content-muted"
         >
           + 新建配置文件
         </button>

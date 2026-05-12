@@ -11,6 +11,8 @@ export interface CanvasAgent {
   connections: string[]
 }
 
+export type ThemeMode = 'dark' | 'light' | 'cyberpunk'
+
 export interface Profile {
   id: string
   name: string
@@ -30,6 +32,7 @@ const DEFAULT_PROFILE: Profile = {
 }
 
 interface AppState {
+  theme: ThemeMode
   view: ViewMode
   messages: ChatMessage[]
   isLoading: boolean
@@ -75,6 +78,7 @@ interface AppState {
   startWorkflowExecution: (workflowId: string) => void
   updateNodeExecution: (nodeId: string, status: NodeExecutionStatus, output?: string) => void
   completeWorkflowExecution: (status: 'completed' | 'failed') => void
+  setTheme: (theme: ThemeMode) => void
   notify: (title: string, body: string) => void
 }
 
@@ -94,7 +98,18 @@ function updateActiveProfile(state: AppState, patch: Partial<Profile>): Profile[
   )
 }
 
+function loadTheme(): ThemeMode {
+  if (typeof window === 'undefined') return 'dark'
+  return (localStorage.getItem('ai-gui-theme') as ThemeMode) || 'dark'
+}
+
+function applyTheme(theme: ThemeMode) {
+  document.documentElement.dataset.theme = theme
+  localStorage.setItem('ai-gui-theme', theme)
+}
+
 export const useAppStore = create<AppState>((set) => ({
+  theme: loadTheme(),
   view: 'chat',
   messages: [],
   isLoading: false,
@@ -326,6 +341,11 @@ export const useAppStore = create<AppState>((set) => ({
         }
       }
     }),
+
+  setTheme: (theme) => {
+    applyTheme(theme)
+    set({ theme })
+  },
 
   notify: (title, body) => {
     if (window.aiGui?.sendNotification) {

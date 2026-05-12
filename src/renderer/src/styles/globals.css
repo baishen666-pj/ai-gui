@@ -1,1 +1,73 @@
 @import 'tailwindcss';
+
+@theme {
+  --color-surface-base: var(--t-surface-base);
+  --color-surface-elevated: var(--t-surface-elevated);
+  --color-surface-overlay: var(--t-surface-overlay);
+  --color-surface-inset: var(--t-surface-inset);
+  --color-content-primary: var(--t-content-primary);
+  --color-content-secondary: var(--t-content-secondary);
+  --color-content-heading: var(--t-content-heading);
+  --color-content-muted: var(--t-content-muted);
+  --color-content-subtle: var(--t-content-subtle);
+  --color-border-subtle: var(--t-border-subtle);
+  --color-border-default: var(--t-border-default);
+  --color-accent: var(--t-accent);
+  --color-accent-hover: var(--t-accent-hover);
+  --color-accent-text: var(--t-accent-text);
+}
+
+/* Dark (default) */
+:root,
+[data-theme="dark"] {
+  --t-surface-base: #09090b;
+  --t-surface-elevated: #18181b;
+  --t-surface-overlay: #27272a;
+  --t-surface-inset: #3f3f46;
+  --t-content-primary: #f4f4f5;
+  --t-content-secondary: #e4e4e7;
+  --t-content-heading: #d4d4d8;
+  --t-content-muted: #a1a1aa;
+  --t-content-subtle: #71717a;
+  --t-border-subtle: #27272a;
+  --t-border-default: #3f3f46;
+  --t-accent: #4f46e5;
+  --t-accent-hover: #4338ca;
+  --t-accent-text: #818cf8;
+}
+
+/* Light */
+[data-theme="light"] {
+  --t-surface-base: #ffffff;
+  --t-surface-elevated: #f9fafb;
+  --t-surface-overlay: #f4f4f5;
+  --t-surface-inset: #e4e4e7;
+  --t-content-primary: #09090b;
+  --t-content-secondary: #18181b;
+  --t-content-heading: #27272a;
+  --t-content-muted: #52525b;
+  --t-content-subtle: #71717a;
+  --t-border-subtle: #e4e4e7;
+  --t-border-default: #d4d4d8;
+  --t-accent: #4f46e5;
+  --t-accent-hover: #4338ca;
+  --t-accent-text: #4f46e5;
+}
+
+/* Cyberpunk */
+[data-theme="cyberpunk"] {
+  --t-surface-base: #0a0014;
+  --t-surface-elevated: #150025;
+  --t-surface-overlay: #1f0035;
+  --t-surface-inset: #2d004d;
+  --t-content-primary: #e0f7fa;
+  --t-content-secondary: #b2ebf2;
+  --t-content-heading: #80deea;
+  --t-content-muted: #4dd0e1;
+  --t-content-subtle: #26c6da;
+  --t-border-subtle: #2d004d;
+  --t-border-default: #4a0080;
+  --t-accent: #00ffd5;
+  --t-accent-hover: #00e6bf;
+  --t-accent-text: #00ffd5;
+}

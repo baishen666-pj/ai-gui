@@ -54,14 +54,14 @@ export function SettingsPanel() {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex items-center justify-between border-b border-zinc-800 px-4 py-2">
-        <h2 className="text-sm font-medium text-zinc-300">设置</h2>
+      <header className="flex items-center justify-between border-b border-border-subtle px-4 py-2">
+        <h2 className="text-sm font-medium text-content-heading">设置</h2>
         <button
           onClick={handleSave}
           className={`rounded px-3 py-1 text-xs font-medium transition-colors ${
             saved
               ? 'bg-emerald-600 text-white'
-              : 'bg-indigo-600 text-white hover:bg-indigo-500'
+              : 'bg-accent text-white hover:bg-accent-hover'
           }`}
         >
           {saved ? '已保存' : '保存'}
@@ -73,10 +73,10 @@ export function SettingsPanel() {
 
           {/* API Provider */}
           <section>
-            <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-zinc-500">
+            <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-content-subtle">
               API Provider
             </h3>
-            <div className="space-y-3 rounded-lg border border-zinc-800 bg-zinc-900 p-4">
+            <div className="space-y-3 rounded-lg border border-border-subtle bg-surface-elevated p-4">
               {/* Provider tabs */}
               <div className="flex flex-wrap gap-1.5">
                 {providers.map((p) => (
@@ -85,8 +85,8 @@ export function SettingsPanel() {
                     onClick={() => handleSetActive(p.id)}
                     className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs transition-colors ${
                       activeId === p.id
-                        ? 'border-indigo-600/50 bg-indigo-600/15 text-indigo-300'
-                        : 'border-zinc-700 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300'
+                        ? 'border-accent/50 bg-accent/15 text-accent-text'
+                        : 'border-border-default text-content-subtle hover:bg-surface-overlay hover:text-content-heading'
                     }`}
                   >
                     <span>{PROVIDER_ICONS[p.type] ?? '⚙️'}</span>
@@ -99,7 +99,7 @@ export function SettingsPanel() {
                     id: `custom-${Date.now()}`, name: '自定义', type: 'custom',
                     baseUrl: '', apiKey: '', models: [''], defaultModel: ''
                   })}
-                  className="rounded-lg border border-dashed border-zinc-700 px-3 py-1.5 text-xs text-zinc-600 hover:border-zinc-500 hover:text-zinc-400"
+                  className="rounded-lg border border-dashed border-border-default px-3 py-1.5 text-xs text-content-subtle hover:border-border-subtle hover:text-content-muted"
                 >
                   + 添加
                 </button>
@@ -117,26 +117,26 @@ export function SettingsPanel() {
 
           {/* Model selection */}
           <section>
-            <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-zinc-500">
+            <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-content-subtle">
               当前模型
             </h3>
-            <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-4">
+            <div className="rounded-lg border border-border-subtle bg-surface-elevated p-4">
               <div className="flex items-center gap-2">
                 <div className="h-2 w-2 rounded-full bg-emerald-400" />
-                <span className="text-sm text-zinc-300">{activeProvider?.defaultModel ?? '未选择'}</span>
-                <span className="text-xs text-zinc-600">({activeProvider?.name})</span>
+                <span className="text-sm text-content-heading">{activeProvider?.defaultModel ?? '未选择'}</span>
+                <span className="text-xs text-content-subtle">({activeProvider?.name})</span>
               </div>
             </div>
           </section>
 
           {/* UI settings */}
           <section>
-            <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-zinc-500">
+            <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-content-subtle">
               界面设置
             </h3>
-            <div className="space-y-3 rounded-lg border border-zinc-800 bg-zinc-900 p-4">
+            <div className="space-y-3 rounded-lg border border-border-subtle bg-surface-elevated p-4">
               <label className="flex items-center gap-3 text-sm">
-                <span className="w-20 shrink-0 text-zinc-500">语言</span>
+                <span className="w-20 shrink-0 text-content-subtle">语言</span>
                 <div className="flex gap-1">
                   {([['zh-CN', '简体中文'], ['en', 'English']] as const).map(([val, label]) => (
                     <button
@@ -144,8 +144,8 @@ export function SettingsPanel() {
                       onClick={() => setLocalLocale(val)}
                       className={`rounded px-3 py-1.5 text-xs transition-colors ${
                         locale === val
-                          ? 'bg-indigo-600 text-white'
-                          : 'bg-zinc-800 text-zinc-500 hover:text-zinc-300'
+                          ? 'bg-accent text-white'
+                          : 'bg-surface-overlay text-content-subtle hover:text-content-heading'
                       }`}
                     >
                       {label}
@@ -158,29 +158,29 @@ export function SettingsPanel() {
 
           {/* Notifications */}
           <section>
-            <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-zinc-500">
+            <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-content-subtle">
               通知
             </h3>
-            <div className="space-y-3 rounded-lg border border-zinc-800 bg-zinc-900 p-4">
+            <div className="space-y-3 rounded-lg border border-border-subtle bg-surface-elevated p-4">
               <button
                 onClick={() => {
                   if (window.aiGui) {
                     window.aiGui.sendNotification({ title: 'AI GUI 通知测试', body: '如果你看到这条系统通知，说明桌面通知工作正常！' })
                   }
                 }}
-                className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-xs text-zinc-400 transition-colors hover:bg-zinc-700 hover:text-zinc-200"
+                className="w-full rounded-lg border border-border-default bg-surface-overlay px-3 py-2 text-xs text-content-muted transition-colors hover:bg-surface-inset hover:text-content-secondary"
               >
                 发送测试通知
               </button>
-              <div className="space-y-2 text-[10px] text-zinc-600">
+              <div className="space-y-2 text-[10px] text-content-subtle">
                 <p>通知触发场景：</p>
                 <div className="grid grid-cols-2 gap-1">
-                  <span className="rounded bg-zinc-800 px-2 py-1">⏰ 定时任务触发</span>
-                  <span className="rounded bg-zinc-800 px-2 py-1">⏰ 定时任务失败</span>
-                  <span className="rounded bg-zinc-800 px-2 py-1">🔀 工作流完成</span>
-                  <span className="rounded bg-zinc-800 px-2 py-1">🔀 工作流失败</span>
-                  <span className="rounded bg-zinc-800 px-2 py-1">💬 聊天错误</span>
-                  <span className="rounded bg-zinc-800 px-2 py-1">🔄 长时任务完成</span>
+                  <span className="rounded bg-surface-overlay px-2 py-1">⏰ 定时任务触发</span>
+                  <span className="rounded bg-surface-overlay px-2 py-1">⏰ 定时任务失败</span>
+                  <span className="rounded bg-surface-overlay px-2 py-1">🔀 工作流完成</span>
+                  <span className="rounded bg-surface-overlay px-2 py-1">🔀 工作流失败</span>
+                  <span className="rounded bg-surface-overlay px-2 py-1">💬 聊天错误</span>
+                  <span className="rounded bg-surface-overlay px-2 py-1">🔄 长时任务完成</span>
                 </div>
               </div>
             </div>
@@ -188,10 +188,10 @@ export function SettingsPanel() {
 
           {/* About */}
           <section>
-            <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-zinc-500">
+            <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-content-subtle">
               关于
             </h3>
-            <div className="space-y-2 rounded-lg border border-zinc-800 bg-zinc-900 p-4">
+            <div className="space-y-2 rounded-lg border border-border-subtle bg-surface-elevated p-4">
               {[
                 ['版本', '0.1.0'],
                 ['Electron', '39'],
@@ -199,8 +199,8 @@ export function SettingsPanel() {
                 ['Three.js', '0.175']
               ].map(([k, v]) => (
                 <div key={k} className="flex items-center justify-between text-sm">
-                  <span className="text-zinc-500">{k}</span>
-                  <span className="text-zinc-400">{v}</span>
+                  <span className="text-content-subtle">{k}</span>
+                  <span className="text-content-muted">{v}</span>
                 </div>
               ))}
             </div>
@@ -243,9 +243,9 @@ function ProviderConfigForm({ provider, onChange }: { provider: ProviderConfig; 
   // ChatGPT subscription uses browser login, no manual URL/Key fields
   if (provider.type === 'chatgpt') {
     return (
-      <div className="space-y-3 border-t border-zinc-800 pt-3">
-        <div className="rounded-lg bg-zinc-800/50 p-3">
-          <p className="text-xs text-zinc-400">
+      <div className="space-y-3 border-t border-border-subtle pt-3">
+        <div className="rounded-lg bg-surface-overlay/50 p-3">
+          <p className="text-xs text-content-muted">
             使用你的 ChatGPT Plus/Pro 订阅直接登录，无需 API Key。
           </p>
         </div>
@@ -258,7 +258,7 @@ function ProviderConfigForm({ provider, onChange }: { provider: ProviderConfig; 
             </div>
             <button
               onClick={handleLogout}
-              className="rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-xs text-zinc-400 transition-colors hover:bg-zinc-700"
+              className="rounded-lg border border-border-default bg-surface-overlay px-3 py-2 text-xs text-content-muted transition-colors hover:bg-surface-inset"
             >
               退出登录
             </button>
@@ -278,11 +278,11 @@ function ProviderConfigForm({ provider, onChange }: { provider: ProviderConfig; 
         )}
 
         <label className="flex items-center gap-3 text-sm">
-          <span className="w-20 shrink-0 text-zinc-500">模型</span>
+          <span className="w-20 shrink-0 text-content-subtle">模型</span>
           <select
             value={provider.defaultModel}
             onChange={(e) => update('defaultModel', e.target.value)}
-            className="rounded border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm text-zinc-300"
+            className="rounded border border-border-default bg-surface-overlay px-3 py-1.5 text-sm text-content-heading"
           >
             {provider.models.map((m) => (
               <option key={m} value={m}>{m}{m === 'o1-pro' ? ' (Pro)' : ''}</option>
@@ -294,34 +294,34 @@ function ProviderConfigForm({ provider, onChange }: { provider: ProviderConfig; 
   }
 
   return (
-    <div className="space-y-3 border-t border-zinc-800 pt-3">
+    <div className="space-y-3 border-t border-border-subtle pt-3">
       <label className="flex items-center gap-3 text-sm">
-        <span className="w-20 shrink-0 text-zinc-500">API URL</span>
+        <span className="w-20 shrink-0 text-content-subtle">API URL</span>
         <input
           type="text"
           value={provider.baseUrl}
           onChange={(e) => update('baseUrl', e.target.value)}
-          className="flex-1 rounded border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-zinc-300 outline-none focus:border-indigo-500"
+          className="flex-1 rounded border border-border-default bg-surface-overlay px-3 py-1.5 text-content-heading outline-none focus:border-accent"
         />
       </label>
 
       <label className="flex items-center gap-3 text-sm">
-        <span className="w-20 shrink-0 text-zinc-500">API Key</span>
+        <span className="w-20 shrink-0 text-content-subtle">API Key</span>
         <input
           type="password"
           value={provider.apiKey}
           onChange={(e) => update('apiKey', e.target.value)}
           placeholder={provider.type === 'ollama' ? '无需 Key' : '粘贴你的 API Key...'}
-          className="flex-1 rounded border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-zinc-300 outline-none focus:border-indigo-500"
+          className="flex-1 rounded border border-border-default bg-surface-overlay px-3 py-1.5 text-content-heading outline-none focus:border-accent"
         />
       </label>
 
       <label className="flex items-center gap-3 text-sm">
-        <span className="w-20 shrink-0 text-zinc-500">模型</span>
+        <span className="w-20 shrink-0 text-content-subtle">模型</span>
         <select
           value={provider.defaultModel}
           onChange={(e) => update('defaultModel', e.target.value)}
-          className="rounded border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm text-zinc-300"
+          className="rounded border border-border-default bg-surface-overlay px-3 py-1.5 text-sm text-content-heading"
         >
           {provider.models.map((m) => (
             <option key={m} value={m}>{m}</option>
@@ -329,9 +329,9 @@ function ProviderConfigForm({ provider, onChange }: { provider: ProviderConfig; 
         </select>
       </label>
 
-      <div className="flex items-center gap-2 rounded bg-indigo-600/10 px-3 py-2">
-        <span className="text-xs text-indigo-400">{PROVIDER_ICONS[provider.type]} {provider.name}</span>
-        <span className="text-[10px] text-zinc-600">
+      <div className="flex items-center gap-2 rounded bg-accent/10 px-3 py-2">
+        <span className="text-xs text-accent-text">{PROVIDER_ICONS[provider.type]} {provider.name}</span>
+        <span className="text-[10px] text-content-subtle">
           {provider.type === 'ollama' ? '本地运行 · 无需 API Key' : provider.type === 'zhipu' ? '按量计费 · flash 模型免费' : '按量计费'}
         </span>
       </div>

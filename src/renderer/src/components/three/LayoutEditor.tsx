@@ -91,13 +91,13 @@ export function LayoutEditor({ onSave, onCancel }: LayoutEditorProps) {
   return (
     <div className="flex h-full">
       {/* Palette sidebar */}
-      <div className="flex w-44 flex-col gap-2 border-r border-zinc-800 bg-zinc-950 p-3">
-        <div className="mb-1 text-xs font-medium text-zinc-400">家具</div>
+      <div className="flex w-44 flex-col gap-2 border-r border-border-subtle bg-surface-base p-3">
+        <div className="mb-1 text-xs font-medium text-content-muted">家具</div>
         {PALETTE.map((type) => (
           <button
             key={type}
             onClick={() => handleAdd(type)}
-            className="flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-xs text-zinc-300 transition-colors hover:border-zinc-600 hover:bg-zinc-800"
+            className="flex items-center gap-2 rounded-lg border border-border-subtle bg-surface-elevated px-3 py-2 text-xs text-content-heading transition-colors hover:border-border-default hover:bg-surface-overlay"
           >
             <span
               className="inline-block h-3 w-3 rounded"
@@ -107,20 +107,20 @@ export function LayoutEditor({ onSave, onCancel }: LayoutEditorProps) {
           </button>
         ))}
 
-        <div className="my-2 border-t border-zinc-800" />
+        <div className="my-2 border-t border-border-subtle" />
 
-        <div className="text-xs font-medium text-zinc-400">操作</div>
+        <div className="text-xs font-medium text-content-muted">操作</div>
         <button
           onClick={handleRotate}
           disabled={!selectedId}
-          className="rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-xs text-zinc-300 transition-colors hover:bg-zinc-800 disabled:opacity-40"
+          className="rounded-lg border border-border-subtle bg-surface-elevated px-3 py-2 text-xs text-content-heading transition-colors hover:bg-surface-overlay disabled:opacity-40"
         >
           旋转 (+90°)
         </button>
         <button
           onClick={handleDelete}
           disabled={!selectedId}
-          className="rounded-lg border border-red-900/50 bg-zinc-900 px-3 py-2 text-xs text-red-400 transition-colors hover:bg-red-950/30 disabled:opacity-40"
+          className="rounded-lg border border-red-900/50 bg-surface-elevated px-3 py-2 text-xs text-red-400 transition-colors hover:bg-red-950/30 disabled:opacity-40"
         >
           删除
         </button>
@@ -128,13 +128,13 @@ export function LayoutEditor({ onSave, onCancel }: LayoutEditorProps) {
         <div className="mt-auto flex flex-col gap-2">
           <button
             onClick={handleSave}
-            className="rounded-lg bg-indigo-600 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-indigo-500"
+            className="rounded-lg bg-accent px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-accent-hover"
           >
             保存布局
           </button>
           <button
             onClick={onCancel}
-            className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs text-zinc-400 transition-colors hover:bg-zinc-800"
+            className="rounded-lg border border-border-default bg-surface-elevated px-3 py-2 text-xs text-content-muted transition-colors hover:bg-surface-overlay"
           >
             取消
           </button>

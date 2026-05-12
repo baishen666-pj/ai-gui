@@ -47,12 +47,12 @@ function CodeBlock({ language, children }: CodeBlockProps) {
 
   if (isDiff) {
     return (
-      <div className="group relative my-2 overflow-hidden rounded-lg border border-zinc-700">
-        <div className="flex items-center justify-between bg-zinc-800 px-3 py-1 text-xs text-zinc-400">
+      <div className="group relative my-2 overflow-hidden rounded-lg border border-border-default">
+        <div className="flex items-center justify-between bg-surface-overlay px-3 py-1 text-xs text-content-muted">
           <span>diff</span>
           <CopyButton copied={copied} onClick={handleCopy} />
         </div>
-        <pre className="overflow-x-auto bg-zinc-900 p-3 text-sm">
+        <pre className="overflow-x-auto bg-surface-elevated p-3 text-sm">
           {children.split('\n').map((line, i) => (
             <div
               key={i}
@@ -61,7 +61,7 @@ function CodeBlock({ language, children }: CodeBlockProps) {
                   ? 'text-green-400'
                   : line.startsWith('-')
                     ? 'text-red-400'
-                    : 'text-zinc-300'
+                    : 'text-content-heading'
               }
             >
               {line}
@@ -73,21 +73,21 @@ function CodeBlock({ language, children }: CodeBlockProps) {
   }
 
   return (
-    <div className="group relative my-2 overflow-hidden rounded-lg border border-zinc-700">
-      <div className="flex items-center justify-between bg-zinc-800 px-3 py-1 text-xs text-zinc-400">
+    <div className="group relative my-2 overflow-hidden rounded-lg border border-border-default">
+      <div className="flex items-center justify-between bg-surface-overlay px-3 py-1 text-xs text-content-muted">
         <span>{language || 'code'}</span>
         <CopyButton copied={copied} onClick={handleCopy} />
       </div>
       <Suspense
         fallback={
-          <pre className="bg-zinc-900 p-3 text-sm text-zinc-300">{children}</pre>
+          <pre className="bg-surface-elevated p-3 text-sm text-content-heading">{children}</pre>
         }
       >
         <SyntaxHighlighter
           language={language || 'typescript'}
           useInlineStyles={false}
           wrapLongLines
-          className="!bg-zinc-900 !p-3 !text-sm"
+          className="!bg-surface-elevated !p-3 !text-sm"
         >
           {children}
         </SyntaxHighlighter>
@@ -100,7 +100,7 @@ function CopyButton({ copied, onClick }: { copied: boolean; onClick: () => void 
   return (
     <button
       onClick={onClick}
-      className="rounded px-2 py-0.5 text-xs text-zinc-500 hover:bg-zinc-700 hover:text-zinc-300"
+      className="rounded px-2 py-0.5 text-xs text-content-subtle hover:bg-surface-inset hover:text-content-heading"
     >
       {copied ? '已复制' : '复制'}
     </button>
@@ -113,7 +113,7 @@ interface AgentMarkdownProps {
 
 export function AgentMarkdown({ content }: AgentMarkdownProps) {
   return (
-    <div className="prose-invert max-w-none text-sm text-zinc-200 [&_a]:text-indigo-400 [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-zinc-600 [&_blockquote]:pl-3 [&_blockquote]:italic [&_blockquote]:text-zinc-400 [&_code]:rounded [&_code]:bg-zinc-800 [&_code]:px-1 [&_code]:text-indigo-300 [&_h1]:mt-4 [&_h1]:text-lg [&_h1]:font-bold [&_h2]:mt-3 [&_h2]:text-base [&_h2]:font-bold [&_h3]:mt-2 [&_h3]:font-bold [&_hr]:border-zinc-700 [&_li]:ml-4 [&_ol]:list-decimal [&_p]:my-1 [&_strong]:text-zinc-100 [&_table]:my-2 [&_td]:border [&_td]:border-zinc-700 [&_td]:px-2 [&_td]:py-1 [&_th]:border [&_th]:border-zinc-600 [&_th]:bg-zinc-800 [&_th]:px-2 [&_th]:py-1 [&_th]:font-medium [&_ul]:list-disc">
+    <div className="prose-invert max-w-none text-sm text-content-secondary [&_a]:text-accent-text [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-border-default [&_blockquote]:pl-3 [&_blockquote]:italic [&_blockquote]:text-content-muted [&_code]:rounded [&_code]:bg-surface-overlay [&_code]:px-1 [&_code]:text-accent-text [&_h1]:mt-4 [&_h1]:text-lg [&_h1]:font-bold [&_h2]:mt-3 [&_h2]:text-base [&_h2]:font-bold [&_h3]:mt-2 [&_h3]:font-bold [&_hr]:border-border-default [&_li]:ml-4 [&_ol]:list-decimal [&_p]:my-1 [&_strong]:text-content-primary [&_table]:my-2 [&_td]:border [&_td]:border-border-default [&_td]:px-2 [&_td]:py-1 [&_th]:border [&_th]:border-border-default [&_th]:bg-surface-overlay [&_th]:px-2 [&_th]:py-1 [&_th]:font-medium [&_ul]:list-disc">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{

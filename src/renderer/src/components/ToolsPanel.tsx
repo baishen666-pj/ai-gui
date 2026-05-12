@@ -59,25 +59,25 @@ export function ToolsPanel() {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex items-center justify-between border-b border-zinc-800 px-4 py-2">
-        <h2 className="text-sm font-medium text-zinc-300">工具集</h2>
+      <header className="flex items-center justify-between border-b border-border-subtle px-4 py-2">
+        <h2 className="text-sm font-medium text-content-heading">工具集</h2>
         <div className="flex gap-1">
-          <button onClick={enableAll} className="rounded px-2 py-1 text-xs text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300">
+          <button onClick={enableAll} className="rounded px-2 py-1 text-xs text-content-subtle hover:bg-surface-overlay hover:text-content-heading">
             全部启用
           </button>
-          <button onClick={disableAll} className="rounded px-2 py-1 text-xs text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300">
+          <button onClick={disableAll} className="rounded px-2 py-1 text-xs text-content-subtle hover:bg-surface-overlay hover:text-content-heading">
             全部禁用
           </button>
         </div>
       </header>
 
-      <div className="flex items-center gap-2 border-b border-zinc-800 px-4 py-2">
+      <div className="flex items-center gap-2 border-b border-border-subtle px-4 py-2">
         <input
           type="text"
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
           placeholder="搜索工具..."
-          className="flex-1 rounded border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-sm text-zinc-200 placeholder-zinc-600 outline-none focus:border-indigo-500"
+          className="flex-1 rounded border border-border-default bg-surface-elevated px-3 py-1.5 text-sm text-content-secondary placeholder-content-subtle outline-none focus:border-accent"
         />
         <div className="flex gap-1">
           {Object.entries(CATEGORIES).map(([key, cfg]) => (
@@ -86,8 +86,8 @@ export function ToolsPanel() {
               onClick={() => setCategoryFilter(categoryFilter === key ? 'all' : key)}
               className={`rounded px-2 py-1 text-xs transition-colors ${
                 categoryFilter === key
-                  ? 'bg-indigo-600/20 text-indigo-400'
-                  : 'text-zinc-500 hover:bg-zinc-800 hover:text-zinc-400'
+                  ? 'bg-accent/20 text-accent-text'
+                  : 'text-content-subtle hover:bg-surface-overlay hover:text-content-muted'
               }`}
             >
               {cfg.label}
@@ -103,7 +103,7 @@ export function ToolsPanel() {
             return (
               <div
                 key={tool.id}
-                className={`rounded-lg border-l-2 ${cat.color} border border-zinc-800 bg-zinc-900 p-3 transition-colors ${
+                className={`rounded-lg border-l-2 ${cat.color} border border-border-subtle bg-surface-elevated p-3 transition-colors ${
                   tool.enabled ? 'opacity-100' : 'opacity-50'
                 }`}
               >
@@ -111,14 +111,14 @@ export function ToolsPanel() {
                   <div className="flex items-center gap-2">
                     <span className="text-lg">{tool.icon}</span>
                     <div>
-                      <div className="text-sm font-medium text-zinc-300">{tool.name}</div>
-                      <div className="text-xs text-zinc-600">{tool.description}</div>
+                      <div className="text-sm font-medium text-content-heading">{tool.name}</div>
+                      <div className="text-xs text-content-subtle">{tool.description}</div>
                     </div>
                   </div>
                   <button
                     onClick={() => toggleTool(tool.id)}
                     className={`relative h-5 w-9 rounded-full transition-colors ${
-                      tool.enabled ? 'bg-indigo-600' : 'bg-zinc-700'
+                      tool.enabled ? 'bg-accent' : 'bg-surface-inset'
                     }`}
                   >
                     <span
@@ -128,7 +128,7 @@ export function ToolsPanel() {
                     />
                   </button>
                 </div>
-                <div className="mt-2 text-[10px] text-zinc-600">
+                <div className="mt-2 text-[10px] text-content-subtle">
                   key: {tool.key} · {cat.label}
                 </div>
               </div>
@@ -137,8 +137,8 @@ export function ToolsPanel() {
         </div>
       </div>
 
-      <div className="border-t border-zinc-800 px-4 py-2">
-        <p className="text-xs text-zinc-600">
+      <div className="border-t border-border-subtle px-4 py-2">
+        <p className="text-xs text-content-subtle">
           已启用 {enabledCount}/{tools.length} 个工具 — 切换即时生效
         </p>
       </div>
