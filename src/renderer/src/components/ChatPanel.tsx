@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback, memo } from 'react'
 import { useAppStore } from '../stores/app'
 import { AgentMarkdown } from './AgentMarkdown'
 import { SlashCommandMenu } from './SlashCommandMenu'
@@ -23,18 +23,45 @@ export function ChatPanel() {
   const inputRef = useRef<HTMLInputElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const agentBufferRef = useRef('')
+  const streamBufferRef = useRef('')
+  const rafIdRef = useRef(0)
+  const isStreamingRef = useRef(false)
+
+  const flushStreamBuffer = useCallback(() => {
+    const chunk = streamBufferRef.current
+    if (chunk) {
+      streamBufferRef.current = ''
+      appendToLastAgent(chunk)
+      agentBufferRef.current += chunk
+    }
+  }, [appendToLastAgent])
+
+  const scheduleFlush = useCallback(() => {
+    if (rafIdRef.current) return
+    rafIdRef.current = requestAnimationFrame(() => {
+      rafIdRef.current = 0
+      flushStreamBuffer()
+    })
+  }, [flushStreamBuffer])
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    if (isStreamingRef.current) {
+      bottomRef.current?.scrollIntoView({ behavior: 'auto' })
+    } else {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }
   }, [messages, isLoading])
 
   useEffect(() => {
     if (!window.aiGui) return
     const unsubChunk = window.aiGui.onChatChunk((chunk: string) => {
-      appendToLastAgent(chunk)
-      agentBufferRef.current += chunk
+      streamBufferRef.current += chunk
+      scheduleFlush()
     })
     const unsubDone = () => {
+      if (rafIdRef.current) { cancelAnimationFrame(rafIdRef.current); rafIdRef.current = 0 }
+      flushStreamBuffer()
+      isStreamingRef.current = false
       setLoading(false)
       setToolProgress(null)
       persistAgentMessage(agentBufferRef.current)
@@ -56,7 +83,7 @@ export function ChatPanel() {
     return () => {
       unsubDoneEvt(); unsubErrorEvt(); unsubChunkEvt(); unsubToolEvt(); unsubReasoningEvt()
     }
-  }, [appendToLastAgent, setLoading, setToolProgress, addMessage, appendReasoning, clearReasoning])
+  }, [appendToLastAgent, setLoading, setToolProgress, addMessage, appendReasoning, clearReasoning, flushStreamBuffer, scheduleFlush])
 
   const persistAgentMessage = useCallback(async (content: string) => {
     if (!window.aiGui || !content || !sessionId) return
@@ -140,6 +167,7 @@ export function ChatPanel() {
     setSlashMenuOpen(false)
     setLoading(true)
     agentBufferRef.current = ''
+    isStreamingRef.current = true
 
     if (window.aiGui) {
       try {
@@ -341,7 +369,7 @@ function EmptyState() {
   )
 }
 
-function MessageBubble({ msg, onDelete, onCopy }: {
+const MessageBubble = memo(function MessageBubble({ msg, onDelete, onCopy }: {
   msg: ChatMessage
   onDelete: (id: string) => void
   onCopy: (text: string) => void
@@ -399,7 +427,7 @@ function MessageBubble({ msg, onDelete, onCopy }: {
       </div>
     </div>
   )
-}
+})
 
 function ReasoningBlock({ content }: { content: string }) {
   const [expanded, setExpanded] = useState(false)

@@ -9,16 +9,40 @@ export interface SendMessageOptions {
   profile?: string
 }
 
+const RETRYABLE_STATUS = new Set([429, 502, 503, 504])
+const MAX_RETRIES = 2
+
 export function sendMessage(opts: SendMessageOptions, cb: SseCallbacks): AbortController {
   const controller = new AbortController()
   const provider = getActiveProvider()
 
-  // Route to ChatGPT conversation API or standard OpenAI-compatible API
   if (provider.type === 'chatgpt') {
     return sendChatGPTMessage(opts, cb, controller, provider)
   }
 
-  return sendOpenAICompatibleMessage(opts, cb, controller, provider)
+  let attempt = 0
+
+  const trySend = (): AbortController => {
+    const wrappedCb: SseCallbacks = {
+      onChunk: cb.onChunk,
+      onDone: cb.onDone,
+      onToolProgress: cb.onToolProgress,
+      onReasoning: cb.onReasoning,
+      onError: (msg) => {
+        if (attempt < MAX_RETRIES && controller.signal.aborted === false) {
+          attempt++
+          const delay = Math.min(1000 * Math.pow(2, attempt - 1), 4000)
+          setTimeout(trySend, delay)
+        } else {
+          cb.onError?.(msg)
+        }
+      }
+    }
+    return sendOpenAICompatibleMessage(opts, wrappedCb, controller, provider)
+  }
+
+  trySend()
+  return controller
 }
 
 function sendOpenAICompatibleMessage(
@@ -193,6 +217,8 @@ function sendChatGPTMessage(
       return
     }
 
+    let lastSentLength = 0
+
     response.on('data', (chunk: Buffer) => {
       if (controller.signal.aborted) return
       buffer += chunk.toString('utf-8')
@@ -213,17 +239,19 @@ function sendChatGPTMessage(
           const parts = message.content?.parts
           if (parts && Array.isArray(parts)) {
             const text = parts.join('')
-            // Only emit new content by tracking what we've sent
-            if (text && parsed.message.id) {
-              cb.onChunk?.(text)
+            const delta = text.slice(lastSentLength)
+            if (delta) {
+              lastSentLength = text.length
+              cb.onChunk?.(delta)
             }
           }
 
           if (message.status === 'finished_successfully') {
-            // Send the full final text
             const finalParts = message.content?.parts
             if (finalParts) {
-              cb.onChunk?.(finalParts.join(''))
+              const finalText = finalParts.join('')
+              const finalDelta = finalText.slice(lastSentLength)
+              if (finalDelta) cb.onChunk?.(finalDelta)
             }
           }
         } catch {

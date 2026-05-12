@@ -1,4 +1,4 @@
-import { useState, useCallback, Suspense, lazy } from 'react'
+import { useState, useCallback, Suspense, lazy, memo } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 
@@ -111,48 +111,48 @@ interface AgentMarkdownProps {
   content: string
 }
 
-export function AgentMarkdown({ content }: AgentMarkdownProps) {
+const markdownComponents = {
+  code(props: React.ClassAttributes<HTMLElement> & React.HTMLAttributes<HTMLElement> & { children?: React.ReactNode }) {
+    const { className, children, ...rest } = props
+    const match = /language-(\w+)/.exec(className || '')
+    const isInline = !match && !className
+    if (isInline) {
+      return <code className={className} {...rest}>{children}</code>
+    }
+    return (
+      <CodeBlock language={match?.[1] || ''}>
+        {String(children).replace(/\n$/, '')}
+      </CodeBlock>
+    )
+  },
+  a(props: React.AnchorHTMLAttributes<HTMLAnchorElement> & { children?: React.ReactNode }) {
+    const { href, children } = props
+    return (
+      <a
+        href={href}
+        onClick={(e) => {
+          e.preventDefault()
+          if (href && (href.startsWith('http') || href.startsWith('mailto'))) {
+            window.aiGui?.openExternal(href)
+          }
+        }}
+        className="cursor-pointer"
+      >
+        {children}
+      </a>
+    )
+  }
+}
+
+export const AgentMarkdown = memo(function AgentMarkdown({ content }: AgentMarkdownProps) {
   return (
     <div className="prose-invert max-w-none text-sm text-content-secondary [&_a]:text-accent-text [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-border-default [&_blockquote]:pl-3 [&_blockquote]:italic [&_blockquote]:text-content-muted [&_code]:rounded [&_code]:bg-surface-overlay [&_code]:px-1 [&_code]:text-accent-text [&_h1]:mt-4 [&_h1]:text-lg [&_h1]:font-bold [&_h2]:mt-3 [&_h2]:text-base [&_h2]:font-bold [&_h3]:mt-2 [&_h3]:font-bold [&_hr]:border-border-default [&_li]:ml-4 [&_ol]:list-decimal [&_p]:my-1 [&_strong]:text-content-primary [&_table]:my-2 [&_td]:border [&_td]:border-border-default [&_td]:px-2 [&_td]:py-1 [&_th]:border [&_th]:border-border-default [&_th]:bg-surface-overlay [&_th]:px-2 [&_th]:py-1 [&_th]:font-medium [&_ul]:list-disc">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
-        components={{
-          code({ className, children, ...props }) {
-            const match = /language-(\w+)/.exec(className || '')
-            const isInline = !match && !className
-            if (isInline) {
-              return (
-                <code className={className} {...props}>
-                  {children}
-                </code>
-              )
-            }
-            return (
-              <CodeBlock language={match?.[1] || ''}>
-                {String(children).replace(/\n$/, '')}
-              </CodeBlock>
-            )
-          },
-          a({ href, children }) {
-            return (
-              <a
-                href={href}
-                onClick={(e) => {
-                  e.preventDefault()
-                  if (href && (href.startsWith('http') || href.startsWith('mailto'))) {
-                    window.aiGui?.openExternal(href)
-                  }
-                }}
-                className="cursor-pointer"
-              >
-                {children}
-              </a>
-            )
-          }
-        }}
+        components={markdownComponents}
       >
         {content}
       </ReactMarkdown>
     </div>
   )
-}
+})
