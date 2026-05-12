@@ -24,7 +24,8 @@ const COMMANDS: SlashCommand[] = [
   { key: 'usage', label: '/usage', description: '查看 token 用量', category: 'info' },
   { key: 'web', label: '/web', description: '搜索网页', category: 'tools' },
   { key: 'image', label: '/image', description: '生成图片', category: 'tools' },
-  { key: 'code', label: '/code', description: '执行代码', category: 'tools' }
+  { key: 'code', label: '/code', description: '执行代码', category: 'tools' },
+  { key: 'approve', label: '/approve', description: '发送测试审批请求到老板', category: 'agent' }
 ]
 
 interface SlashCommandMenuProps {

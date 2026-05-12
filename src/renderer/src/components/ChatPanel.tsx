@@ -208,6 +208,25 @@ export function ChatPanel() {
       case 'workflow': setView('workflow'); break
       case 'soul': setView('soul'); break
       case 'settings': setView('settings'); break
+      case 'approve': {
+        const rooms = useAppStore.getState().projectRooms
+        if (rooms.length === 0) {
+          addMessage({ id: `system-${Date.now()}`, role: 'system', content: '请先在 3D 视图添加项目组', timestamp: Date.now() })
+        } else {
+          const room = rooms[0]
+          const member = room.members[0]
+          useAppStore.getState().submitApproval({
+            fromMemberId: member.id,
+            fromMemberName: member.name,
+            fromProjectId: room.id,
+            fromProjectName: room.name,
+            title: '测试审批请求',
+            description: '这是一条测试审批，用于验证员工→老板的审批流程。批准后员工将返回岗位。'
+          })
+          addMessage({ id: `system-${Date.now()}`, role: 'system', content: `📋 ${member.name} 正在前往老板办公室提交审批...`, timestamp: Date.now() })
+        }
+        break
+      }
       default: addMessage({ id: `system-${Date.now()}`, role: 'system', content: `${cmd.label} — ${cmd.description}`, timestamp: Date.now() })
     }
     inputRef.current?.focus()

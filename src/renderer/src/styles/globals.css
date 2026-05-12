@@ -130,6 +130,15 @@ select option {
   animation: msg-in 0.2s ease-out both;
 }
 
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out both;
+}
+
 .typing-dot {
   display: inline-block;
   width: 6px;
