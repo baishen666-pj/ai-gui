@@ -11,6 +11,24 @@ export interface CanvasAgent {
   connections: string[]
 }
 
+export interface Profile {
+  id: string
+  name: string
+  soulPrompt: string
+  officeLayout: LayoutItem[]
+  activeProviderId: string
+  canvasAgents: CanvasAgent[]
+}
+
+const DEFAULT_PROFILE: Profile = {
+  id: 'default',
+  name: '默认',
+  soulPrompt: '',
+  officeLayout: DEFAULT_LAYOUT,
+  activeProviderId: 'zhipu',
+  canvasAgents: []
+}
+
 interface AppState {
   view: ViewMode
   messages: ChatMessage[]
@@ -21,6 +39,8 @@ interface AppState {
   reasoningContent: string
   officeLayout: LayoutItem[]
   soulPrompt: string
+  profiles: Profile[]
+  activeProfileId: string
 
   setView: (view: ViewMode) => void
   addMessage: (msg: ChatMessage) => void
@@ -34,6 +54,26 @@ interface AppState {
   appendReasoning: (text: string) => void
   clearReasoning: () => void
   clearMessages: () => void
+  switchProfile: (id: string) => void
+  createProfile: (name: string) => void
+  deleteProfile: (id: string) => void
+  renameProfile: (id: string, name: string) => void
+}
+
+function syncProfileToStore(state: AppState): Partial<AppState> {
+  const profile = state.profiles.find((p) => p.id === state.activeProfileId)
+  if (!profile) return {}
+  return {
+    soulPrompt: profile.soulPrompt,
+    officeLayout: profile.officeLayout,
+    canvasAgents: profile.canvasAgents
+  }
+}
+
+function updateActiveProfile(state: AppState, patch: Partial<Profile>): Profile[] {
+  return state.profiles.map((p) =>
+    p.id === state.activeProfileId ? { ...p, ...patch } : p
+  )
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -42,10 +82,12 @@ export const useAppStore = create<AppState>((set) => ({
   isLoading: false,
   toolProgress: null,
   sessionId: null,
-  canvasAgents: [],
+  canvasAgents: DEFAULT_PROFILE.canvasAgents,
   reasoningContent: '',
-  officeLayout: DEFAULT_LAYOUT,
-  soulPrompt: '',
+  officeLayout: DEFAULT_PROFILE.officeLayout,
+  soulPrompt: DEFAULT_PROFILE.soulPrompt,
+  profiles: [{ ...DEFAULT_PROFILE }],
+  activeProfileId: 'default',
 
   setView: (view) => set({ view }),
 
@@ -71,10 +113,84 @@ export const useAppStore = create<AppState>((set) => ({
   setLoading: (isLoading) => set({ isLoading }),
   setToolProgress: (toolProgress) => set({ toolProgress }),
   setSessionId: (sessionId) => set({ sessionId }),
-  setCanvasAgents: (canvasAgents) => set({ canvasAgents }),
-  setOfficeLayout: (officeLayout) => set({ officeLayout }),
-  setSoulPrompt: (soulPrompt) => set({ soulPrompt }),
+
+  setCanvasAgents: (canvasAgents) =>
+    set((s) => ({ canvasAgents, profiles: updateActiveProfile(s, { canvasAgents }) })),
+
+  setOfficeLayout: (officeLayout) =>
+    set((s) => ({ officeLayout, profiles: updateActiveProfile(s, { officeLayout }) })),
+
+  setSoulPrompt: (soulPrompt) =>
+    set((s) => ({ soulPrompt, profiles: updateActiveProfile(s, { soulPrompt }) })),
+
   appendReasoning: (text) => set((s) => ({ reasoningContent: s.reasoningContent + text })),
   clearReasoning: () => set({ reasoningContent: '' }),
-  clearMessages: () => set({ messages: [], isLoading: false, toolProgress: null, sessionId: null, reasoningContent: '' })
+  clearMessages: () => set({ messages: [], isLoading: false, toolProgress: null, sessionId: null, reasoningContent: '' }),
+
+  switchProfile: (id) =>
+    set((s) => {
+      const profile = s.profiles.find((p) => p.id === id)
+      if (!profile) return {}
+      return {
+        activeProfileId: id,
+        soulPrompt: profile.soulPrompt,
+        officeLayout: profile.officeLayout,
+        canvasAgents: profile.canvasAgents,
+        messages: [],
+        isLoading: false,
+        toolProgress: null,
+        sessionId: null,
+        reasoningContent: ''
+      }
+    }),
+
+  createProfile: (name) =>
+    set((s) => {
+      const id = `profile-${Date.now()}`
+      const newProfile: Profile = {
+        id,
+        name,
+        soulPrompt: '',
+        officeLayout: [...DEFAULT_LAYOUT],
+        activeProviderId: s.activeProfileId,
+        canvasAgents: []
+      }
+      return {
+        profiles: [...s.profiles, newProfile],
+        activeProfileId: id,
+        soulPrompt: newProfile.soulPrompt,
+        officeLayout: newProfile.officeLayout,
+        canvasAgents: newProfile.canvasAgents,
+        messages: [],
+        isLoading: false,
+        toolProgress: null,
+        sessionId: null,
+        reasoningContent: ''
+      }
+    }),
+
+  deleteProfile: (id) =>
+    set((s) => {
+      if (s.profiles.length <= 1) return {}
+      const profiles = s.profiles.filter((p) => p.id !== id)
+      if (s.activeProfileId !== id) return { profiles }
+      const first = profiles[0]
+      return {
+        profiles,
+        activeProfileId: first.id,
+        soulPrompt: first.soulPrompt,
+        officeLayout: first.officeLayout,
+        canvasAgents: first.canvasAgents,
+        messages: [],
+        isLoading: false,
+        toolProgress: null,
+        sessionId: null,
+        reasoningContent: ''
+      }
+    }),
+
+  renameProfile: (id, name) =>
+    set((s) => ({
+      profiles: s.profiles.map((p) => p.id === id ? { ...p, name } : p)
+    }))
 }))
