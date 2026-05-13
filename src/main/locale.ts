@@ -1,5 +1,5 @@
 import { join } from 'path'
-import { existsSync, readFileSync } from 'fs'
+import { readFileSync } from 'fs'
 import { safeWriteFile } from './utils'
 import type { AppLocale } from '../shared/i18n/types'
 
@@ -9,7 +9,7 @@ export function getLocale(): AppLocale {
   try {
     const raw = readFileSync(LOCALE_FILE, 'utf-8').trim() as AppLocale
     if (['zh-CN', 'en'].includes(raw)) return raw
-  } catch {}
+  } catch { /* noop */ }
   return 'zh-CN'
 }
 

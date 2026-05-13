@@ -1,3 +1,4 @@
+import { genId } from '../../lib/genId'
 import { useState, useCallback, useMemo } from 'react'
 import {
   ReactFlow,
@@ -50,7 +51,7 @@ export function LayoutEditor({ onSave, onCancel }: LayoutEditorProps) {
   )
 
   const handleAdd = useCallback((type: FurnitureType) => {
-    const id = `${type}-${Date.now()}`
+    const id = genId(type + '-')
     const newNode: Node = {
       id,
       type: 'layout',

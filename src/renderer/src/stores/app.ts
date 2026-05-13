@@ -1,86 +1,23 @@
-import { create } from 'zustand'
+import { useThemeStore } from './themeStore'
+import { useScheduleStore } from './scheduleStore'
+import { useWorkflowStore } from './workflowStore'
+import { useOfficeStore } from './officeStore'
+import { useChatStore } from './chatStore'
+import { useProfileStore } from './profileStore'
+
+export type { ThemeMode } from './themeStore'
+export type { ChatApprovalRequest } from './chatStore'
+export type { TeamRole, TeamMember, ProjectRoom, ApprovalRequest } from './officeStore'
+export type { CanvasAgent, Profile } from './profileStore'
+
+import type { ThemeMode } from './themeStore'
+import type { ChatApprovalRequest } from './chatStore'
+import type { TeamRole, TeamMember, ProjectRoom, ApprovalRequest } from './officeStore'
+import type { CanvasAgent, Profile } from './profileStore'
 import type { ChatMessage, ViewMode, ScheduleTask, Workflow, WorkflowNode, WorkflowEdge, WorkflowExecution, NodeExecutionStatus } from '../../../shared/types'
 import type { LayoutItem } from '../components/three/types'
-import { DEFAULT_LAYOUT } from '../components/three/constants'
-import type { DangerCategory } from '../lib/approvalDetection'
 
-export interface CanvasAgent {
-  id: string
-  label: string
-  role: string
-  model: string
-  color: string
-  position: { x: number; y: number }
-  connections: string[]
-  tools: string[]
-  status: 'idle' | 'running' | 'error' | 'success'
-}
-
-export type TeamRole = 'boss' | 'pm' | 'developer' | 'designer' | 'tester' | 'worker'
-
-export interface TeamMember {
-  id: string
-  name: string
-  role: TeamRole
-  color: string
-  activity: 'idle' | 'working' | 'meeting' | 'walking' | 'submitting'
-}
-
-export interface ProjectRoom {
-  id: string
-  name: string
-  members: TeamMember[]
-  floor: number
-  position: { x: number; z: number }
-}
-
-export interface ApprovalRequest {
-  id: string
-  fromMemberId: string
-  fromMemberName: string
-  fromProjectId: string
-  fromProjectName: string
-  title: string
-  description: string
-  context?: string
-  status: 'pending' | 'approved' | 'rejected'
-  createdAt: number
-  respondedAt?: number
-}
-
-export interface ChatApprovalRequest {
-  id: string
-  messageId: string
-  content: string
-  category: DangerCategory
-  summary: string
-  confidence: 'high' | 'medium'
-  matchedPattern: string | null
-  status: 'pending' | 'approved' | 'rejected'
-  createdAt: number
-}
-
-export type ThemeMode = 'dark' | 'light' | 'cyberpunk'
-
-export interface Profile {
-  id: string
-  name: string
-  soulPrompt: string
-  officeLayout: LayoutItem[]
-  activeProviderId: string
-  canvasAgents: CanvasAgent[]
-}
-
-const DEFAULT_PROFILE: Profile = {
-  id: 'default',
-  name: '默认',
-  soulPrompt: '',
-  officeLayout: DEFAULT_LAYOUT,
-  activeProviderId: 'zhipu',
-  canvasAgents: []
-}
-
-interface AppState {
+export interface AppState {
   theme: ThemeMode
   view: ViewMode
   messages: ChatMessage[]
@@ -145,362 +82,195 @@ interface AppState {
   notify: (title: string, body: string) => void
 }
 
-function syncProfileToStore(state: AppState): Partial<AppState> {
-  const profile = state.profiles.find((p) => p.id === state.activeProfileId)
-  if (!profile) return {}
+function getCombinedState(): AppState {
+  const theme = useThemeStore.getState()
+  const chat = useChatStore.getState()
+  const profile = useProfileStore.getState()
+  const schedule = useScheduleStore.getState()
+  const workflow = useWorkflowStore.getState()
+  const office = useOfficeStore.getState()
+
   return {
-    soulPrompt: profile.soulPrompt,
+    theme: theme.theme,
+    view: chat.view,
+    messages: chat.messages,
+    isLoading: chat.isLoading,
+    toolProgress: chat.toolProgress,
+    sessionId: chat.sessionId,
+    canvasAgents: profile.canvasAgents,
+    reasoningContent: chat.reasoningContent,
     officeLayout: profile.officeLayout,
-    canvasAgents: profile.canvasAgents
+    soulPrompt: profile.soulPrompt,
+    profiles: profile.profiles,
+    activeProfileId: profile.activeProfileId,
+    scheduledTasks: schedule.scheduledTasks,
+    workflows: workflow.workflows,
+    activeWorkflowId: workflow.activeWorkflowId,
+    workflowExecution: workflow.workflowExecution,
+    isAiConfigMode: chat.isAiConfigMode,
+    projectRooms: office.projectRooms,
+    approvalRequests: office.approvalRequests,
+    chatApproval: chat.chatApproval,
+
+    setView: chat.setView,
+    addMessage: chat.addMessage,
+    appendToLastAgent: chat.appendToLastAgent,
+    setLoading: chat.setLoading,
+    setToolProgress: chat.setToolProgress,
+    setSessionId: chat.setSessionId,
+    setCanvasAgents: profile.setCanvasAgents,
+    setOfficeLayout: profile.setOfficeLayout,
+    setSoulPrompt: profile.setSoulPrompt,
+    appendReasoning: chat.appendReasoning,
+    clearReasoning: chat.clearReasoning,
+    clearMessages: chat.clearMessages,
+    switchProfile: profile.switchProfile,
+    createProfile: profile.createProfile,
+    deleteProfile: profile.deleteProfile,
+    renameProfile: profile.renameProfile,
+    addScheduledTask: schedule.addScheduledTask,
+    updateScheduledTask: schedule.updateScheduledTask,
+    deleteScheduledTask: schedule.deleteScheduledTask,
+    tickScheduledTask: schedule.tickScheduledTask,
+    createWorkflow: workflow.createWorkflow,
+    updateWorkflow: workflow.updateWorkflow,
+    deleteWorkflow: workflow.deleteWorkflow,
+    setActiveWorkflow: workflow.setActiveWorkflow,
+    updateWorkflowNodes: workflow.updateWorkflowNodes,
+    updateWorkflowEdges: workflow.updateWorkflowEdges,
+    startWorkflowExecution: workflow.startWorkflowExecution,
+    updateNodeExecution: workflow.updateNodeExecution,
+    completeWorkflowExecution: workflow.completeWorkflowExecution,
+    setTheme: theme.setTheme,
+    setAiConfigMode: chat.setAiConfigMode,
+    addProjectRoom: office.addProjectRoom,
+    removeProjectRoom: office.removeProjectRoom,
+    addTeamMember: office.addTeamMember,
+    removeTeamMember: office.removeTeamMember,
+    updateMemberActivity: office.updateMemberActivity,
+    submitApproval: office.submitApproval,
+    respondApproval: office.respondApproval,
+    submitChatApproval: chat.submitChatApproval,
+    respondChatApproval: chat.respondChatApproval,
+    notify: office.notify
   }
 }
 
-function updateActiveProfile(state: AppState, patch: Partial<Profile>): Profile[] {
-  return state.profiles.map((p) =>
-    p.id === state.activeProfileId ? { ...p, ...patch } : p
-  )
-}
-
-function loadTheme(): ThemeMode {
-  if (typeof window === 'undefined') return 'dark'
-  return (localStorage.getItem('ai-gui-theme') as ThemeMode) || 'dark'
-}
-
-function applyTheme(theme: ThemeMode) {
-  document.documentElement.dataset.theme = theme
-  localStorage.setItem('ai-gui-theme', theme)
-}
-
-export const useAppStore = create<AppState>((set) => ({
-  theme: loadTheme(),
-  view: 'chat',
-  messages: [],
-  isLoading: false,
-  toolProgress: null,
-  sessionId: null,
-  canvasAgents: DEFAULT_PROFILE.canvasAgents,
-  reasoningContent: '',
-  officeLayout: DEFAULT_PROFILE.officeLayout,
-  soulPrompt: DEFAULT_PROFILE.soulPrompt,
-  profiles: [{ ...DEFAULT_PROFILE }],
-  activeProfileId: 'default',
-  scheduledTasks: [],
-  workflows: [],
-  activeWorkflowId: null,
-  workflowExecution: null,
-  isAiConfigMode: false,
-  projectRooms: [],
-  approvalRequests: [],
-  chatApproval: null,
-
-  setView: (view) => set({ view }),
-
-  addMessage: (msg) =>
-    set((s) => ({ messages: [...s.messages, msg] })),
-
-  appendToLastAgent: (chunk) =>
-    set((s) => {
-      const msgs = [...s.messages]
-      const last = msgs[msgs.length - 1]
-      if (last?.role === 'agent') {
-        msgs[msgs.length - 1] = { ...last, content: last.content + chunk }
-        return { messages: msgs }
-      }
-      return {
-        messages: [
-          ...msgs,
-          { id: `agent-${Date.now()}`, role: 'agent', content: chunk, timestamp: Date.now() }
-        ]
-      }
-    }),
-
-  setLoading: (isLoading) => set({ isLoading }),
-  setToolProgress: (toolProgress) => set({ toolProgress }),
-  setSessionId: (sessionId) => set({ sessionId }),
-
-  setCanvasAgents: (canvasAgents) =>
-    set((s) => ({ canvasAgents, profiles: updateActiveProfile(s, { canvasAgents }) })),
-
-  setOfficeLayout: (officeLayout) =>
-    set((s) => ({ officeLayout, profiles: updateActiveProfile(s, { officeLayout }) })),
-
-  setSoulPrompt: (soulPrompt) =>
-    set((s) => ({ soulPrompt, profiles: updateActiveProfile(s, { soulPrompt }) })),
-
-  appendReasoning: (text) => set((s) => ({ reasoningContent: s.reasoningContent + text })),
-  clearReasoning: () => set({ reasoningContent: '' }),
-  clearMessages: () => set({ messages: [], isLoading: false, toolProgress: null, sessionId: null, reasoningContent: '', chatApproval: null }),
-
-  switchProfile: (id) =>
-    set((s) => {
-      const profile = s.profiles.find((p) => p.id === id)
-      if (!profile) return {}
-      return {
-        activeProfileId: id,
-        soulPrompt: profile.soulPrompt,
-        officeLayout: profile.officeLayout,
-        canvasAgents: profile.canvasAgents,
-        messages: [],
-        isLoading: false,
-        toolProgress: null,
-        sessionId: null,
-        reasoningContent: ''
-      }
-    }),
-
-  createProfile: (name) =>
-    set((s) => {
-      const id = `profile-${Date.now()}`
-      const newProfile: Profile = {
-        id,
-        name,
-        soulPrompt: '',
-        officeLayout: [...DEFAULT_LAYOUT],
-        activeProviderId: s.activeProfileId,
-        canvasAgents: []
-      }
-      return {
-        profiles: [...s.profiles, newProfile],
-        activeProfileId: id,
-        soulPrompt: newProfile.soulPrompt,
-        officeLayout: newProfile.officeLayout,
-        canvasAgents: newProfile.canvasAgents,
-        messages: [],
-        isLoading: false,
-        toolProgress: null,
-        sessionId: null,
-        reasoningContent: ''
-      }
-    }),
-
-  deleteProfile: (id) =>
-    set((s) => {
-      if (s.profiles.length <= 1) return {}
-      const profiles = s.profiles.filter((p) => p.id !== id)
-      if (s.activeProfileId !== id) return { profiles }
-      const first = profiles[0]
-      return {
-        profiles,
-        activeProfileId: first.id,
-        soulPrompt: first.soulPrompt,
-        officeLayout: first.officeLayout,
-        canvasAgents: first.canvasAgents,
-        messages: [],
-        isLoading: false,
-        toolProgress: null,
-        sessionId: null,
-        reasoningContent: ''
-      }
-    }),
-
-  renameProfile: (id, name) =>
-    set((s) => ({
-      profiles: s.profiles.map((p) => p.id === id ? { ...p, name } : p)
-    })),
-
-  addScheduledTask: (task) =>
-    set((s) => ({ scheduledTasks: [...s.scheduledTasks, task] })),
-
-  updateScheduledTask: (id, patch) =>
-    set((s) => ({
-      scheduledTasks: s.scheduledTasks.map((t) =>
-        t.id === id ? { ...t, ...patch } : t
-      )
-    })),
-
-  deleteScheduledTask: (id) =>
-    set((s) => ({
-      scheduledTasks: s.scheduledTasks.filter((t) => t.id !== id)
-    })),
-
-  tickScheduledTask: (id) =>
-    set((s) => ({
-      scheduledTasks: s.scheduledTasks.map((t) =>
-        t.id === id
-          ? {
-              ...t,
-              lastRunAt: Date.now(),
-              nextRunAt: Date.now() + t.intervalSeconds * 1000,
-              runCount: t.runCount + 1
-            }
-          : t
-      )
-    })),
-
-  createWorkflow: (name) => {
-    const id = `wf-${Date.now()}`
-    const now = Date.now()
-    const startNode: WorkflowNode = {
-      id: 'start-1',
-      type: 'start',
-      position: { x: 250, y: 50 },
-      data: { label: '开始' }
-    }
-    const workflow: Workflow = { id, name, description: '', nodes: [startNode], edges: [], createdAt: now, updatedAt: now }
-    set((s) => ({ workflows: [...s.workflows, workflow], activeWorkflowId: id }))
-    return id
-  },
-
-  updateWorkflow: (id, patch) =>
-    set((s) => ({
-      workflows: s.workflows.map((w) =>
-        w.id === id ? { ...w, ...patch, updatedAt: Date.now() } : w
-      )
-    })),
-
-  deleteWorkflow: (id) =>
-    set((s) => ({
-      workflows: s.workflows.filter((w) => w.id !== id),
-      activeWorkflowId: s.activeWorkflowId === id ? null : s.activeWorkflowId
-    })),
-
-  setActiveWorkflow: (id) => set({ activeWorkflowId: id }),
-
-  updateWorkflowNodes: (id, nodes) =>
-    set((s) => ({
-      workflows: s.workflows.map((w) =>
-        w.id === id ? { ...w, nodes, updatedAt: Date.now() } : w
-      )
-    })),
-
-  updateWorkflowEdges: (id, edges) =>
-    set((s) => ({
-      workflows: s.workflows.map((w) =>
-        w.id === id ? { ...w, edges, updatedAt: Date.now() } : w
-      )
-    })),
-
-  startWorkflowExecution: (workflowId) => {
-    const execution: WorkflowExecution = {
-      id: `exec-${Date.now()}`,
-      workflowId,
-      startedAt: Date.now(),
-      completedAt: null,
-      nodeStatuses: {},
-      nodeOutputs: {},
-      status: 'running'
-    }
-    set({ workflowExecution: execution })
-  },
-
-  updateNodeExecution: (nodeId, status, output) =>
-    set((s) => {
-      if (!s.workflowExecution) return {}
-      return {
-        workflowExecution: {
-          ...s.workflowExecution,
-          nodeStatuses: { ...s.workflowExecution.nodeStatuses, [nodeId]: status },
-          nodeOutputs: output !== undefined
-            ? { ...s.workflowExecution.nodeOutputs, [nodeId]: output }
-            : s.workflowExecution.nodeOutputs
-        }
-      }
-    }),
-
-  completeWorkflowExecution: (status) =>
-    set((s) => {
-      if (!s.workflowExecution) return {}
-      return {
-        workflowExecution: {
-          ...s.workflowExecution,
-          status,
-          completedAt: Date.now()
-        }
-      }
-    }),
-
-  setTheme: (theme) => {
-    applyTheme(theme)
-    set({ theme })
-  },
-
-  setAiConfigMode: (mode) => set({ isAiConfigMode: mode }),
-
-  addProjectRoom: (name) => set((s) => {
-    const id = `room-${Date.now()}`
-    const floor = Math.floor(s.projectRooms.length / 2)
-    const col = s.projectRooms.length % 2
-    const room: ProjectRoom = {
-      id,
-      name,
-      members: [
-        { id: `${id}-pm`, name: `${name}经理`, role: 'pm', color: '#F59E0B', activity: 'working' },
-        { id: `${id}-dev1`, name: '开发', role: 'developer', color: '#10B981', activity: 'working' },
-        { id: `${id}-dev2`, name: '开发', role: 'developer', color: '#10B981', activity: 'working' },
-        { id: `${id}-design`, name: '设计', role: 'designer', color: '#EC4899', activity: 'working' },
-        { id: `${id}-qa`, name: '测试', role: 'tester', color: '#3B82F6', activity: 'working' }
-      ],
-      floor,
-      position: { x: col * 12 - 6, z: floor * 16 }
-    }
-    return { projectRooms: [...s.projectRooms, room] }
-  }),
-
-  removeProjectRoom: (id) => set((s) => ({
-    projectRooms: s.projectRooms.filter((r) => r.id !== id)
-  })),
-
-  addTeamMember: (roomId, role, name) => set((s) => ({
-    projectRooms: s.projectRooms.map((r) =>
-      r.id === roomId
-        ? { ...r, members: [...r.members, { id: `m-${Date.now()}`, name, role, color: '#8B5CF6', activity: 'idle' as const }] }
-        : r
-    )
-  })),
-
-  removeTeamMember: (roomId, memberId) => set((s) => ({
-    projectRooms: s.projectRooms.map((r) =>
-      r.id === roomId
-        ? { ...r, members: r.members.filter((m) => m.id !== memberId) }
-        : r
-    )
-  })),
-
-  updateMemberActivity: (roomId, memberId, activity) => set((s) => ({
-    projectRooms: s.projectRooms.map((r) =>
-      r.id === roomId
-        ? { ...r, members: r.members.map((m) => m.id === memberId ? { ...m, activity } : m) }
-        : r
-    )
-  })),
-
-  submitApproval: (req) => set((s) => ({
-    approvalRequests: [...s.approvalRequests, {
-      ...req,
-      id: `approval-${Date.now()}`,
-      status: 'pending' as const,
-      createdAt: Date.now()
-    }]
-  })),
-
-  respondApproval: (id, approved) => set((s) => ({
-    approvalRequests: s.approvalRequests.map((r) =>
-      r.id === id ? { ...r, status: approved ? 'approved' as const : 'rejected' as const, respondedAt: Date.now() } : r
-    )
-  })),
-
-  submitChatApproval: (req) => set({
-    chatApproval: {
-      ...req,
-      id: `chat-approval-${Date.now()}`,
-      status: 'pending' as const,
-      createdAt: Date.now()
-    }
-  }),
-
-  respondChatApproval: (approved) => set((s) => {
-    if (!s.chatApproval) return {}
-    return {
-      chatApproval: {
-        ...s.chatApproval,
-        status: approved ? 'approved' as const : 'rejected' as const
-      }
-    }
-  }),
-
-  notify: (title, body) => {
-    if (window.aiGui?.sendNotification) {
-      window.aiGui.sendNotification({ title, body }).catch(() => {})
-    }
+function routeSetState(patch: Partial<AppState>): void {
+  if (patch.scheduledTasks !== undefined) {
+    useScheduleStore.setState({ scheduledTasks: patch.scheduledTasks })
   }
-}))
+  if (patch.workflows !== undefined) {
+    useWorkflowStore.setState({ workflows: patch.workflows })
+  }
+  if (patch.chatApproval !== undefined) {
+    useChatStore.setState({ chatApproval: patch.chatApproval })
+  }
+  if (patch.messages !== undefined) {
+    useChatStore.setState({ messages: patch.messages })
+  }
+}
+
+export interface UseAppStore {
+  <T = AppState>(selector?: (state: AppState) => T): T
+  getState: () => AppState
+  setState: (partial: Partial<AppState>) => void
+}
+
+export const useAppStore: UseAppStore = function useAppStore<T = AppState>(
+  selector?: (state: AppState) => T
+): T {
+  const theme = useThemeStore((s) => s.theme)
+  const chatView = useChatStore((s) => s.view)
+  const chatMessages = useChatStore((s) => s.messages)
+  const chatLoading = useChatStore((s) => s.isLoading)
+  const chatToolProgress = useChatStore((s) => s.toolProgress)
+  const chatSessionId = useChatStore((s) => s.sessionId)
+  const chatReasoning = useChatStore((s) => s.reasoningContent)
+  const chatAiConfigMode = useChatStore((s) => s.isAiConfigMode)
+  const chatApproval = useChatStore((s) => s.chatApproval)
+  const profileCanvasAgents = useProfileStore((s) => s.canvasAgents)
+  const profileOfficeLayout = useProfileStore((s) => s.officeLayout)
+  const profileSoulPrompt = useProfileStore((s) => s.soulPrompt)
+  const profileProfiles = useProfileStore((s) => s.profiles)
+  const profileActiveId = useProfileStore((s) => s.activeProfileId)
+  const scheduleTasks = useScheduleStore((s) => s.scheduledTasks)
+  const wfWorkflows = useWorkflowStore((s) => s.workflows)
+  const wfActiveId = useWorkflowStore((s) => s.activeWorkflowId)
+  const wfExecution = useWorkflowStore((s) => s.workflowExecution)
+  const officeRooms = useOfficeStore((s) => s.projectRooms)
+  const officeApprovals = useOfficeStore((s) => s.approvalRequests)
+
+  const state: AppState = {
+    theme,
+    view: chatView,
+    messages: chatMessages,
+    isLoading: chatLoading,
+    toolProgress: chatToolProgress,
+    sessionId: chatSessionId,
+    canvasAgents: profileCanvasAgents,
+    reasoningContent: chatReasoning,
+    officeLayout: profileOfficeLayout,
+    soulPrompt: profileSoulPrompt,
+    profiles: profileProfiles,
+    activeProfileId: profileActiveId,
+    scheduledTasks: scheduleTasks,
+    workflows: wfWorkflows,
+    activeWorkflowId: wfActiveId,
+    workflowExecution: wfExecution,
+    isAiConfigMode: chatAiConfigMode,
+    projectRooms: officeRooms,
+    approvalRequests: officeApprovals,
+    chatApproval: chatApproval,
+
+    setView: useChatStore.getState().setView,
+    addMessage: useChatStore.getState().addMessage,
+    appendToLastAgent: useChatStore.getState().appendToLastAgent,
+    setLoading: useChatStore.getState().setLoading,
+    setToolProgress: useChatStore.getState().setToolProgress,
+    setSessionId: useChatStore.getState().setSessionId,
+    setCanvasAgents: useProfileStore.getState().setCanvasAgents,
+    setOfficeLayout: useProfileStore.getState().setOfficeLayout,
+    setSoulPrompt: useProfileStore.getState().setSoulPrompt,
+    appendReasoning: useChatStore.getState().appendReasoning,
+    clearReasoning: useChatStore.getState().clearReasoning,
+    clearMessages: useChatStore.getState().clearMessages,
+    switchProfile: useProfileStore.getState().switchProfile,
+    createProfile: useProfileStore.getState().createProfile,
+    deleteProfile: useProfileStore.getState().deleteProfile,
+    renameProfile: useProfileStore.getState().renameProfile,
+    addScheduledTask: useScheduleStore.getState().addScheduledTask,
+    updateScheduledTask: useScheduleStore.getState().updateScheduledTask,
+    deleteScheduledTask: useScheduleStore.getState().deleteScheduledTask,
+    tickScheduledTask: useScheduleStore.getState().tickScheduledTask,
+    createWorkflow: useWorkflowStore.getState().createWorkflow,
+    updateWorkflow: useWorkflowStore.getState().updateWorkflow,
+    deleteWorkflow: useWorkflowStore.getState().deleteWorkflow,
+    setActiveWorkflow: useWorkflowStore.getState().setActiveWorkflow,
+    updateWorkflowNodes: useWorkflowStore.getState().updateWorkflowNodes,
+    updateWorkflowEdges: useWorkflowStore.getState().updateWorkflowEdges,
+    startWorkflowExecution: useWorkflowStore.getState().startWorkflowExecution,
+    updateNodeExecution: useWorkflowStore.getState().updateNodeExecution,
+    completeWorkflowExecution: useWorkflowStore.getState().completeWorkflowExecution,
+    setTheme: useThemeStore.getState().setTheme,
+    setAiConfigMode: useChatStore.getState().setAiConfigMode,
+    addProjectRoom: useOfficeStore.getState().addProjectRoom,
+    removeProjectRoom: useOfficeStore.getState().removeProjectRoom,
+    addTeamMember: useOfficeStore.getState().addTeamMember,
+    removeTeamMember: useOfficeStore.getState().removeTeamMember,
+    updateMemberActivity: useOfficeStore.getState().updateMemberActivity,
+    submitApproval: useOfficeStore.getState().submitApproval,
+    respondApproval: useOfficeStore.getState().respondApproval,
+    submitChatApproval: useChatStore.getState().submitChatApproval,
+    respondChatApproval: useChatStore.getState().respondChatApproval,
+    notify: useOfficeStore.getState().notify
+  }
+
+  if (selector) {
+    return selector(state)
+  }
+  return state as T
+} as UseAppStore
+
+useAppStore.getState = getCombinedState
+useAppStore.setState = routeSetState

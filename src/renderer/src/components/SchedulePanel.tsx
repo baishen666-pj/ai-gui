@@ -1,3 +1,4 @@
+import { genId } from '../lib/genId'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useAppStore } from '../stores/app'
 import type { ScheduleTask } from '../../../shared/types'
@@ -30,6 +31,13 @@ export function SchedulePanel() {
   const [customInterval, setCustomInterval] = useState(false)
   const [customSeconds, setCustomSeconds] = useState(60)
   const timersRef = useRef<Map<string, ReturnType<typeof setInterval>>>(new Map())
+  const [, setTick] = useState(0)
+
+  // Tick every 10s to update countdowns
+  useEffect(() => {
+    const id = setInterval(() => setTick((t) => t + 1), 10000)
+    return () => clearInterval(id)
+  }, [])
 
   const activeCount = scheduledTasks.filter((t) => t.enabled).length
 
@@ -93,7 +101,7 @@ export function SchedulePanel() {
 
     window.aiGui.chatSend({ messages }).catch(() => {
       store.addMessage({
-        id: `error-${Date.now()}`, role: 'error',
+        id: genId('error-'), role: 'error',
         content: `定时任务「${task.name}」执行失败`,
         timestamp: Date.now()
       })
@@ -101,7 +109,7 @@ export function SchedulePanel() {
     })
 
     store.addMessage({
-      id: `system-${Date.now()}`, role: 'system',
+      id: genId('system-'), role: 'system',
       content: `⏰ 定时任务「${task.name}」已触发`,
       timestamp: Date.now()
     })
@@ -223,7 +231,7 @@ export function SchedulePanel() {
             countdown={getNextCountdown(task)}
             onToggle={() => toggleEnabled(task)}
             onEdit={() => startEdit(task)}
-            onDelete={() => deleteScheduledTask(task.id)}
+            onDelete={() => { if (confirm(`确定删除任务「${task.name}」？`)) deleteScheduledTask(task.id) }}
             onRunNow={() => runNow(task)}
             formatTime={formatTime}
             formatInterval={formatInterval}

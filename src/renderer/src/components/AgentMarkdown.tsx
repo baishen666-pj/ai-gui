@@ -38,7 +38,7 @@ function CodeBlock({ language, children }: CodeBlockProps) {
     })
   }, [children])
 
-  const handleRun = useCallback(() => {
+  const handleRun = useCallback(async () => {
     const lang = language.toLowerCase()
     setRunning(true)
     setOutput(null)
@@ -47,16 +47,16 @@ function CodeBlock({ language, children }: CodeBlockProps) {
       if (window.aiGui) {
         window.aiGui.chatSend({
           messages: [
-            { role: 'system', content: 'Execute this Python code and return ONLY the output. If there is an error, return the error message prefixed with "Error:".' },
+            { role: 'system', content: '执行以下 Python 代码，只返回输出结果。如有错误，返回以"错误:"开头的错误信息。' },
             { role: 'user', content: `\`\`\`python\n${children}\n\`\`\`` }
           ]
-        }).catch(() => { setRunning(false); setOutput('Error: request failed') })
+        }).catch(() => { setRunning(false); setOutput('错误: 请求失败') })
         let buf = ''
         let cleaned = false
         const cleanup = () => { if (cleaned) return; cleaned = true; unsubChunk(); unsubDone(); unsubErr(); setRunning(false) }
         const unsubChunk = window.aiGui.onChatChunk((chunk: string) => { if (!cleaned) { buf += chunk; setOutput(buf) } })
         const unsubDone = window.aiGui.onChatDone(cleanup)
-        const unsubErr = window.aiGui.onChatError((msg: string) => { if (!cleaned) { setOutput(`Error: ${msg}`) } cleanup() })
+        const unsubErr = window.aiGui.onChatError((msg: string) => { if (!cleaned) { setOutput(`错误: ${msg}`) } cleanup() })
       }
       return
     }
@@ -64,27 +64,20 @@ function CodeBlock({ language, children }: CodeBlockProps) {
     // JS/TS/Bash — execute locally via eval (sandboxed) or shell
     if (lang === 'bash' || lang === 'sh' || lang === 'shell') {
       if (window.aiGui?.runShell) {
-        window.aiGui.runShell(children).then((result: string) => { setOutput(result); setRunning(false) }).catch((e: Error) => { setOutput(`Error: ${e.message}`); setRunning(false) })
+        window.aiGui.runShell(children).then((result: string) => { setOutput(result); setRunning(false) }).catch((e: Error) => { setOutput(`错误: ${e.message}`); setRunning(false) })
       } else {
-        setOutput('Shell execution not available in browser mode')
+        setOutput('Shell 执行仅在桌面端可用')
         setRunning(false)
       }
       return
     }
 
-    // JavaScript / TypeScript — eval in sandbox
+    // JS/TS — route through IPC shell for safety (no eval in renderer)
     try {
-      const logs: string[] = []
-      const fakeConsole = { log: (...args: unknown[]) => logs.push(args.map(String).join(' ')), error: (...args: unknown[]) => logs.push('Error: ' + args.map(String).join(' ')), warn: (...args: unknown[]) => logs.push('Warn: ' + args.map(String).join(' ')) }
-      const code = lang === 'typescript' || lang === 'ts'
-        ? children.replace(/:\s+(\w+)(\[\])?/g, '').replace(/:\s+\w+/g, '').replace(/interface\s+\w+\s*\{[^}]*\}/g, '').replace(/<\w+>/g, '')
-        : children
-      const fn = new Function('console', code)
-      const result = fn(fakeConsole)
-      const out = logs.join('\n') + (result !== undefined ? (logs.length ? '\n→ ' : '→ ') + String(result) : '')
-      setOutput(out || '(no output)')
+      const result = await window.aiGui.runShell(`node -e "${children.replace(/"/g, '\\"').replace(/`/g, '\\`')}"`)
+      setOutput(result || '（无输出）')
     } catch (e) {
-      setOutput(`Error: ${(e as Error).message}`)
+      setOutput(`错误: ${(e as Error).message}`)
     }
     setRunning(false)
   }, [language, children])
@@ -106,7 +99,7 @@ function CodeBlock({ language, children }: CodeBlockProps) {
   return (
     <div className="group relative my-2 overflow-hidden rounded-lg border border-border-default">
       <div className="flex items-center justify-between bg-surface-overlay px-3 py-1 text-xs text-content-muted">
-        <span>{language || 'code'}</span>
+        <span>{language || '代码'}</span>
         <div className="flex items-center gap-1">
           {canRun && (
             <button

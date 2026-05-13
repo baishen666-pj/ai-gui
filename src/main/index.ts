@@ -1,6 +1,6 @@
-import { app, BrowserWindow, ipcMain, shell, Notification, dialog } from 'electron'
+import { app, BrowserWindow, Menu, ipcMain, shell, Notification, dialog } from 'electron'
 import { execFile } from 'child_process'
-import { join, resolve } from 'path'
+import { join } from 'path'
 import { writeFile } from 'fs/promises'
 
 import { enableGpuFlags } from './gpu'
@@ -49,6 +49,7 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
+  setupMenu()
   registerIpcHandlers()
   createWindow()
 
@@ -56,6 +57,72 @@ app.whenReady().then(() => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
 })
+
+function setupMenu(): void {
+  const isMac = process.platform === 'darwin'
+
+  const template: Electron.MenuItemConstructorOptions[] = [
+    {
+      label: '文件',
+      submenu: [
+        { label: '新对话', accelerator: 'CmdOrCtrl+N', click: () => mainWindow?.webContents.send('menu-new-chat') },
+        { type: 'separator' },
+        { label: '导出对话', accelerator: 'CmdOrCtrl+S', click: () => mainWindow?.webContents.send('menu-export') },
+        { type: 'separator' },
+        isMac ? { label: '关闭窗口', role: 'close' } : { label: '退出', role: 'quit', accelerator: 'CmdOrCtrl+Q' },
+      ].filter(Boolean) as Electron.MenuItemConstructorOptions[],
+    },
+    {
+      label: '编辑',
+      submenu: [
+        { label: '撤销', role: 'undo' },
+        { label: '重做', role: 'redo' },
+        { type: 'separator' },
+        { label: '剪切', role: 'cut' },
+        { label: '复制', role: 'copy' },
+        { label: '粘贴', role: 'paste' },
+        { label: '全选', role: 'selectAll' },
+      ],
+    },
+    {
+      label: '视图',
+      submenu: [
+        { label: '聊天', accelerator: 'CmdOrCtrl+1', click: () => mainWindow?.webContents.send('menu-nav', 'chat') },
+        { label: 'Agent 画布', accelerator: 'CmdOrCtrl+2', click: () => mainWindow?.webContents.send('menu-nav', 'canvas') },
+        { label: '办公室', accelerator: 'CmdOrCtrl+3', click: () => mainWindow?.webContents.send('menu-nav', '3d') },
+        { label: '工作流', accelerator: 'CmdOrCtrl+4', click: () => mainWindow?.webContents.send('menu-nav', 'workflow') },
+        { type: 'separator' },
+        { label: '放大', role: 'zoomIn' },
+        { label: '缩小', role: 'zoomOut' },
+        { label: '重置缩放', role: 'resetZoom' },
+        { type: 'separator' },
+        { label: '全屏', role: 'togglefullscreen' },
+        { type: 'separator' },
+        { label: '开发者工具', role: 'toggleDevTools' },
+      ],
+    },
+    {
+      label: '窗口',
+      submenu: [
+        { label: '最小化', role: 'minimize' },
+        { label: '缩放', role: 'zoom' },
+        ...(isMac ? [
+          { type: 'separator' as const },
+          { label: '前置所有窗口', role: 'front' as const },
+        ] : []),
+      ],
+    },
+    {
+      label: '帮助',
+      submenu: [
+        { label: '关于 AI GUI', click: () => mainWindow?.webContents.send('menu-about') },
+        { label: '快捷键', accelerator: 'CmdOrCtrl+/', click: () => mainWindow?.webContents.send('menu-shortcuts') },
+      ],
+    },
+  ]
+
+  Menu.setApplicationMenu(Menu.buildFromTemplate(template))
+}
 
 app.on('window-all-closed', () => {
   app.quit()
@@ -131,14 +198,35 @@ function registerIpcHandlers(): void {
   })
 
   // Sessions
-  ipcMain.handle('sessions-list', (_e, limit?: number) => sessions.listSessions(limit))
-  ipcMain.handle('sessions-get-messages', (_e, sessionId: string) => sessions.getSessionMessages(sessionId))
-  ipcMain.handle('sessions-create', (_e, id: string, model?: string) => sessions.createSession(id, model))
-  ipcMain.handle('sessions-end', (_e, id: string) => sessions.endSession(id))
-  ipcMain.handle('sessions-update-title', (_e, id: string, title: string) => sessions.updateSessionTitle(id, title))
-  ipcMain.handle('sessions-delete', (_e, id: string) => sessions.deleteSession(id))
-  ipcMain.handle('sessions-insert-message', (_e, msg) => sessions.insertMessage(msg))
-  ipcMain.handle('sessions-search', (_e, query: string, limit?: number) => sessions.searchSessions(query, limit))
+  ipcMain.handle('sessions-list', (_e, limit?: number) => sessions.listSessions(Math.min(limit ?? 50, 200)))
+  ipcMain.handle('sessions-get-messages', (_e, sessionId: string) => {
+    if (typeof sessionId !== 'string' || !sessionId) throw new Error('Invalid sessionId')
+    return sessions.getSessionMessages(sessionId)
+  })
+  ipcMain.handle('sessions-create', (_e, id: string, model?: string) => {
+    if (typeof id !== 'string' || !id) throw new Error('Invalid session id')
+    return sessions.createSession(id, model)
+  })
+  ipcMain.handle('sessions-end', (_e, id: string) => {
+    if (typeof id !== 'string' || !id) throw new Error('Invalid session id')
+    return sessions.endSession(id)
+  })
+  ipcMain.handle('sessions-update-title', (_e, id: string, title: string) => {
+    if (typeof id !== 'string' || !id) throw new Error('Invalid session id')
+    return sessions.updateSessionTitle(id, String(title).slice(0, 200))
+  })
+  ipcMain.handle('sessions-delete', (_e, id: string) => {
+    if (typeof id !== 'string' || !id) throw new Error('Invalid session id')
+    return sessions.deleteSession(id)
+  })
+  ipcMain.handle('sessions-insert-message', (_e, msg) => {
+    if (!msg || typeof msg.id !== 'string' || typeof msg.role !== 'string') throw new Error('Invalid message')
+    return sessions.insertMessage(msg)
+  })
+  ipcMain.handle('sessions-search', (_e, query: string, limit?: number) => {
+    if (typeof query !== 'string') throw new Error('Invalid query')
+    return sessions.searchSessions(query, Math.min(limit ?? 20, 100))
+  })
 
   // Notifications
   ipcMain.handle('send-notification', (_e, opts: { title: string; body: string; silent?: boolean }) => {
@@ -170,21 +258,18 @@ function registerIpcHandlers(): void {
     return true
   })
 
-  // Shell execution for code block run (restricted)
+  // Shell execution for code block run (restricted, no shell injection)
   const ALLOWED_SHELL_COMMANDS = ['node', 'python', 'python3', 'pip', 'npm', 'npx', 'echo', 'dir', 'ls', 'cat', 'pwd', 'whoami', 'date', 'git', 'curl']
   ipcMain.handle('run-shell', async (_e, command: string) => {
     const trimmed = command.trim()
-    const baseCmd = trimmed.split(/\s+/)[0].toLowerCase()
-    // On Windows, strip common extensions for matching
-    const baseName = baseCmd.replace(/\.(exe|cmd|bat|ps1)$/, '')
-    if (!ALLOWED_SHELL_COMMANDS.includes(baseName)) {
-      return `Error: command "${baseCmd}" is not allowed. Allowed: ${ALLOWED_SHELL_COMMANDS.join(', ')}`
+    // Split into argv safely — no shell metacharacter interpretation
+    const parts = trimmed.split(/\s+/)
+    const baseCmd = parts[0].toLowerCase().replace(/\.(exe|cmd|bat|ps1)$/, '')
+    if (!ALLOWED_SHELL_COMMANDS.includes(baseCmd)) {
+      return `Error: command "${parts[0]}" is not allowed. Allowed: ${ALLOWED_SHELL_COMMANDS.join(', ')}`
     }
     return new Promise<string>((resolve) => {
-      const isWindows = process.platform === 'win32'
-      const shell = isWindows ? 'powershell.exe' : '/bin/bash'
-      const shellArg = isWindows ? `/c ${trimmed}` : `-c ${trimmed}`
-      execFile(shell, [shellArg], { timeout: 10000 }, (error, stdout, stderr) => {
+      execFile(parts[0], parts.slice(1), { timeout: 10000, shell: false }, (error, stdout, stderr) => {
         if (error) resolve(`Error: ${error.message}\n${stderr}`)
         else resolve(stdout || stderr || '(no output)')
       })

@@ -10,8 +10,6 @@ export function AgentGraph3D() {
   const [addingRoom, setAddingRoom] = useState(false)
   const projectRooms = useAppStore((s) => s.projectRooms)
   const addProjectRoom = useAppStore((s) => s.addProjectRoom)
-  const removeProjectRoom = useAppStore((s) => s.removeProjectRoom)
-  const theme = useAppStore((s) => s.theme)
 
   const handleAddRoom = useCallback(() => {
     if (!roomName.trim()) return

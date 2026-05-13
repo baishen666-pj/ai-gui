@@ -122,7 +122,7 @@ export interface SearchResult {
 }
 
 export function searchSessions(query: string, limit = 20): SearchResult[] {
-  const escaped = query.split(/\s+/).map((w) => `"${w}"*`).join(' ')
+  const escaped = query.split(/\s+/).map((w) => `"${w.replace(/"/g, '')}"*`).join(' ')
   return getDb().prepare(`
     SELECT DISTINCT m.session_id, s.title,
       snippet(messages_fts, 0, '<<', '>>', '...', 40) as snippet

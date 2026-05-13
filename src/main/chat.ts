@@ -9,7 +9,6 @@ export interface SendMessageOptions {
   profile?: string
 }
 
-const RETRYABLE_STATUS = new Set([429, 502, 503, 504])
 const MAX_RETRIES = 2
 
 export function sendMessage(opts: SendMessageOptions, cb: SseCallbacks): AbortController {
@@ -113,7 +112,7 @@ function sendOpenAICompatibleMessage(
         try {
           const parsed = JSON.parse(errorBody)
           msg = parsed.error?.message || parsed.message || msg
-        } catch {}
+        } catch { /* noop */ }
         cb.onError?.(msg)
       })
       return
@@ -194,7 +193,7 @@ function sendChatGPTMessage(
   const request = net.request({ method: 'POST', url })
   request.setHeader('Content-Type', 'application/json')
   request.setHeader('Authorization', `Bearer ${provider.apiKey}`)
-  request.setHeader('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36')
+  request.setHeader('User-Agent', 'AI-GUI/0.1.0')
   request.setHeader('Accept', 'text/event-stream')
 
   let buffer = ''
@@ -208,7 +207,7 @@ function sendChatGPTMessage(
         try {
           const parsed = JSON.parse(errorBody)
           msg = parsed.detail || parsed.error?.message || parsed.message || msg
-        } catch {}
+        } catch { /* noop */ }
         if (response.statusCode === 401) {
           msg = 'ChatGPT 登录已过期，请重新登录'
         }

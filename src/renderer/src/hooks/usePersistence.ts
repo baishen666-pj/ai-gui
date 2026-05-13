@@ -84,8 +84,6 @@ export function usePersistence() {
     if (loaded.current || !window.aiGui) return
     loaded.current = true
 
-    const store = useAppStore.getState()
-
     // Load tasks
     window.aiGui.persistenceGetTasks().then((rows: TaskRow[]) => {
       if (rows && rows.length > 0) {
@@ -103,51 +101,57 @@ export function usePersistence() {
     }).catch(() => {})
   }, [])
 
-  // Auto-save tasks on change
+  // Auto-save tasks on change (incremental)
   const tasks = useAppStore((s) => s.scheduledTasks)
-  const prevTaskIds = useRef<Set<string>>(new Set())
+  const prevTasksRef = useRef<Map<string, string>>(new Map())
 
   useEffect(() => {
     if (!window.aiGui) return
 
-    const currentIds = new Set(tasks.map((t) => t.id))
+    const currentMap = new Map(tasks.map((t) => [t.id, JSON.stringify(taskToRow(t))]))
+    const prevMap = prevTasksRef.current
 
     // Detect deleted tasks
-    for (const id of prevTaskIds.current) {
-      if (!currentIds.has(id)) {
+    for (const id of prevMap.keys()) {
+      if (!currentMap.has(id)) {
         window.aiGui.persistenceDeleteTask(id).catch(() => {})
       }
     }
 
-    // Upsert all current tasks
-    for (const task of tasks) {
-      window.aiGui.persistenceUpsertTask(taskToRow(task)).catch(() => {})
+    // Upsert only changed tasks
+    for (const [id, json] of currentMap) {
+      if (prevMap.get(id) !== json) {
+        window.aiGui.persistenceUpsertTask(JSON.parse(json)).catch(() => {})
+      }
     }
 
-    prevTaskIds.current = currentIds
+    prevTasksRef.current = currentMap
   }, [tasks])
 
-  // Auto-save workflows on change
+  // Auto-save workflows on change (incremental)
   const workflows = useAppStore((s) => s.workflows)
-  const prevWfIds = useRef<Set<string>>(new Set())
+  const prevWfRef = useRef<Map<string, string>>(new Map())
 
   useEffect(() => {
     if (!window.aiGui) return
 
-    const currentIds = new Set(workflows.map((w) => w.id))
+    const currentMap = new Map(workflows.map((w) => [w.id, JSON.stringify(workflowToRow(w))]))
+    const prevMap = prevWfRef.current
 
     // Detect deleted workflows
-    for (const id of prevWfIds.current) {
-      if (!currentIds.has(id)) {
+    for (const id of prevMap.keys()) {
+      if (!currentMap.has(id)) {
         window.aiGui.persistenceDeleteWorkflow(id).catch(() => {})
       }
     }
 
-    // Upsert all current workflows
-    for (const wf of workflows) {
-      window.aiGui.persistenceUpsertWorkflow(workflowToRow(wf)).catch(() => {})
+    // Upsert only changed workflows
+    for (const [id, json] of currentMap) {
+      if (prevMap.get(id) !== json) {
+        window.aiGui.persistenceUpsertWorkflow(JSON.parse(json)).catch(() => {})
+      }
     }
 
-    prevWfIds.current = currentIds
+    prevWfRef.current = currentMap
   }, [workflows])
 }

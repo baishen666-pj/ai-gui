@@ -116,7 +116,7 @@ export function SessionSidebar({ activeSessionId, onSelectSession, onNewChat }: 
                 </span>
               )}
               <button
-                onClick={(e) => { e.stopPropagation(); handleDelete(s.id) }}
+                onClick={(e) => { e.stopPropagation(); if (confirm('确定删除此对话？')) handleDelete(s.id) }}
                 className="shrink-0 rounded p-0.5 text-[10px] text-content-subtle opacity-0 transition-opacity hover:text-danger group-hover:opacity-100"
               >
                 ✕

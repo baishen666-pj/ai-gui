@@ -1,3 +1,4 @@
+import { genId } from '../../lib/genId'
 import { useCallback, useState } from 'react'
 import {
   ReactFlow,
@@ -97,11 +98,11 @@ export function AgentCanvas() {
   const addAgent = useCallback(() => {
     const colors = ['#6366f1', '#8b5cf6', '#a78bfa', '#f59e0b', '#10b981', '#ec4899', '#3b82f6', '#ef4444']
     const newNode: Node = {
-      id: `agent-${Date.now()}`,
+      id: genId('agent-'),
       type: 'agent',
       position: { x: 200 + Math.random() * 300, y: 100 + Math.random() * 200 },
       data: {
-        label: 'New Agent',
+        label: '新 Agent',
         role: '自定义 Agent',
         model: 'gpt-4o',
         status: 'idle',
@@ -146,7 +147,7 @@ export function AgentCanvas() {
   return (
     <div className="flex h-full flex-col">
       <header className="flex items-center justify-between border-b border-border-subtle px-4 py-2">
-        <h2 className="text-sm font-medium text-content-heading">Agent Canvas</h2>
+        <h2 className="text-sm font-medium text-content-heading">Agent 画布</h2>
         <div className="flex items-center gap-1">
           {TEMPLATES.map((tpl) => (
             <button

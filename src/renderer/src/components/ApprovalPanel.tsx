@@ -1,9 +1,22 @@
+import { useEffect } from 'react'
 import { useAppStore } from '../stores/app'
 
 export function ApprovalPanel() {
   const approvalRequests = useAppStore((s) => s.approvalRequests)
   const respondApproval = useAppStore((s) => s.respondApproval)
   const pendingRequests = approvalRequests.filter((r) => r.status === 'pending')
+
+  // Keyboard shortcuts: Enter=approve, Escape=reject
+  useEffect(() => {
+    if (pendingRequests.length === 0) return
+    const req = pendingRequests[0]
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Enter') { e.preventDefault(); respondApproval(req.id, true) }
+      if (e.key === 'Escape') { e.preventDefault(); respondApproval(req.id, false) }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [pendingRequests, respondApproval])
 
   if (pendingRequests.length === 0) return null
 

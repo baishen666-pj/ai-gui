@@ -28,7 +28,7 @@ export function processCustomEvent(
       const emoji = payload.emoji || ''
       cb.onToolProgress(emoji ? `${emoji} ${label}` : label)
       return true
-    } catch {}
+    } catch { /* noop */ }
   }
   return false
 }
@@ -82,7 +82,7 @@ export function processSseData(
     if (delta?.reasoning_content && cb.onReasoning) {
       cb.onReasoning(delta.reasoning_content)
     }
-  } catch {}
+  } catch { /* noop */ }
 
   return { done: false, hasContent: state.hasContent }
 }

@@ -35,7 +35,7 @@ export const AgentWorkflowNode = memo(({ data, selected }: NodeProps) => {
         <span className="flex h-5 w-5 items-center justify-center rounded bg-accent/20 text-[10px] text-accent-text">
           AI
         </span>
-        <span className="text-xs font-medium text-content-secondary">{d.label || 'Agent'}</span>
+        <span className="text-xs font-medium text-content-secondary">{d.label || '智能体'}</span>
         {status === 'running' && (
           <span className="ml-auto h-2 w-2 animate-pulse rounded-full bg-warning" />
         )}

@@ -17,6 +17,7 @@ export function safeWriteFile(filePath: string, content: string): void {
 }
 
 export function stripAnsi(text: string): string {
+  // eslint-disable-next-line no-control-regex
   return text.replace(/\x1B\[[0-9;]*[a-zA-Z]/g, '')
 }
 

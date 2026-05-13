@@ -1,6 +1,6 @@
 import { Handle, Position } from '@xyflow/react'
 import type { NodeProps } from '@xyflow/react'
-import type { LayoutItem, FurnitureType } from './types'
+import type { LayoutItem } from './types'
 import { FURNITURE_META } from './constants'
 
 type LayoutNodeData = LayoutItem & { selected?: boolean }

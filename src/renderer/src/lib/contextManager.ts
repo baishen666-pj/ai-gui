@@ -1,3 +1,4 @@
+import { genId } from './genId'
 import type { ChatMessage } from '../../../shared/types'
 
 export interface AgentOutput {
@@ -137,7 +138,7 @@ export function compressChatContext(messages: ChatMessage[]): ChatMessage[] {
 
   return [
     {
-      id: `context-summary-${Date.now()}`,
+      id: genId('context-summary-'),
       role: 'agent',
       content: `[历史对话摘要]\n${summary}`,
       timestamp: older[older.length - 1]?.timestamp || Date.now()

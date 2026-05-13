@@ -1,3 +1,4 @@
+import { genId } from '../../lib/genId'
 import { useCallback, useState, useEffect } from 'react'
 import {
   ReactFlow,
@@ -36,7 +37,6 @@ export function WorkflowEditor() {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([])
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([])
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
-  const [showList, setShowList] = useState(false)
 
   const activeWorkflow = workflows.find((w) => w.id === activeWorkflowId)
 
@@ -129,7 +129,7 @@ export function WorkflowEditor() {
 
   const addNode = useCallback((type: WFNode['type']) => {
     if (!activeWorkflowId) return
-    const id = `${type}-${Date.now()}`
+    const id = genId(type + '-')
     const positions = {
       start: { x: 250, y: 50 },
       agent: { x: 250, y: 200 },
@@ -172,7 +172,6 @@ export function WorkflowEditor() {
     setSelectedNodeId(null)
   }, [setNodes, setEdges, syncToStore])
 
-  const selectedNode = nodes.find((n) => n.id === selectedNodeId)
   const isExecuting = workflowExecution?.status === 'running'
 
   // No active workflow — show list

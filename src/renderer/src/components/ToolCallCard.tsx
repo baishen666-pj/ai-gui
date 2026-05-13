@@ -73,7 +73,7 @@ export function EnhancedDiffViewer({ content }: EnhancedDiffViewerProps) {
             <span className="text-success">+{stats.added}</span>
             <span className="text-danger">-{stats.removed}</span>
           </span>
-          <span className="rounded bg-surface-inset px-1.5 py-0.5 text-[10px] text-content-subtle">diff</span>
+          <span className="rounded bg-surface-inset px-1.5 py-0.5 text-[10px] text-content-subtle">差异</span>
         </div>
       </div>
 

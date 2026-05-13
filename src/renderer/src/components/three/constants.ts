@@ -1,4 +1,3 @@
-import type { Vector3Tuple } from 'three'
 import type { DemoAgentConfig, OfficePosition, LayoutItem, FurnitureType } from './types'
 
 // Demo agents shown when canvasAgents is empty
@@ -84,9 +83,9 @@ export const SOFA = { width: 1.8, height: 0.5, depth: 0.8, backHeight: 0.4 }
 export const PLANT = { potRadius: 0.15, potHeight: 0.25, crownRadius: 0.35, crownHeight: 0.5 }
 
 // Zone centers
-export const WORKSTATION_CENTER: Vector3Tuple = [0, 0, -1]
-export const MEETING_CENTER: Vector3Tuple = [0, 0, -5.5]
-export const LOUNGE_CENTER: Vector3Tuple = [0, 0, 5]
+export const WORKSTATION_CENTER: [number, number, number] = [0, 0, -1]
+export const MEETING_CENTER: [number, number, number] = [0, 0, -5.5]
+export const LOUNGE_CENTER: [number, number, number] = [0, 0, 5]
 
 // Workstation slots — 2 rows of 3 desks facing the back wall
 export const WORKSTATION_SLOTS: OfficePosition[] = [
@@ -104,7 +103,7 @@ export const MEETING_SLOTS: OfficePosition[] = Array.from({ length: 6 }, (_, i) 
     Math.cos(i * Math.PI / 3) * 2.0,
     0,
     -5.5 + Math.sin(i * Math.PI / 3) * 2.0
-  ] as Vector3Tuple,
+  ] as [number, number, number],
   rotation: i * Math.PI / 3 + Math.PI
 }))
 

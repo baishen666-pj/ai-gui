@@ -64,8 +64,9 @@ export function App() {
   return (
     <div className="flex h-screen bg-surface-base text-content-primary">
       <Sidebar activeView={view} onViewChange={setView} />
-      <main className="flex-1 overflow-hidden">
+      <main className="flex-1 overflow-hidden" key={view}>
         <Suspense fallback={<LoadingSpinner />}>
+          <div className="animate-view-in h-full">
           {view === 'chat' && <ChatView />}
           {view === 'canvas' && (
             <ReactFlowProvider>
@@ -83,6 +84,7 @@ export function App() {
           )}
           {view === 'soul' && <SoulEditorPanel />}
           {view === 'settings' && <SettingsPanel />}
+          </div>
         </Suspense>
       </main>
       {showHelp && <ShortcutHelp onClose={() => setShowHelp(false)} />}

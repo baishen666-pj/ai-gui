@@ -1,6 +1,7 @@
+import { genId } from '../../lib/genId'
 import { useCallback, useRef } from 'react'
 import { useAppStore } from '../../stores/app'
-import type { Workflow, WorkflowNode, WorkflowEdge } from '../../../../shared/types'
+import type { Workflow, WorkflowNode } from '../../../../shared/types'
 import { detectDangerousContent, CATEGORY_LABELS } from '../../lib/approvalDetection'
 import {
   createAgentOutput,
@@ -44,19 +45,21 @@ export function WorkflowExecutor({ workflow }: Props) {
 
   const evaluateCondition = (condition: string, output: string): boolean => {
     if (!condition) return true
-    // Only allow simple comparison expressions, no arbitrary code execution
-    const safe = condition.replace(/\s+/g, ' ').trim()
-    const allowedPattern = /^(output\.(length|includes|startsWith|endsWith|indexOf|trim)\s*\(.*\)\s*(===|!==|==|!=|>|<|>=|<=)\s*.+|output\.length\s*(===|!==|==|!=|>|<|>=|<=)\s*\d+|output\s*(===|!==|==|!=|>|<|>=|<=)\s*.+)$/
-    if (!allowedPattern.test(safe)) {
-      // Fallback: check if output has content
-      return output.length > 0
-    }
-    try {
-      const fn = new Function('output', `"use strict"; return ${safe}`)
-      return !!fn(output)
-    } catch {
-      return output.length > 0
-    }
+    // Safe condition parser — no Function constructor
+    const c = condition.trim()
+    // Supported patterns: "yes", "no", "true", "false", "contains:xxx", "length>N", "length<N"
+    if (c === 'yes' || c === 'true' || c === '1') return true
+    if (c === 'no' || c === 'false' || c === '0') return false
+    const containsMatch = c.match(/^contains:(.+)$/i)
+    if (containsMatch) return output.toLowerCase().includes(containsMatch[1].toLowerCase())
+    const lengthGt = c.match(/^length\s*>\s*(\d+)$/)
+    if (lengthGt) return output.length > parseInt(lengthGt[1], 10)
+    const lengthLt = c.match(/^length\s*<\s*(\d+)$/)
+    if (lengthLt) return output.length < parseInt(lengthLt[1], 10)
+    const lengthEq = c.match(/^length\s*==?\s*(\d+)$/)
+    if (lengthEq) return output.length === parseInt(lengthEq[1], 10)
+    // Default: non-empty output = truthy
+    return output.length > 0
   }
 
   const callAgentWithContext = async (
@@ -109,24 +112,30 @@ export function WorkflowExecutor({ workflow }: Props) {
     const { nodes, edges } = workflow
     const startNode = nodes.find((n) => n.type === 'start')
     if (!startNode) {
-      addMessage({ id: `error-${Date.now()}`, role: 'error', content: '工作流缺少开始节点', timestamp: Date.now() })
+      addMessage({ id: genId('error-'), role: 'error', content: '工作流缺少开始节点', timestamp: Date.now() })
       return
     }
 
     startWorkflowExecution(workflow.id)
     const agentOutputs: AgentOutput[] = []
-    let input = ''
+    const input = ''
 
     addMessage({
-      id: `system-${Date.now()}`, role: 'system',
+      id: genId('system-'), role: 'system',
       content: `🔀 工作流「${workflow.name}」开始执行`,
       timestamp: Date.now()
     })
 
     const getOutgoingEdges = (nodeId: string) => edges.filter((e) => e.source === nodeId)
+    const visited = new Set<string>()
 
     const processNode = async (node: WorkflowNode, currentInput: string): Promise<void> => {
       if (abortRef.current) return
+      if (visited.has(node.id)) {
+        addMessage({ id: genId('error-'), role: 'error', content: `检测到循环引用: 节点「${node.data.label}」被重复访问，已中止`, timestamp: Date.now() })
+        return
+      }
+      visited.add(node.id)
 
       if (node.type === 'start') {
         updateNodeExecution(node.id, 'completed')
@@ -149,7 +158,7 @@ export function WorkflowExecutor({ workflow }: Props) {
         // Human approval condition
         if (isApprovalCondition(node.data.label, node.data.condition)) {
           addMessage({
-            id: `system-${Date.now()}`, role: 'system',
+            id: genId('system-'), role: 'system',
             content: `🔒 条件「${node.data.label}」需要人工审批`,
             timestamp: Date.now()
           })
@@ -173,7 +182,7 @@ export function WorkflowExecutor({ workflow }: Props) {
             const approved = await waitForApproval(pendingId)
             const resultText = approved ? '已批准' : '已拒绝'
             addMessage({
-              id: `system-${Date.now()}`, role: 'system',
+              id: genId('system-'), role: 'system',
               content: `${approved ? '✅' : '❌'} 审批${resultText}: ${node.data.label}`,
               timestamp: Date.now()
             })
@@ -194,7 +203,7 @@ export function WorkflowExecutor({ workflow }: Props) {
         const result = evaluateCondition(node.data.condition || '', currentInput)
 
         addMessage({
-          id: `system-${Date.now()}`, role: 'system',
+          id: genId('system-'), role: 'system',
           content: `? 条件「${node.data.label}」: ${result ? '是' : '否'}`,
           timestamp: Date.now()
         })
@@ -218,7 +227,7 @@ export function WorkflowExecutor({ workflow }: Props) {
           : currentInput || '请执行任务'
 
         addMessage({
-          id: `system-${Date.now()}`, role: 'system',
+          id: genId('system-'), role: 'system',
           content: `▶ Agent「${node.data.label}」执行中... (上下文: ${agentOutputs.length} 个上游节点, ~${context.totalTokens} tokens)`,
           timestamp: Date.now()
         })
@@ -234,7 +243,7 @@ export function WorkflowExecutor({ workflow }: Props) {
         if (detection.detected) {
           const categoryLabel = CATEGORY_LABELS[detection.category!]
           addMessage({
-            id: `system-${Date.now()}`, role: 'system',
+            id: genId('system-'), role: 'system',
             content: `⚠️ Agent「${node.data.label}」输出包含${categoryLabel}操作「${detection.summary}」，等待审批`,
             timestamp: Date.now()
           })
@@ -265,7 +274,7 @@ export function WorkflowExecutor({ workflow }: Props) {
           const chatResult = useAppStore.getState().chatApproval
           if (chatResult?.status === 'rejected') {
             addMessage({
-              id: `system-${Date.now()}`, role: 'system',
+              id: genId('system-'), role: 'system',
               content: `❌ Agent「${node.data.label}」的操作被拒绝，跳过下游节点`,
               timestamp: Date.now()
             })
@@ -274,7 +283,7 @@ export function WorkflowExecutor({ workflow }: Props) {
         }
 
         addMessage({
-          id: `agent-${Date.now()}`, role: 'agent',
+          id: genId('agent-'), role: 'agent',
           content: `**${node.data.label}** (${(agentOutput.durationMs / 1000).toFixed(1)}s, ~${agentOutput.tokenEstimate} tokens): ${output}`,
           timestamp: Date.now()
         })
@@ -297,7 +306,7 @@ export function WorkflowExecutor({ workflow }: Props) {
       }
 
       addMessage({
-        id: `system-${Date.now()}`, role: 'system',
+        id: genId('system-'), role: 'system',
         content: abortRef.current ? `⚠ 工作流「${workflow.name}」已中止` : `✓ 工作流「${workflow.name}」执行完成`,
         timestamp: Date.now()
       })
@@ -305,7 +314,7 @@ export function WorkflowExecutor({ workflow }: Props) {
       completeWorkflowExecution('failed')
       notify('工作流失败', `「${workflow.name}」执行出错`)
       addMessage({
-        id: `error-${Date.now()}`, role: 'error',
+        id: genId('error-'), role: 'error',
         content: `工作流执行失败`,
         timestamp: Date.now()
       })

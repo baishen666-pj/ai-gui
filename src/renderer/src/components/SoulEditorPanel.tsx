@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { useAppStore } from '../stores/app'
 
 interface PersonaTemplate {
@@ -107,10 +107,12 @@ export function SoulEditorPanel() {
   const prevSoulRef = useRef(soulPrompt)
 
   // Sync from store when soulPrompt changes externally (e.g. profile switch)
-  if (soulPrompt !== prevSoulRef.current) {
-    prevSoulRef.current = soulPrompt
-    setLocalPrompt(soulPrompt)
-  }
+  useEffect(() => {
+    if (soulPrompt !== prevSoulRef.current) {
+      prevSoulRef.current = soulPrompt
+      setLocalPrompt(soulPrompt)
+    }
+  }, [soulPrompt])
 
   const handleApplyTemplate = useCallback((template: PersonaTemplate) => {
     setActiveTemplate(template.id)
@@ -175,7 +177,7 @@ export function SoulEditorPanel() {
         {/* Editor area */}
         <div className="flex flex-1 flex-col overflow-hidden p-4">
           <div className="flex items-center justify-between">
-            <div className="text-xs font-medium text-content-muted">System Prompt</div>
+            <div className="text-xs font-medium text-content-muted">系统提示词</div>
             <div className="flex items-center gap-2">
               <div className="h-1.5 w-24 rounded-full bg-surface-overlay">
                 <div

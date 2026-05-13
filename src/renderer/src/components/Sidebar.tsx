@@ -42,13 +42,15 @@ export function Sidebar({ activeView, onViewChange }: SidebarProps) {
   }, [menuOpen])
 
   return (
-    <aside className="flex h-full w-14 flex-col items-center gap-1 border-r border-border-subtle bg-surface-base py-3">
+    <aside className="flex h-full w-14 flex-col items-center gap-1 border-r border-border-subtle bg-surface-base py-3" role="navigation" aria-label="主导航">
       {/* Logo / Profile switcher */}
       <div className="relative mb-4" ref={menuRef}>
         <button
           onClick={() => setMenuOpen(!menuOpen)}
           className="flex h-8 w-10 items-center justify-center rounded-lg bg-accent/20 text-xs font-bold text-accent-text transition-colors hover:bg-accent/30"
           title={activeProfile.name}
+          aria-label={`配置文件: ${activeProfile.name}`}
+          aria-expanded={menuOpen}
         >
           {activeProfile.name.slice(0, 1)}
         </button>
@@ -62,6 +64,8 @@ export function Sidebar({ activeView, onViewChange }: SidebarProps) {
           key={view}
           onClick={() => onViewChange(view)}
           title={labelZh}
+          aria-label={labelZh}
+          aria-current={activeView === view ? 'page' : undefined}
           className={`flex h-10 w-10 items-center justify-center rounded-lg text-lg transition-colors ${
             activeView === view
               ? 'bg-accent/20 text-accent-text'
@@ -80,6 +84,7 @@ export function Sidebar({ activeView, onViewChange }: SidebarProps) {
             setTheme(next)
           }}
           title={`主题: ${THEME_LABELS[theme]}`}
+          aria-label={`切换主题，当前: ${THEME_LABELS[theme]}`}
           className="flex h-10 w-10 items-center justify-center rounded-lg text-lg transition-colors hover:bg-surface-overlay hover:text-content-heading"
         >
           {THEME_ICONS[theme]}
@@ -116,7 +121,7 @@ function ProfileMenu({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div className="absolute left-14 top-0 z-50 w-48 rounded-lg border border-border-default bg-surface-elevated p-1.5 shadow-xl">
+    <div className="absolute left-14 top-0 z-50 w-48 rounded-lg border border-border-default bg-surface-elevated p-1.5 shadow-xl" role="menu" aria-label="配置文件菜单">
       <div className="mb-1 px-2 text-[10px] font-medium uppercase tracking-wider text-content-subtle">
         配置文件
       </div>
@@ -160,7 +165,7 @@ function ProfileMenu({ onClose }: { onClose: () => void }) {
               </button>
               {profiles.length > 1 && (
                 <button
-                  onClick={() => { deleteProfile(p.id) }}
+                  onClick={() => { if (confirm(`确定删除配置文件「${p.name}」？`)) deleteProfile(p.id) }}
                   className="rounded p-0.5 text-[10px] text-content-subtle hover:text-danger"
                   title="删除"
                 >

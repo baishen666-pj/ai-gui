@@ -1,3 +1,4 @@
+import { genId } from '../lib/genId'
 import { useState } from 'react'
 
 interface MemoryEntry {
@@ -33,7 +34,7 @@ export function MemoryPanel() {
   const handleAdd = () => {
     if (!newContent.trim()) return
     const entry: MemoryEntry = {
-      id: `m-${Date.now()}`,
+      id: genId('m-'),
       content: newContent.trim(),
       timestamp: Date.now(),
       type: newType

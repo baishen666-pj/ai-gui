@@ -1,4 +1,4 @@
-import type { Vector3Tuple } from 'three'
+export type Vector3 = [number, number, number]
 
 export type AgentActivity = 'idle' | 'working' | 'meeting' | 'walking' | 'submitting'
 export type StaticActivity = 'idle' | 'working' | 'meeting'
@@ -14,7 +14,7 @@ export interface LayoutItem {
 }
 
 export interface OfficePosition {
-  position: Vector3Tuple
+  position: Vector3
   rotation: number
 }
 
@@ -28,7 +28,7 @@ export interface AgentOfficeState {
 }
 
 export interface WalkingState {
-  fromPosition: Vector3Tuple
+  fromPosition: Vector3
   toSlot: OfficePosition
   targetActivity: StaticActivity
   progress: number

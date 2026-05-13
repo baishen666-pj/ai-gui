@@ -11,18 +11,18 @@ interface ToolItem {
 }
 
 const DEFAULT_TOOLS: ToolItem[] = [
-  { id: 't1', key: 'web', name: 'Web Search', description: '搜索互联网获取实时信息', category: 'search', enabled: true, icon: '🔍' },
-  { id: 't2', key: 'browse', name: 'Browser', description: '浏览网页、提取内容、截图', category: 'search', enabled: true, icon: '🌐' },
-  { id: 't3', key: 'code', name: 'Code Execution', description: '执行代码并返回结果', category: 'execution', enabled: true, icon: '💻' },
-  { id: 't4', key: 'file', name: 'File System', description: '读取、写入、搜索文件', category: 'system', enabled: true, icon: '📁' },
-  { id: 't5', key: 'shell', name: 'Terminal', description: '执行 Shell 命令', category: 'execution', enabled: true, icon: '⚡' },
-  { id: 't6', key: 'image_gen', name: 'Image Gen', description: '生成图片（DALL-E / Stable Diffusion）', category: 'creation', enabled: false, icon: '🎨' },
-  { id: 't7', key: 'vision', name: 'Vision', description: '分析图片内容', category: 'creation', enabled: false, icon: '👁️' },
-  { id: 't8', key: 'tts', name: 'Text to Speech', description: '文字转语音', category: 'creation', enabled: false, icon: '🔊' },
-  { id: 't9', key: 'memory', name: 'Memory', description: '长期记忆存取', category: 'system', enabled: true, icon: '🧠' },
-  { id: 't10', key: 'delegation', name: 'Delegation', description: '委派任务给子 Agent', category: 'system', enabled: true, icon: '🤝' },
-  { id: 't11', key: 'skills', name: 'Skills', description: '技能插件系统', category: 'system', enabled: true, icon: '📦' },
-  { id: 't12', key: 'cronjob', name: 'Cron Jobs', description: '定时任务调度', category: 'system', enabled: false, icon: '⏰' }
+  { id: 't1', key: 'web', name: '网页搜索', description: '搜索互联网获取实时信息', category: 'search', enabled: true, icon: '🔍' },
+  { id: 't2', key: 'browse', name: '浏览器', description: '浏览网页、提取内容、截图', category: 'search', enabled: true, icon: '🌐' },
+  { id: 't3', key: 'code', name: '代码执行', description: '执行代码并返回结果', category: 'execution', enabled: true, icon: '💻' },
+  { id: 't4', key: 'file', name: '文件系统', description: '读取、写入、搜索文件', category: 'system', enabled: true, icon: '📁' },
+  { id: 't5', key: 'shell', name: '终端', description: '执行 Shell 命令', category: 'execution', enabled: true, icon: '⚡' },
+  { id: 't6', key: 'image_gen', name: '图片生成', description: '生成图片（DALL-E / Stable Diffusion）', category: 'creation', enabled: false, icon: '🎨' },
+  { id: 't7', key: 'vision', name: '视觉分析', description: '分析图片内容', category: 'creation', enabled: false, icon: '👁️' },
+  { id: 't8', key: 'tts', name: '语音合成', description: '文字转语音', category: 'creation', enabled: false, icon: '🔊' },
+  { id: 't9', key: 'memory', name: '记忆系统', description: '长期记忆存取', category: 'system', enabled: true, icon: '🧠' },
+  { id: 't10', key: 'delegation', name: '任务委派', description: '委派任务给子 Agent', category: 'system', enabled: true, icon: '🤝' },
+  { id: 't11', key: 'skills', name: '技能插件', description: '技能插件系统', category: 'system', enabled: true, icon: '📦' },
+  { id: 't12', key: 'cronjob', name: '定时任务', description: '定时任务调度', category: 'system', enabled: false, icon: '⏰' }
 ]
 
 const CATEGORIES: Record<string, { label: string; color: string }> = {
