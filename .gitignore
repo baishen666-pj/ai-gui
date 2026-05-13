@@ -7,3 +7,6 @@ out/
 !.env.example
 .DS_Store
 Thumbs.db
+coverage/
+test-results/
+.eslintcache

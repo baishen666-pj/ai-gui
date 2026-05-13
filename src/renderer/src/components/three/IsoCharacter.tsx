@@ -2,10 +2,10 @@ import { useState } from 'react'
 import type { TeamRole } from '../../stores/app'
 import type { AgentActivity } from './types'
 import { ACTIVITY_COLORS } from './constants'
-import { useAppStore } from '../../stores/app'
-import { getPalette } from './themeColors'
+import { usePalette } from './PaletteContext'
 import { getBounce, getLimbAngles, getExpression, getIrisColor } from './IsoCharacterAnimation'
 import { Face, RoleHair, RoleOutfit, RoleAccessory } from './IsoCharacterParts'
+import { useAnimTimeRef } from './AnimationContext'
 
 interface Props {
   name: string
@@ -13,20 +13,20 @@ interface Props {
   color: string
   activity: AgentActivity
   facing: 'left' | 'right'
-  animT: number
   isWalking: boolean
   onClick?: () => void
 }
 
-export function IsoCharacter({ name, role, color, activity, facing, animT, isWalking: _isWalking, onClick }: Props) {
+export function IsoCharacter({ name, role, color, activity, facing, isWalking: _isWalking, onClick }: Props) {
+  const animTimeRef = useAnimTimeRef()
+  const animT = animTimeRef.current
   const flip = facing === 'left' ? -1 : 1
   const bounceY = getBounce(activity, animT)
   const { leftArm, rightArm, leftLeg, rightLeg } = getLimbAngles(activity, animT)
   const expression = getExpression(activity)
   const actColor = ACTIVITY_COLORS[activity] || color
   const [hovered, setHovered] = useState(false)
-  const theme = useAppStore((s) => s.theme)
-  const palette = getPalette(theme)
+  const { palette, theme } = usePalette()
   const nameFill = theme === 'light' ? '#18181b' : '#e4e4e7'
   const nameStroke = theme === 'light' ? '#ffffff' : '#000000'
   const irisColor = getIrisColor(role, color)

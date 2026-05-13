@@ -7,6 +7,9 @@ import { IsoBossOffice, BOSS_POSITION } from './IsoBossOffice'
 import { IsoDesk, IsoMonitor, FurnitureDefs } from './IsoFurniture'
 import { IsoCharacter } from './IsoCharacter'
 import { ApprovalGlow, ReturnBurst, WalkTrail } from './IsoEffects'
+import { AnimTimeContext } from './AnimationContext'
+import { PaletteContext } from './PaletteContext'
+import { getPalette } from './themeColors'
 
 const ROOM_W = 10, ROOM_D = 8, ROOM_GAP = 4
 const ROLE_COLORS: Record<string, string> = {
@@ -58,7 +61,9 @@ export function IsoScene() {
   const theme = useAppStore((s) => s.theme)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [returnEffect, setReturnEffect] = useState<{ memberId: string; approved: boolean } | null>(null)
-  const [animTime, setAnimTime] = useState(0)
+  const animTimeRef = useRef(0)
+  const [, setRenderTick] = useState(0)
+  const frameCountRef = useRef(0)
   const [zoom, setZoom] = useState(1)
   const [pan, setPan] = useState({ x: 0, y: 0 })
 
@@ -87,7 +92,13 @@ export function IsoScene() {
       if (!running) return
       const delta = (now - prev) / 1000
       prev = now
-      setAnimTime((t) => t + delta)
+      animTimeRef.current += delta
+
+      // Render at ~10fps instead of 60fps to avoid thrashing React
+      frameCountRef.current++
+      if (frameCountRef.current % 6 === 0) {
+        setRenderTick((t) => t + 1)
+      }
 
       const members = membersRef.current
       const allMembers = [bossRef.current, ...members]
@@ -238,7 +249,7 @@ export function IsoScene() {
           <WalkTrail positions={m.trail} />
           <IsoCharacter
             name={m.name} role={m.role} color={m.color}
-            activity={m.activity} facing={m.facing} animT={animTime}
+            activity={m.activity} facing={m.facing}
             isWalking={!!m.walking}
             onClick={() => setSelectedId(m.id)}
           />
@@ -262,9 +273,12 @@ export function IsoScene() {
   renderItems.sort((a, b) => a.sortKey - b.sortKey)
 
   const bgColor = theme === 'cyberpunk' ? '#0a0014' : theme === 'light' ? '#f9fafb' : '#09090b'
+  const palette = getPalette(theme)
 
   return (
     <div className="h-full w-full overflow-hidden" style={{ background: bgColor }}>
+      <AnimTimeContext.Provider value={animTimeRef}>
+      <PaletteContext.Provider value={{ palette, theme }}>
       <svg
         width="100%" height="100%"
         viewBox={`${-totalWidth * 25} ${-totalHeight * 25} ${totalWidth * 50} ${totalHeight * 50}`}
@@ -280,6 +294,8 @@ export function IsoScene() {
           {renderItems.map((item, i) => <g key={i}>{item.element}</g>)}
         </g>
       </svg>
+      </PaletteContext.Provider>
+      </AnimTimeContext.Provider>
 
       {/* Info panel */}
       {selectedId && (() => {

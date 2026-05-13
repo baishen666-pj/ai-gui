@@ -1,10 +1,8 @@
 import { toIso } from './IsoEngine'
-import { useAppStore } from '../../stores/app'
-import { getPalette } from './themeColors'
+import { usePalette } from './PaletteContext'
 
 export function ApprovalGlow({ cx, cz }: { cx: number; cz: number }) {
-  const theme = useAppStore((s) => s.theme)
-  const palette = getPalette(theme)
+  const { palette } = usePalette()
   const pos = toIso(cx, cz)
 
   return (
@@ -29,8 +27,7 @@ export function ApprovalGlow({ cx, cz }: { cx: number; cz: number }) {
 }
 
 export function ReturnBurst({ x, z, approved }: { x: number; z: number; approved: boolean }) {
-  const theme = useAppStore((s) => s.theme)
-  const palette = getPalette(theme)
+  const { palette } = usePalette()
   const pos = toIso(x, z)
   const color = approved ? palette.glowColor : '#ef4444'
 
@@ -84,8 +81,7 @@ export function ReturnBurst({ x, z, approved }: { x: number; z: number; approved
 }
 
 export function WalkTrail({ positions }: { positions: { x: number; z: number }[] }) {
-  const theme = useAppStore((s) => s.theme)
-  const palette = getPalette(theme)
+  const { palette } = usePalette()
   if (positions.length === 0) return null
   return (
     <g>
