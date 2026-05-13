@@ -1,6 +1,6 @@
 {
   "name": "ai-gui",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "AI GUI — 多Agent桌面工作台 + 3D可视化",
   "main": "./out/main/index.js",
   "author": "ai-gui",

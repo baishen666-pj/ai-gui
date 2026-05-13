@@ -9,7 +9,6 @@ files:
   - '!**/.claude/*'
   - '!src/*'
   - '!docs/*'
-  - '!out/*'
   - '!dist/*'
   - '!electron.vite.config.*'
   - '!vitest.config.*'
