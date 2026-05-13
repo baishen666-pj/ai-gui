@@ -11,7 +11,8 @@ export const en: LocaleMessages = {
     memory: 'Memory',
     tools: 'Tools',
     settings: 'Settings',
-    computerUse: 'Computer Use'
+    computerUse: 'Computer Use',
+    im: 'IM'
   },
   chat: {
     placeholder: 'Type a message, / for commands...',

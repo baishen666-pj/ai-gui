@@ -12,6 +12,7 @@ import { ToolsPanel } from './components/ToolsPanel'
 import { SettingsPanel } from './components/SettingsPanel'
 import { CheckpointPanel } from './components/CheckpointPanel'
 import { ComputerUsePanel } from './components/computer-use/ComputerUsePanel'
+import { ImPanel } from './components/im/ImPanel'
 import { ShortcutHelp } from './components/ShortcutHelp'
 import { ApprovalPanel } from './components/ApprovalPanel'
 import { UpdateNotification } from './components/UpdateNotification'
@@ -99,6 +100,7 @@ export function App() {
           {view === 'soul' && <SoulEditorPanel />}
           {view === 'checkpoint' && <CheckpointPanel />}
           {view === 'computer-use' && <ComputerUsePanel />}
+          {view === 'im' && <ImPanel />}
           {view === 'settings' && <SettingsPanel />}
           </div>
         </Suspense>

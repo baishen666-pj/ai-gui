@@ -20,6 +20,7 @@ import { startMcpServer, stopMcpServer } from './mcp'
 import { connectStdioServer, disconnectServer, getConnectedServers, callExternalTool, disconnectAll, type McpServerConfig } from './mcp/client'
 import { registerComputerUseIpc, cleanupComputerUse } from './computer-use'
 import { initUpdater } from './updater'
+import { registerImIpc, cleanupIm } from './im'
 
 enableGpuFlags()
 
@@ -66,6 +67,7 @@ app.whenReady().then(() => {
   startMcpServer().catch(() => { /* MCP server is optional */ })
 
   if (mainWindow) initUpdater(mainWindow)
+  if (mainWindow) registerImIpc(mainWindow)
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
@@ -145,6 +147,7 @@ function setupMenu(): void {
 
 app.on('window-all-closed', () => {
   cleanupComputerUse()
+  cleanupIm()
   app.quit()
 })
 

@@ -11,7 +11,8 @@ export const zhCN: LocaleMessages = {
     memory: '记忆',
     tools: '工具',
     settings: '设置',
-    computerUse: '桌面控制'
+    computerUse: '桌面控制',
+    im: 'IM'
   },
   chat: {
     placeholder: '输入消息，/ 查看命令...',

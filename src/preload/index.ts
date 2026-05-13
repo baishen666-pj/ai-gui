@@ -219,6 +219,23 @@ const api = {
     const handler = (_e: Electron.IpcRendererEvent, info: { message: string }): void => cb(info)
     ipcRenderer.on('updater-error', handler)
     return () => ipcRenderer.removeListener('updater-error', handler)
+  },
+
+  // IM Bridge
+  imStart: (config: Record<string, unknown>): Promise<boolean> => ipcRenderer.invoke('im-start', config),
+  imStop: (platform: string): Promise<boolean> => ipcRenderer.invoke('im-stop', platform),
+  imStatus: (): Promise<Array<{ platform: string; running: boolean }>> => ipcRenderer.invoke('im-status'),
+  imSend: (platform: string, chatId: string, text: string): Promise<boolean> =>
+    ipcRenderer.invoke('im-send', platform, chatId, text),
+  onImMessage: (cb: (msg: Record<string, unknown>) => void) => {
+    const handler = (_e: Electron.IpcRendererEvent, msg: Record<string, unknown>): void => cb(msg)
+    ipcRenderer.on('im-message', handler)
+    return () => ipcRenderer.removeListener('im-message', handler)
+  },
+  onImStatus: (cb: (statuses: Array<{ platform: string; running: boolean }>) => void) => {
+    const handler = (_e: Electron.IpcRendererEvent, statuses: Array<{ platform: string; running: boolean }>): void => cb(statuses)
+    ipcRenderer.on('im-status', handler)
+    return () => ipcRenderer.removeListener('im-status', handler)
   }
 } as const
 
