@@ -5,9 +5,10 @@ import { writeFile } from 'fs/promises'
 
 import { enableGpuFlags } from './gpu'
 import { getLocale, setLocale } from './locale'
-import { getConnectionConfig, setConnectionConfig, getActiveProvider, setActiveProvider, updateProvider, removeProvider } from './config'
+import { getConnectionConfig, setConnectionConfig, getActiveProvider, setActiveProvider, updateProvider, removeProvider, setProviderModel } from './config'
+import { discoverModels } from './model-discovery'
 import { sendMessage } from './chat'
-import { openChatGPTLogin, logoutChatGPT } from './auth'
+import { openChatGPTLogin, logoutChatGPT, openSubscriptionLogin } from './auth'
 import * as sessions from './sessions'
 import * as persistence from './persistence'
 import * as memory from './memory'
@@ -17,6 +18,8 @@ import { resolveAgentsConfig } from './agents-config'
 import { registerBuiltinTools } from './tools'
 import { startMcpServer, stopMcpServer } from './mcp'
 import { connectStdioServer, disconnectServer, getConnectedServers, callExternalTool, disconnectAll, type McpServerConfig } from './mcp/client'
+import { registerComputerUseIpc, cleanupComputerUse } from './computer-use'
+import { initUpdater } from './updater'
 
 enableGpuFlags()
 
@@ -61,6 +64,8 @@ app.whenReady().then(() => {
   registerIpcHandlers()
   createWindow()
   startMcpServer().catch(() => { /* MCP server is optional */ })
+
+  if (mainWindow) initUpdater(mainWindow)
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
@@ -139,6 +144,7 @@ function setupMenu(): void {
 }
 
 app.on('window-all-closed', () => {
+  cleanupComputerUse()
   app.quit()
 })
 
@@ -165,10 +171,32 @@ function registerIpcHandlers(): void {
   ipcMain.handle('set-active-provider', (_e, id: string) => setActiveProvider(id))
   ipcMain.handle('update-provider', (_e, provider) => updateProvider(provider))
   ipcMain.handle('remove-provider', (_e, id: string) => removeProvider(id))
+  ipcMain.handle('discover-models', async (_e, providerId: string) => {
+    if (typeof providerId !== 'string') throw new Error('Invalid providerId')
+    const config = getConnectionConfig()
+    const provider = config.providers.find((p) => p.id === providerId)
+    if (!provider) throw new Error('Provider not found')
+    return discoverModels(provider)
+  })
+  ipcMain.handle('set-provider-model', (_e, providerId: string, model: string) => {
+    if (typeof providerId !== 'string' || typeof model !== 'string') throw new Error('Invalid params')
+    setProviderModel(providerId, model)
+  })
 
   // Auth
   ipcMain.handle('chatgpt-login', () => openChatGPTLogin())
   ipcMain.handle('chatgpt-logout', () => logoutChatGPT())
+  ipcMain.handle('subscription-login', async (_e, providerId: string) => {
+    if (typeof providerId !== 'string') throw new Error('Invalid providerId')
+    const config = getConnectionConfig()
+    const provider = config.providers.find((p) => p.id === providerId)
+    if (!provider) throw new Error('Provider not found')
+    if (provider.authType !== 'subscription' && provider.type !== 'chatgpt') {
+      throw new Error('Not a subscription provider')
+    }
+    // ChatGPT is the only subscription provider for now
+    return openChatGPTLogin()
+  })
 
   // Shell
   ipcMain.handle('open-external', (_e, url: string) => {
@@ -440,4 +468,7 @@ function registerIpcHandlers(): void {
     if (typeof serverId !== 'string' || typeof toolName !== 'string') throw new Error('Invalid params')
     return callExternalTool(serverId, toolName, args)
   })
+
+  // Computer Use — requires mainWindow for confirmation dialogs
+  registerComputerUseIpc(mainWindow!)
 }

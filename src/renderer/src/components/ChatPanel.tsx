@@ -13,6 +13,7 @@ import { useExportChat } from '../hooks/useExportChat'
 import { useChatSend } from '../hooks/useChatSend'
 import { ChatMessages } from './chat/ChatMessages'
 import { ChatInput } from './chat/ChatInput'
+import { ModelSwitcher } from './chat/ModelSwitcher'
 
 export function ChatPanel() {
   const messages = useAppStore((s) => s.messages)
@@ -168,6 +169,7 @@ export function ChatPanel() {
       <header className="flex items-center justify-between border-b border-border-subtle px-4 py-2">
         <h2 className="text-sm font-medium text-content-heading">{sessionId ? '对话' : 'AI GUI'}</h2>
         <div className="flex items-center gap-3">
+          <ModelSwitcher onOpenSettings={() => setView('settings')} />
           {soulPrompt && (
             <button
               onClick={() => setView('soul')}

@@ -22,11 +22,17 @@ const api = {
     ipcRenderer.invoke('update-provider', provider),
   removeProvider: (id: string): Promise<void> =>
     ipcRenderer.invoke('remove-provider', id),
+  discoverModels: (providerId: string): Promise<Array<{ id: string; name?: string; owned_by?: string }>> =>
+    ipcRenderer.invoke('discover-models', providerId),
+  setProviderModel: (providerId: string, model: string): Promise<void> =>
+    ipcRenderer.invoke('set-provider-model', providerId, model),
 
   chatgptLogin: (): Promise<ChatGPTSession> =>
     ipcRenderer.invoke('chatgpt-login'),
   chatgptLogout: (): Promise<void> =>
     ipcRenderer.invoke('chatgpt-logout'),
+  subscriptionLogin: (providerId: string): Promise<{ accessToken: string }> =>
+    ipcRenderer.invoke('subscription-login', providerId),
 
   openExternal: (url: string): Promise<void> =>
     ipcRenderer.invoke('open-external', url),
@@ -162,7 +168,58 @@ const api = {
     tools: Array<{ serverId: string; name: string; description?: string; inputSchema?: Record<string, unknown> }>
   }>> => ipcRenderer.invoke('mcp-list-connected'),
   mcpCallTool: (serverId: string, toolName: string, args: Record<string, unknown>) =>
-    ipcRenderer.invoke('mcp-call-tool', serverId, toolName, args)
+    ipcRenderer.invoke('mcp-call-tool', serverId, toolName, args),
+
+  // Computer Use
+  cuStart: (): Promise<boolean> => ipcRenderer.invoke('cu-start'),
+  cuStop: (): Promise<boolean> => ipcRenderer.invoke('cu-stop'),
+  cuStatus: (): Promise<{ running: boolean; safetyMode: string; actionCount: number; screenSize?: { width: number; height: number } }> =>
+    ipcRenderer.invoke('cu-status'),
+  cuAction: (action: { method: string; params: Record<string, unknown> }): Promise<{ ok: boolean; data?: unknown; error?: string }> =>
+    ipcRenderer.invoke('cu-action', action),
+  cuScreenshot: (): Promise<{ ok: boolean; data?: unknown; error?: string }> =>
+    ipcRenderer.invoke('cu-screenshot'),
+  cuSetSafety: (mode: string): Promise<boolean> =>
+    ipcRenderer.invoke('cu-set-safety', mode),
+  onCuConfirmRequest: (cb: (action: { method: string; params: Record<string, unknown> }) => void) => {
+    const handler = (_e: Electron.IpcRendererEvent, action: { method: string; params: Record<string, unknown> }): void => cb(action)
+    ipcRenderer.on('cu-confirm-request', handler)
+    return () => ipcRenderer.removeListener('cu-confirm-request', handler)
+  },
+  onCuEmergencyStop: (cb: () => void) => {
+    const handler = (): void => cb()
+    ipcRenderer.on('cu-emergency-stop', handler)
+    return () => ipcRenderer.removeListener('cu-emergency-stop', handler)
+  },
+  cuConfirmRespond: (approved: boolean): void => {
+    ipcRenderer.send('cu-confirm-response', approved)
+  },
+
+  // Auto Updater
+  updaterCheck: (): Promise<unknown> => ipcRenderer.invoke('updater-check'),
+  updaterDownload: (): Promise<boolean> => ipcRenderer.invoke('updater-download'),
+  updaterInstall: (): Promise<boolean> => ipcRenderer.invoke('updater-install'),
+  updaterStatus: (): Promise<unknown> => ipcRenderer.invoke('updater-status'),
+  onUpdaterAvailable: (cb: (info: { version: string }) => void) => {
+    const handler = (_e: Electron.IpcRendererEvent, info: { version: string }): void => cb(info)
+    ipcRenderer.on('updater-available', handler)
+    return () => ipcRenderer.removeListener('updater-available', handler)
+  },
+  onUpdaterProgress: (cb: (info: { percent: number }) => void) => {
+    const handler = (_e: Electron.IpcRendererEvent, info: { percent: number }): void => cb(info)
+    ipcRenderer.on('updater-progress', handler)
+    return () => ipcRenderer.removeListener('updater-progress', handler)
+  },
+  onUpdaterDownloaded: (cb: (info: { version: string }) => void) => {
+    const handler = (_e: Electron.IpcRendererEvent, info: { version: string }): void => cb(info)
+    ipcRenderer.on('updater-downloaded', handler)
+    return () => ipcRenderer.removeListener('updater-downloaded', handler)
+  },
+  onUpdaterError: (cb: (info: { message: string }) => void) => {
+    const handler = (_e: Electron.IpcRendererEvent, info: { message: string }): void => cb(info)
+    ipcRenderer.on('updater-error', handler)
+    return () => ipcRenderer.removeListener('updater-error', handler)
+  }
 } as const
 
 export type AiGuiAPI = typeof api

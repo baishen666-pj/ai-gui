@@ -12,6 +12,7 @@ const PROVIDER_ICONS: Record<string, string> = {
   ollama: '🦙',
   openrouter: '🌐',
   chatgpt: '💬',
+  deepseek: '🔵',
   custom: '⚙️'
 }
 
@@ -21,6 +22,7 @@ export function SettingsPanel() {
   const [activeId, setActiveId] = useState('zhipu')
   const [editingProvider, setEditingProvider] = useState<ProviderConfig | null>(null)
   const [saved, setSaved] = useState(false)
+  const [updateCheckStatus, setUpdateCheckStatus] = useState<'idle' | 'checking' | 'available' | 'latest' | 'error'>('idle')
   const sandboxLevel = useSandboxStore((s) => s.level)
   const setSandboxLevel = useSandboxStore((s) => s.setLevel)
 
@@ -238,7 +240,7 @@ export function SettingsPanel() {
             </h3>
             <div className="space-y-2 rounded-lg border border-border-subtle bg-surface-elevated p-4">
               {[
-                ['版本', '0.1.0'],
+                ['版本', '0.4.1'],
                 ['Electron', '39'],
                 ['React', '19'],
                 ['Three.js', '0.175']
@@ -248,6 +250,23 @@ export function SettingsPanel() {
                   <span className="text-content-muted">{v}</span>
                 </div>
               ))}
+              <button
+                onClick={async () => {
+                  if (!window.aiGui) return
+                  setUpdateCheckStatus('checking')
+                  try {
+                    const status = await window.aiGui.updaterCheck() as { available: boolean; version: string | null }
+                    setUpdateCheckStatus(status.available ? 'available' : 'latest')
+                  } catch {
+                    setUpdateCheckStatus('error')
+                  }
+                  setTimeout(() => setUpdateCheckStatus('idle'), 3000)
+                }}
+                disabled={updateCheckStatus === 'checking'}
+                className="mt-2 w-full rounded-lg border border-border-default bg-surface-overlay px-3 py-2 text-xs text-content-muted transition-colors hover:bg-surface-inset hover:text-content-secondary disabled:opacity-50"
+              >
+                {updateCheckStatus === 'checking' ? '检查中...' : updateCheckStatus === 'available' ? '✓ 发现新版本' : updateCheckStatus === 'latest' ? '✓ 已是最新版本' : updateCheckStatus === 'error' ? '✗ 检查失败' : '检查更新'}
+              </button>
             </div>
           </section>
         </div>
@@ -260,6 +279,7 @@ function ProviderConfigForm({ provider, onChange }: { provider: ProviderConfig; 
   const [loginStatus, setLoginStatus] = useState<'idle' | 'logging' | 'done' | 'error'>('idle')
   const [showKey, setShowKey] = useState(false)
   const [testResult, setTestResult] = useState<'idle' | 'testing' | 'ok' | 'fail'>('idle')
+  const [discoverStatus, setDiscoverStatus] = useState<'idle' | 'discovering' | 'done' | 'fail'>('idle')
   const update = (field: keyof ProviderConfig, value: string) => {
     onChange({ ...provider, [field]: value })
   }
@@ -288,7 +308,7 @@ function ProviderConfigForm({ provider, onChange }: { provider: ProviderConfig; 
   }
 
   // ChatGPT subscription uses browser login, no manual URL/Key fields
-  if (provider.type === 'chatgpt') {
+  if (provider.authType === 'subscription' || provider.type === 'chatgpt') {
     return (
       <div className="space-y-3 border-t border-border-subtle pt-3">
         <div className="rounded-lg bg-surface-overlay/50 p-3">
@@ -384,6 +404,30 @@ function ProviderConfigForm({ provider, onChange }: { provider: ProviderConfig; 
             <option key={m} value={m}>{m}</option>
           ))}
         </select>
+        <button
+          onClick={async () => {
+            if (!window.aiGui) return
+            setDiscoverStatus('discovering')
+            try {
+              const models = await window.aiGui.discoverModels(provider.id) as Array<{ id: string; name?: string }>
+              if (models.length > 0) {
+                const newModels = models.map((m) => m.id)
+                const merged = [...new Set([...newModels, ...provider.models])]
+                onChange({ ...provider, models: merged })
+                setDiscoverStatus('done')
+              } else {
+                setDiscoverStatus('fail')
+              }
+            } catch {
+              setDiscoverStatus('fail')
+            }
+            setTimeout(() => setDiscoverStatus('idle'), 3000)
+          }}
+          disabled={discoverStatus === 'discovering'}
+          className="rounded border border-border-default bg-surface-elevated px-2 py-1.5 text-[10px] text-content-subtle transition-colors hover:bg-surface-overlay hover:text-content-heading disabled:opacity-50"
+        >
+          {discoverStatus === 'discovering' ? '发现中...' : discoverStatus === 'done' ? `✓ 已发现` : discoverStatus === 'fail' ? '✗ 无结果' : '发现模型'}
+        </button>
       </label>
 
       <div className="flex items-center gap-2 rounded bg-accent/10 px-3 py-2">

@@ -2,6 +2,8 @@ import { net } from 'electron'
 import { parseSseBlock, processSseData, processCustomEvent } from './sse-parser'
 import type { SseCallbacks } from './sse-parser'
 import { getActiveProvider } from './config'
+import { getStrategy } from './providers/registry'
+import type { ProviderConfig } from '../shared/types'
 
 export interface SendMessageOptions {
   messages: { role: string; content: string | object[] }[]
@@ -14,9 +16,10 @@ const MAX_RETRIES = 2
 export function sendMessage(opts: SendMessageOptions, cb: SseCallbacks): AbortController {
   const controller = new AbortController()
   const provider = getActiveProvider()
+  const strategy = getStrategy(provider.type)
 
-  if (provider.type === 'chatgpt') {
-    return sendChatGPTMessage(opts, cb, controller, provider)
+  if (strategy.isSubscription) {
+    return sendSubscriptionMessage(opts, cb, controller, provider, strategy)
   }
 
   let attempt = 0
@@ -37,68 +40,28 @@ export function sendMessage(opts: SendMessageOptions, cb: SseCallbacks): AbortCo
         }
       }
     }
-    return sendOpenAICompatibleMessage(opts, wrappedCb, controller, provider)
+    return sendProviderMessage(opts, wrappedCb, controller, provider, strategy)
   }
 
   trySend()
   return controller
 }
 
-function sendOpenAICompatibleMessage(
+function sendProviderMessage(
   opts: SendMessageOptions,
   cb: SseCallbacks,
   controller: AbortController,
-  provider: ReturnType<typeof getActiveProvider>
+  provider: ProviderConfig,
+  strategy: ReturnType<typeof getStrategy>
 ): AbortController {
-  const baseUrl = provider.baseUrl.replace(/\/$/, '')
-
-  let url: string
-  if (provider.type === 'claude') {
-    url = `${baseUrl}/messages`
-  } else {
-    url = `${baseUrl}/chat/completions`
-  }
-
+  const url = strategy.buildUrl(provider.baseUrl)
   const model = opts.model || provider.defaultModel
-
-  let body: string
-  if (provider.type === 'claude') {
-    const systemMsg = opts.messages.find((m) => m.role === 'system')
-    const otherMsgs = opts.messages.filter((m) => m.role !== 'system').map((m) => ({
-      role: m.role === 'assistant' ? 'assistant' : 'user',
-      content: m.content
-    }))
-    body = JSON.stringify({
-      model,
-      max_tokens: 4096,
-      stream: true,
-      system: typeof systemMsg?.content === 'string' ? systemMsg.content : undefined,
-      messages: otherMsgs
-    })
-  } else {
-    body = JSON.stringify({
-      model,
-      messages: opts.messages,
-      stream: true
-    })
-  }
+  const body = strategy.buildBody(model, opts.messages, true)
 
   const request = net.request({ method: 'POST', url })
   request.setHeader('Content-Type', 'application/json')
-
-  if (provider.apiKey) {
-    if (provider.type === 'claude') {
-      request.setHeader('x-api-key', provider.apiKey)
-      request.setHeader('anthropic-version', '2023-06-01')
-    } else {
-      request.setHeader('Authorization', `Bearer ${provider.apiKey}`)
-    }
-  }
-
-  if (provider.baseUrl.includes('openrouter.ai')) {
-    request.setHeader('HTTP-Referer', 'https://github.com/ai-gui')
-    request.setHeader('X-Title', 'AI GUI')
-  }
+  strategy.applyAuthHeaders(request, provider.apiKey)
+  strategy.applyExtraHeaders(request, provider.baseUrl)
 
   let buffer = ''
   const state = { hasContent: false, lastError: '' }
@@ -160,43 +123,24 @@ function sendOpenAICompatibleMessage(
   return controller
 }
 
-function sendChatGPTMessage(
+function sendSubscriptionMessage(
   opts: SendMessageOptions,
   cb: SseCallbacks,
   controller: AbortController,
-  provider: ReturnType<typeof getActiveProvider>
+  provider: ProviderConfig,
+  strategy: ReturnType<typeof getStrategy>
 ): AbortController {
-  const url = 'https://chatgpt.com/backend-api/conversation'
+  const url = strategy.buildUrl(provider.baseUrl)
   const model = opts.model || provider.defaultModel
-
-  // Convert OpenAI format messages to ChatGPT format
-  const chatgptMessages = opts.messages
-    .filter((m) => m.role !== 'system')
-    .map((m) => ({
-      id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      author: { role: m.role === 'assistant' ? 'assistant' : 'user' },
-      content: { content_type: 'text', parts: [typeof m.content === 'string' ? m.content : ''] }
-    }))
-
-  const systemMsg = opts.messages.find((m) => m.role === 'system')
-  const systemParts = systemMsg && typeof systemMsg.content === 'string' ? [systemMsg.content] : undefined
-
-  const body = JSON.stringify({
-    action: 'next',
-    messages: chatgptMessages,
-    model,
-    parent_message_id: `parent-${Date.now()}`,
-    ...(systemParts ? { system_message: { content_type: 'text', parts: systemParts } } : {}),
-    stream: true
-  })
+  const body = strategy.buildBody(model, opts.messages, true)
 
   const request = net.request({ method: 'POST', url })
   request.setHeader('Content-Type', 'application/json')
-  request.setHeader('Authorization', `Bearer ${provider.apiKey}`)
-  request.setHeader('User-Agent', 'AI-GUI/0.1.0')
-  request.setHeader('Accept', 'text/event-stream')
+  strategy.applyAuthHeaders(request, provider.apiKey)
+  strategy.applyExtraHeaders(request, provider.baseUrl)
 
   let buffer = ''
+  let lastSentLength = 0
 
   request.on('response', (response) => {
     if (response.statusCode !== 200) {
@@ -209,14 +153,12 @@ function sendChatGPTMessage(
           msg = parsed.detail || parsed.error?.message || parsed.message || msg
         } catch { /* noop */ }
         if (response.statusCode === 401) {
-          msg = 'ChatGPT 登录已过期，请重新登录'
+          msg = '登录已过期，请重新登录'
         }
         cb.onError?.(msg)
       })
       return
     }
-
-    let lastSentLength = 0
 
     response.on('data', (chunk: Buffer) => {
       if (controller.signal.aborted) return
@@ -231,26 +173,13 @@ function sendChatGPTMessage(
 
         try {
           const parsed = JSON.parse(data)
-          const message = parsed.message
-          if (!message) continue
-
-          // Extract text content
-          const parts = message.content?.parts
-          if (parts && Array.isArray(parts)) {
-            const text = parts.join('')
-            const delta = text.slice(lastSentLength)
-            if (delta) {
-              lastSentLength = text.length
-              cb.onChunk?.(delta)
-            }
-          }
-
-          if (message.status === 'finished_successfully') {
-            const finalParts = message.content?.parts
-            if (finalParts) {
-              const finalText = finalParts.join('')
-              const finalDelta = finalText.slice(lastSentLength)
-              if (finalDelta) cb.onChunk?.(finalDelta)
+          if (strategy.parseStreamDelta) {
+            const result = strategy.parseStreamDelta(parsed, { lastSentLength })
+            if (result) {
+              if (result.text) {
+                lastSentLength += result.text.length
+                cb.onChunk?.(result.text)
+              }
             }
           }
         } catch {

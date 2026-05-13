@@ -3,7 +3,7 @@
 ## 项目概览
 
 AI Agent 可视化桌面工作台。Electron + React + TypeScript + Zustand + SQLite。
-支持 Multi-Agent 聊天（4 Provider）、2.5D 等轴测办公室可视化、DAG 工作流编排、MCP 协议双向对接。
+支持 Multi-Agent 聊天（8 Provider: 智谱/OpenAI/Claude/Ollama/OpenRouter/ChatGPT/DeepSeek/自定义）、2.5D 等轴测办公室可视化、DAG 工作流编排、MCP 协议双向对接。
 
 ## 技术栈版本
 
@@ -40,6 +40,8 @@ npm run test:e2e         # Playwright E2E
 | 目录 | 职责 |
 |------|------|
 | `src/main/` | Electron 主进程（chat, sessions, persistence, config, auth） |
+| `src/main/providers/` | Provider 策略模式（OpenAI/Claude/ChatGPT + 注册表） |
+| `src/main/model-discovery.ts` | 模型自动发现（GET /models） |
 | `src/main/memory.ts` | 记忆系统（MEMORY/USER/SOUL 三文件管理） |
 | `src/main/agents-config.ts` | AGENTS.md 分层扫描与 override |
 | `src/main/checkpoint.ts` | Checkpoint 快照与回退 |
@@ -107,5 +109,5 @@ npm run test:e2e         # Playwright E2E
 - **测试范围**：覆盖 `vitest.config.ts` 中 `coverage.include` 列出的文件
 - **测试文件位置**：`src/**/__tests__/*.test.ts(x)` 或 `src/**/*.test.ts(x)`
 - **纯函数优先**：IsoEngine、themeColors、approvalDetection、stores 等纯逻辑必须有单元测试
-- **新模块必须覆盖**：memory.ts、agents-config.ts、checkpoint.ts、sandbox.ts、tools/registry.ts、mcp/server.ts 均需有对应单元测试
+- **新模块必须覆盖**：memory.ts、agents-config.ts、checkpoint.ts、sandbox.ts、tools/registry.ts、mcp/server.ts、providers/、model-discovery.ts 均需有对应单元测试
 - **E2E**：Playwright，`npm run test:e2e`

@@ -10,7 +10,8 @@ export const zhCN: LocaleMessages = {
     canvas: 'Agent 画布',
     memory: '记忆',
     tools: '工具',
-    settings: '设置'
+    settings: '设置',
+    computerUse: '桌面控制'
   },
   chat: {
     placeholder: '输入消息，/ 查看命令...',
@@ -26,6 +27,23 @@ export const zhCN: LocaleMessages = {
     local: '本地模式',
     remote: '远程模式',
     save: '保存'
+  },
+  provider: {
+    deepseek: 'DeepSeek',
+    discoverModels: '发现模型',
+    discovering: '发现中...',
+    discoverFailed: '无结果',
+    discoverDone: '已发现',
+    switchModel: '切换模型',
+    switchProvider: '切换服务商',
+    subscription: {
+      login: '登录',
+      logging: '等待登录...',
+      logout: '退出登录',
+      loggedIn: '已登录',
+      loginFailed: '登录失败，请重试',
+      description: '使用你的订阅直接登录，无需 API Key'
+    }
   },
   common: {
     loading: '加载中...',

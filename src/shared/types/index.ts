@@ -10,11 +10,13 @@ export interface ChatMessage {
 export interface ProviderConfig {
   id: string
   name: string
-  type: 'zhipu' | 'openai' | 'claude' | 'ollama' | 'openrouter' | 'chatgpt' | 'custom'
+  type: string
+  authType?: 'apikey' | 'subscription'
   baseUrl: string
   apiKey: string
   models: string[]
   defaultModel: string
+  discoverable?: boolean
 }
 
 export interface ConnectionConfig {
@@ -104,7 +106,7 @@ export interface Workflow {
   updatedAt: number
 }
 
-export type ViewMode = 'chat' | 'canvas' | '3d' | 'memory' | 'tools' | 'soul' | 'schedule' | 'workflow' | 'checkpoint' | 'settings'
+export type ViewMode = 'chat' | 'canvas' | '3d' | 'memory' | 'tools' | 'soul' | 'schedule' | 'workflow' | 'checkpoint' | 'computer-use' | 'settings'
 
 export interface ChatGPTSession {
   accessToken: string

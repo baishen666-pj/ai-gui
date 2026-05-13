@@ -10,7 +10,8 @@ export const en: LocaleMessages = {
     canvas: 'Agent Canvas',
     memory: 'Memory',
     tools: 'Tools',
-    settings: 'Settings'
+    settings: 'Settings',
+    computerUse: 'Computer Use'
   },
   chat: {
     placeholder: 'Type a message, / for commands...',
@@ -26,6 +27,23 @@ export const en: LocaleMessages = {
     local: 'Local Mode',
     remote: 'Remote Mode',
     save: 'Save'
+  },
+  provider: {
+    deepseek: 'DeepSeek',
+    discoverModels: 'Discover Models',
+    discovering: 'Discovering...',
+    discoverFailed: 'No results',
+    discoverDone: 'Discovered',
+    switchModel: 'Switch Model',
+    switchProvider: 'Switch Provider',
+    subscription: {
+      login: 'Login',
+      logging: 'Waiting for login...',
+      logout: 'Logout',
+      loggedIn: 'Logged in',
+      loginFailed: 'Login failed, please retry',
+      description: 'Login with your subscription, no API Key needed'
+    }
   },
   common: {
     loading: 'Loading...',

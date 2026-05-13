@@ -1,6 +1,6 @@
 {
   "name": "ai-gui",
-  "version": "0.2.0",
+  "version": "0.4.1",
   "description": "AI GUI — 多Agent桌面工作台 + 3D可视化",
   "main": "./out/main/index.js",
   "author": "ai-gui",
@@ -26,6 +26,7 @@
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@xyflow/react": "^12.0.0",
     "better-sqlite3": "^12.8.0",
+    "electron-updater": "^6.8.3",
     "react-markdown": "^10.1.0",
     "react-syntax-highlighter": "^16.1.1",
     "remark-gfm": "^4.0.1",

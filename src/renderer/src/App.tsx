@@ -11,8 +11,10 @@ import { MemoryPanel } from './components/MemoryPanel'
 import { ToolsPanel } from './components/ToolsPanel'
 import { SettingsPanel } from './components/SettingsPanel'
 import { CheckpointPanel } from './components/CheckpointPanel'
+import { ComputerUsePanel } from './components/computer-use/ComputerUsePanel'
 import { ShortcutHelp } from './components/ShortcutHelp'
 import { ApprovalPanel } from './components/ApprovalPanel'
+import { UpdateNotification } from './components/UpdateNotification'
 import { usePersistence } from './hooks/usePersistence'
 
 const AgentCanvas = lazy(() => import('./components/canvas/AgentCanvas').then((m) => ({ default: m.AgentCanvas })))
@@ -72,7 +74,9 @@ export function App() {
   }, [setView, clearMessages])
 
   return (
-    <div className="flex h-screen min-w-[640px] bg-surface-base text-content-primary">
+    <div className="flex h-screen min-w-[640px] flex-col bg-surface-base text-content-primary">
+      <UpdateNotification />
+      <div className="flex flex-1 overflow-hidden">
       <Sidebar activeView={view} onViewChange={setView} />
       <main className="flex-1 overflow-hidden" key={view}>
         <Suspense fallback={<LoadingSpinner />}>
@@ -94,12 +98,14 @@ export function App() {
           )}
           {view === 'soul' && <SoulEditorPanel />}
           {view === 'checkpoint' && <CheckpointPanel />}
+          {view === 'computer-use' && <ComputerUsePanel />}
           {view === 'settings' && <SettingsPanel />}
           </div>
         </Suspense>
       </main>
       {showHelp && <ShortcutHelp onClose={() => setShowHelp(false)} />}
       <ApprovalPanel />
+      </div>
     </div>
   )
 }

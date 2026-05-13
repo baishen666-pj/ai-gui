@@ -6,6 +6,7 @@
 import { z } from 'zod'
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { getActiveProvider } from '../../config'
+import { getStrategy } from '../../providers/registry'
 
 export function registerAgentChatTool(server: McpServer): void {
   server.registerTool(
@@ -53,30 +54,13 @@ interface ProviderLike {
 
 function fetchCompletion(provider: ProviderLike, model: string, message: string): Promise<string> {
   return new Promise((resolve, reject) => {
-    const baseUrl = provider.baseUrl.replace(/\/$/, '')
-    const isClaude = provider.type === 'claude'
-
-    const url = isClaude ? `${baseUrl}/messages` : `${baseUrl}/chat/completions`
-
-    let body: string
-    if (isClaude) {
-      body = JSON.stringify({
-        model,
-        max_tokens: 4096,
-        stream: false,
-        messages: [{ role: 'user', content: message }]
-      })
-    } else {
-      body = JSON.stringify({
-        model,
-        messages: [{ role: 'user', content: message }],
-        stream: false
-      })
-    }
+    const strategy = getStrategy(provider.type)
+    const url = strategy.buildUrl(provider.baseUrl)
+    const body = strategy.buildBody(model, [{ role: 'user', content: message }], false)
 
     const headers: Record<string, string> = { 'Content-Type': 'application/json' }
     if (provider.apiKey) {
-      if (isClaude) {
+      if (provider.type === 'claude') {
         headers['x-api-key'] = provider.apiKey
         headers['anthropic-version'] = '2023-06-01'
       } else {

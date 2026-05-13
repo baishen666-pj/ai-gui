@@ -4,9 +4,19 @@ import type { ChatGPTSession } from '../shared/types'
 
 export type { ChatGPTSession }
 
+export interface SubscriptionLoginOptions {
+  loginUrl: string
+  windowTitle: string
+  cookieDomain: string
+  sessionCookieName: string
+  sessionEndpoint: string
+  tokenExtractor: (data: Record<string, unknown>) => string | null
+  partition: string
+}
+
 let loginWindow: BrowserWindow | null = null
 
-export function openChatGPTLogin(): Promise<ChatGPTSession> {
+export function openSubscriptionLogin(opts: SubscriptionLoginOptions): Promise<{ accessToken: string }> {
   return new Promise((resolve, reject) => {
     if (loginWindow && !loginWindow.isDestroyed()) {
       loginWindow.focus()
@@ -17,32 +27,30 @@ export function openChatGPTLogin(): Promise<ChatGPTSession> {
     loginWindow = new BrowserWindow({
       width: 800,
       height: 700,
-      title: '登录 ChatGPT',
+      title: opts.windowTitle,
       webPreferences: {
-        partition: 'chatgpt-auth',
+        partition: opts.partition,
         nodeIntegration: false,
         contextIsolation: true
       }
     })
 
-    loginWindow.loadURL('https://chatgpt.com/auth/login')
+    loginWindow.loadURL(opts.loginUrl)
 
     const pollSession = async () => {
       if (!loginWindow || loginWindow.isDestroyed()) return
 
       try {
         const ses = loginWindow.webContents.session
-        const cookies = await ses.cookies.get({ domain: '.chatgpt.com' })
+        const cookies = await ses.cookies.get({ domain: opts.cookieDomain })
 
-        // Check if user is logged in by looking for session cookies
-        const hasSession = cookies.some((c) => c.name === '__Secure-next-auth.session-token')
+        const hasSession = cookies.some((c) => c.name === opts.sessionCookieName)
         if (!hasSession) {
           setTimeout(pollSession, 2000)
           return
         }
 
-        // Fetch the access token
-        const response = await ses.fetch('https://chatgpt.com/api/auth/session', {
+        const response = await ses.fetch(opts.sessionEndpoint, {
           headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
           }
@@ -53,21 +61,21 @@ export function openChatGPTLogin(): Promise<ChatGPTSession> {
           return
         }
 
-        const data = await response.json() as ChatGPTSession
-        if (!data.accessToken) {
+        const data = await response.json() as Record<string, unknown>
+        const token = opts.tokenExtractor(data)
+        if (!token) {
           setTimeout(pollSession, 2000)
           return
         }
 
-        // Save token to active provider
         const provider = getActiveProvider()
-        if (provider.type === 'chatgpt') {
-          updateProvider({ ...provider, apiKey: data.accessToken })
+        if (provider.authType === 'subscription' || provider.type === 'chatgpt') {
+          updateProvider({ ...provider, apiKey: token })
         }
 
         loginWindow.close()
         loginWindow = null
-        resolve(data)
+        resolve({ accessToken: token })
       } catch {
         setTimeout(pollSession, 2000)
       }
@@ -77,16 +85,27 @@ export function openChatGPTLogin(): Promise<ChatGPTSession> {
       loginWindow = null
     })
 
-    // Start polling after initial load
     loginWindow.webContents.on('did-finish-load', () => {
       setTimeout(pollSession, 1500)
     })
   })
 }
 
+export function openChatGPTLogin(): Promise<ChatGPTSession> {
+  return openSubscriptionLogin({
+    loginUrl: 'https://chatgpt.com/auth/login',
+    windowTitle: '登录 ChatGPT',
+    cookieDomain: '.chatgpt.com',
+    sessionCookieName: '__Secure-next-auth.session-token',
+    sessionEndpoint: 'https://chatgpt.com/api/auth/session',
+    tokenExtractor: (data) => (data as unknown as ChatGPTSession).accessToken ?? null,
+    partition: 'chatgpt-auth'
+  }) as Promise<ChatGPTSession>
+}
+
 export async function getChatGPTSession(): Promise<string | null> {
   const provider = getActiveProvider()
-  if (provider.type !== 'chatgpt') return null
+  if (provider.type !== 'chatgpt' && provider.authType !== 'subscription') return null
   return provider.apiKey || null
 }
 
@@ -94,5 +113,12 @@ export function logoutChatGPT(): Promise<void> {
   return new Promise((resolve) => {
     const partition = session.fromPartition('chatgpt-auth')
     partition.clearStorageData().then(() => resolve()).catch(() => resolve())
+  })
+}
+
+export function logoutSubscription(partition: string): Promise<void> {
+  return new Promise((resolve) => {
+    const ses = session.fromPartition(partition)
+    ses.clearStorageData().then(() => resolve()).catch(() => resolve())
   })
 }

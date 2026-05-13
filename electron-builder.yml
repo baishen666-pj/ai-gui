@@ -53,4 +53,8 @@ linux:
     - AppImage
   maintainer: ai-gui
   category: Development
-publish: null
+publish:
+  provider: github
+  owner: baishen666-pj
+  repo: ai-gui
+  releaseType: release

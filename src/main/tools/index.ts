@@ -7,6 +7,14 @@ import { registerTool } from './registry'
 import { readFileSpec, readFileHandler, writeFileSpec, writeFileHandler } from './file-ops'
 import { shellSpec, shellHandler } from './shell'
 import { searchSpec, searchHandler } from './search'
+import {
+  computerScreenshotSpec, computerScreenshotHandler,
+  computerClickSpec, computerClickHandler,
+  computerTypeSpec, computerTypeHandler,
+  computerKeyPressSpec, computerKeyPressHandler,
+  computerMouseSpec, computerMouseHandler,
+  computerScrollSpec, computerScrollHandler
+} from './computer-use-tools'
 
 /** Register all built-in tools. Idempotent — safe to call multiple times. */
 export function registerBuiltinTools(): void {
@@ -14,6 +22,12 @@ export function registerBuiltinTools(): void {
   registerTool(writeFileSpec, writeFileHandler)
   registerTool(shellSpec, shellHandler)
   registerTool(searchSpec, searchHandler)
+  registerTool(computerScreenshotSpec, computerScreenshotHandler)
+  registerTool(computerClickSpec, computerClickHandler)
+  registerTool(computerTypeSpec, computerTypeHandler)
+  registerTool(computerKeyPressSpec, computerKeyPressHandler)
+  registerTool(computerMouseSpec, computerMouseHandler)
+  registerTool(computerScrollSpec, computerScrollHandler)
 }
 
 // Re-export for convenience

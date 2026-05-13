@@ -64,9 +64,20 @@ const BUILTIN_PROVIDERS: ProviderConfig[] = [
     defaultModel: 'openai/gpt-4o'
   },
   {
+    id: 'deepseek',
+    name: 'DeepSeek',
+    type: 'openai',
+    baseUrl: 'https://api.deepseek.com/v1',
+    apiKey: '',
+    models: ['deepseek-chat', 'deepseek-reasoner'],
+    defaultModel: 'deepseek-chat',
+    discoverable: true
+  },
+  {
     id: 'chatgpt',
     name: 'ChatGPT (订阅)',
     type: 'chatgpt',
+    authType: 'subscription',
     baseUrl: 'https://chatgpt.com/backend-api',
     apiKey: '',
     models: ['gpt-5.5', 'gpt-4o', 'o1-pro', 'o1', 'gpt-4o-mini'],
@@ -132,4 +143,12 @@ export function removeProvider(providerId: string): void {
     ? (providers[0]?.id ?? 'zhipu')
     : config.activeProviderId
   setConnectionConfig({ providers, activeProviderId })
+}
+
+export function setProviderModel(providerId: string, model: string): void {
+  const config = getConnectionConfig()
+  const providers = config.providers.map((p) =>
+    p.id === providerId ? { ...p, defaultModel: model } : p
+  )
+  setConnectionConfig({ providers })
 }
