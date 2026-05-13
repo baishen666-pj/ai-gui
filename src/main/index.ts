@@ -1,4 +1,5 @@
 import { app, BrowserWindow, ipcMain, shell, Notification, dialog } from 'electron'
+import { exec } from 'child_process'
 import { join } from 'path'
 import { writeFile } from 'fs/promises'
 
@@ -162,6 +163,17 @@ function registerIpcHandlers(): void {
     if (result.canceled || !result.filePath) return false
     await writeFile(result.filePath, opts.content, 'utf-8')
     return true
+  })
+
+  // Shell execution for code block run
+  ipcMain.handle('run-shell', async (_e, command: string) => {
+    return new Promise<string>((resolve) => {
+      const isWindows = process.platform === 'win32'
+      exec(command, { timeout: 10000, shell: isWindows ? 'powershell.exe' : '/bin/bash' }, (error, stdout, stderr) => {
+        if (error) resolve(`Error: ${error.message}\n${stderr}`)
+        else resolve(stdout || stderr || '(no output)')
+      })
+    })
   })
 
   // Persistence — Scheduled Tasks

@@ -23,8 +23,12 @@ interface CodeBlockProps {
   children: string
 }
 
+const RUNNABLE_LANGS = new Set(['javascript', 'js', 'typescript', 'ts', 'python', 'py', 'bash', 'sh', 'shell'])
+
 function CodeBlock({ language, children }: CodeBlockProps) {
   const [copied, setCopied] = useState(false)
+  const [running, setRunning] = useState(false)
+  const [output, setOutput] = useState<string | null>(null)
 
   const handleCopy = useCallback(() => {
     navigator.clipboard.writeText(children).then(() => {
@@ -33,7 +37,57 @@ function CodeBlock({ language, children }: CodeBlockProps) {
     })
   }, [children])
 
+  const handleRun = useCallback(() => {
+    const lang = language.toLowerCase()
+    setRunning(true)
+    setOutput(null)
+
+    if (lang === 'python' || lang === 'py') {
+      if (window.aiGui) {
+        window.aiGui.chatSend({
+          messages: [
+            { role: 'system', content: 'Execute this Python code and return ONLY the output. If there is an error, return the error message prefixed with "Error:".' },
+            { role: 'user', content: `\`\`\`python\n${children}\n\`\`\`` }
+          ]
+        }).catch(() => {})
+        let buf = ''
+        const unsubChunk = window.aiGui.onChatChunk((chunk: string) => { buf += chunk; setOutput(buf) })
+        const unsubDone = window.aiGui.onChatDone(() => { unsubChunk(); unsubDone(); unsubErr(); setRunning(false) })
+        const unsubErr = window.aiGui.onChatError((msg: string) => { unsubChunk(); unsubDone(); unsubErr(); setOutput(`Error: ${msg}`); setRunning(false) })
+      }
+      return
+    }
+
+    // JS/TS/Bash — execute locally via eval (sandboxed) or shell
+    if (lang === 'bash' || lang === 'sh' || lang === 'shell') {
+      if (window.aiGui?.runShell) {
+        window.aiGui.runShell(children).then((result: string) => { setOutput(result); setRunning(false) }).catch((e: Error) => { setOutput(`Error: ${e.message}`); setRunning(false) })
+      } else {
+        setOutput('Shell execution not available in browser mode')
+        setRunning(false)
+      }
+      return
+    }
+
+    // JavaScript / TypeScript — eval in sandbox
+    try {
+      const logs: string[] = []
+      const fakeConsole = { log: (...args: unknown[]) => logs.push(args.map(String).join(' ')), error: (...args: unknown[]) => logs.push('Error: ' + args.map(String).join(' ')), warn: (...args: unknown[]) => logs.push('Warn: ' + args.map(String).join(' ')) }
+      const code = lang === 'typescript' || lang === 'ts'
+        ? children.replace(/:\s+(\w+)(\[\])?/g, '').replace(/:\s+\w+/g, '').replace(/interface\s+\w+\s*\{[^}]*\}/g, '').replace(/<\w+>/g, '')
+        : children
+      const fn = new Function('console', code)
+      const result = fn(fakeConsole)
+      const out = logs.join('\n') + (result !== undefined ? (logs.length ? '\n→ ' : '→ ') + String(result) : '')
+      setOutput(out || '(no output)')
+    } catch (e) {
+      setOutput(`Error: ${(e as Error).message}`)
+    }
+    setRunning(false)
+  }, [language, children])
+
   const isDiff = language === 'diff'
+  const canRun = RUNNABLE_LANGS.has(language.toLowerCase())
 
   if (isDiff) {
     return (
@@ -66,7 +120,19 @@ function CodeBlock({ language, children }: CodeBlockProps) {
     <div className="group relative my-2 overflow-hidden rounded-lg border border-border-default">
       <div className="flex items-center justify-between bg-surface-overlay px-3 py-1 text-xs text-content-muted">
         <span>{language || 'code'}</span>
-        <CopyButton copied={copied} onClick={handleCopy} />
+        <div className="flex items-center gap-1">
+          {canRun && (
+            <button
+              onClick={handleRun}
+              disabled={running}
+              className="flex items-center gap-1 rounded px-2 py-0.5 text-xs text-success transition-colors hover:bg-success/10 disabled:opacity-40"
+            >
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21"/></svg>
+              {running ? '运行中...' : '运行'}
+            </button>
+          )}
+          <CopyButton copied={copied} onClick={handleCopy} />
+        </div>
       </div>
       <Suspense
         fallback={
@@ -82,6 +148,12 @@ function CodeBlock({ language, children }: CodeBlockProps) {
           {children}
         </SyntaxHighlighter>
       </Suspense>
+      {output !== null && (
+        <div className="border-t border-border-subtle bg-surface-base px-3 py-2">
+          <div className="mb-1 text-[10px] font-medium text-content-subtle">输出</div>
+          <pre className="overflow-x-auto text-xs text-content-secondary whitespace-pre-wrap">{output}</pre>
+        </div>
+      )}
     </div>
   )
 }

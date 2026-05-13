@@ -6,7 +6,6 @@ import { OfficeLighting } from './OfficeLighting'
 import { OfficeScene } from './OfficeScene'
 import { DynamicOfficeScene } from './DynamicOfficeScene'
 import { LayoutEditor } from './LayoutEditor'
-import { ApprovalPanel } from '../ApprovalPanel'
 import { useAppStore } from '../../stores/app'
 
 export function AgentGraph3D() {
@@ -133,9 +132,6 @@ export function AgentGraph3D() {
           {projectRooms.length > 0 ? <DynamicOfficeScene /> : <OfficeScene />}
         </Canvas>
       </div>
-
-      {/* Approval overlay */}
-      <ApprovalPanel />
     </div>
   )
 }

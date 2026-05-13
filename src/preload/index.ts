@@ -92,7 +92,10 @@ const api = {
   // Persistence — Workflows
   persistenceGetWorkflows: () => ipcRenderer.invoke('persistence-get-workflows'),
   persistenceUpsertWorkflow: (wf: any) => ipcRenderer.invoke('persistence-upsert-workflow', wf),
-  persistenceDeleteWorkflow: (id: string) => ipcRenderer.invoke('persistence-delete-workflow', id)
+  persistenceDeleteWorkflow: (id: string) => ipcRenderer.invoke('persistence-delete-workflow', id),
+
+  // Shell execution (for code block run)
+  runShell: (command: string): Promise<string> => ipcRenderer.invoke('run-shell', command)
 } as const
 
 export type AiGuiAPI = typeof api

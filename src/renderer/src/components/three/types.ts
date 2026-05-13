@@ -1,6 +1,6 @@
 import type { Vector3Tuple } from 'three'
 
-export type AgentActivity = 'idle' | 'working' | 'meeting' | 'walking'
+export type AgentActivity = 'idle' | 'working' | 'meeting' | 'walking' | 'submitting'
 export type StaticActivity = 'idle' | 'working' | 'meeting'
 
 export type FurnitureType = 'desk' | 'monitor' | 'chair' | 'roundTable' | 'sofa' | 'plant' | 'coffeeTable'

@@ -9,6 +9,7 @@ import { MemoryPanel } from './components/MemoryPanel'
 import { ToolsPanel } from './components/ToolsPanel'
 import { SettingsPanel } from './components/SettingsPanel'
 import { ShortcutHelp } from './components/ShortcutHelp'
+import { ApprovalPanel } from './components/ApprovalPanel'
 import { usePersistence } from './hooks/usePersistence'
 
 const AgentCanvas = lazy(() => import('./components/canvas/AgentCanvas').then((m) => ({ default: m.AgentCanvas })))
@@ -85,6 +86,7 @@ export function App() {
         </Suspense>
       </main>
       {showHelp && <ShortcutHelp onClose={() => setShowHelp(false)} />}
+      <ApprovalPanel />
     </div>
   )
 }

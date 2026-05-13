@@ -5,12 +5,14 @@ import { SlashCommandMenu } from './SlashCommandMenu'
 import type { SlashCommand } from './SlashCommandMenu'
 import type { ChatMessage } from '../../../shared/types'
 import { getExportContent, getExportFileName, type ExportFormat } from '../lib/export'
+import { detectDangerousContent, CATEGORY_LABELS } from '../lib/approvalDetection'
 
 export function ChatPanel() {
   const {
     messages, isLoading, toolProgress, sessionId, reasoningContent, soulPrompt,
     addMessage, appendToLastAgent, setLoading, setToolProgress,
-    clearMessages, setSessionId, setView, appendReasoning, clearReasoning, notify
+    clearMessages, setSessionId, setView, appendReasoning, clearReasoning, notify,
+    chatApproval, submitChatApproval, respondChatApproval
   } = useAppStore()
   const [input, setInput] = useState('')
   const [slashMenuOpen, setSlashMenuOpen] = useState(false)
@@ -54,6 +56,74 @@ export function ChatPanel() {
 
   const isAiConfigMode = useAppStore((s) => s.isAiConfigMode)
 
+  // Handle chat approval response — send follow-up message
+  const prevChatApprovalStatusRef = useRef<string>('none')
+  useEffect(() => {
+    if (!chatApproval) {
+      prevChatApprovalStatusRef.current = 'none'
+      return
+    }
+    if (chatApproval.status === 'pending') {
+      prevChatApprovalStatusRef.current = 'pending'
+      return
+    }
+    if (prevChatApprovalStatusRef.current !== 'pending') return
+    prevChatApprovalStatusRef.current = chatApproval.status
+
+    const categoryLabel = CATEGORY_LABELS[chatApproval.category]
+    if (chatApproval.status === 'approved') {
+      addMessage({
+        id: `system-${Date.now()}`, role: 'system',
+        content: `✅ 已批准${categoryLabel}操作，AI 将继续执行`,
+        timestamp: Date.now()
+      })
+      handleApprovalFollowUp('approved')
+    } else {
+      addMessage({
+        id: `system-${Date.now()}`, role: 'system',
+        content: `❌ 已拒绝${categoryLabel}操作，AI 将取消执行`,
+        timestamp: Date.now()
+      })
+      handleApprovalFollowUp('rejected')
+    }
+    // Clear after handling
+    setTimeout(() => {
+      useAppStore.setState({ chatApproval: null })
+    }, 100)
+  }, [chatApproval])
+
+  const handleApprovalFollowUp = useCallback((result: 'approved' | 'rejected') => {
+    if (!window.aiGui) return
+    const prompt = result === 'approved'
+      ? '用户已批准你的操作请求。请继续执行上述操作。'
+      : '用户拒绝了你的操作请求。请不要执行此操作，并提供替代方案。'
+    const sid = useAppStore.getState().sessionId
+    if (!sid) return
+
+    const userMsg: ChatMessage = {
+      id: `user-${Date.now()}`, role: 'user', content: prompt, timestamp: Date.now()
+    }
+    addMessage(userMsg)
+    setLoading(true)
+    isStreamingRef.current = true
+    agentBufferRef.current = ''
+
+    const apiMsgs = [
+      ...messages.filter((m) => m.role !== 'system' && m.role !== 'error').map((m) => ({
+        role: m.role === 'user' ? 'user' as const : 'assistant' as const,
+        content: m.content
+      })),
+      { role: 'user' as const, content: prompt }
+    ]
+    const soul = useAppStore.getState().soulPrompt
+    const finalMsgs = soul ? [{ role: 'system', content: soul }, ...apiMsgs] : apiMsgs
+
+    window.aiGui.chatSend({ messages: finalMsgs }).catch(() => {
+      addMessage({ id: `error-${Date.now()}`, role: 'error', content: '发送后续消息失败', timestamp: Date.now() })
+      setLoading(false)
+    })
+  }, [messages, addMessage, setLoading])
+
   useEffect(() => {
     if (!window.aiGui) return
     const unsubChunk = window.aiGui.onChatChunk((chunk: string) => {
@@ -68,8 +138,32 @@ export function ChatPanel() {
       isStreamingRef.current = false
       setLoading(false)
       setToolProgress(null)
-      persistAgentMessage(agentBufferRef.current)
+      const finalContent = agentBufferRef.current
+      persistAgentMessage(finalContent)
       agentBufferRef.current = ''
+
+      // Auto-approval detection
+      if (finalContent) {
+        const detection = detectDangerousContent(finalContent)
+        if (detection.detected) {
+          const lastMsgId = useAppStore.getState().messages[useAppStore.getState().messages.length - 1]?.id || `agent-${Date.now()}`
+          submitChatApproval({
+            messageId: lastMsgId,
+            content: finalContent,
+            category: detection.category!,
+            summary: detection.summary,
+            confidence: detection.confidence,
+            matchedPattern: detection.matchedPattern
+          })
+          const categoryLabel = CATEGORY_LABELS[detection.category!]
+          addMessage({
+            id: `system-${Date.now()}`, role: 'system',
+            content: `⚠️ 检测到${categoryLabel}操作「${detection.summary}」，等待审批确认`,
+            timestamp: Date.now()
+          })
+          notify('需要审批', `AI 尝试${categoryLabel}：${detection.summary}`)
+        }
+      }
     }
     const unsubError = (msg: string) => {
       if (isAiConfigMode) return
@@ -342,6 +436,16 @@ export function ChatPanel() {
         />
       )}
 
+      {chatApproval?.status === 'pending' && (
+        <ChatApprovalBar
+          summary={chatApproval.summary}
+          confidence={chatApproval.confidence}
+          category={chatApproval.category}
+          onApprove={() => respondChatApproval(true)}
+          onReject={() => respondChatApproval(false)}
+        />
+      )}
+
       <div className="relative border-t border-border-subtle p-3">
         {pendingImage && (
           <div className="mb-2 flex items-center gap-2">
@@ -416,13 +520,19 @@ const BotIcon = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/><line x1="9" y1="19" x2="15" y2="19"/></svg>
 )
 
-const MessageBubble = memo(function MessageBubble({ msg, onDelete, onCopy }: {
+const MessageBubble = memo(function MessageBubble({ msg, onDelete, onCopy, onEdit }: {
   msg: ChatMessage
   onDelete: (id: string) => void
   onCopy: (text: string) => void
+  onEdit?: (id: string, newContent: string) => void
 }) {
   const [showActions, setShowActions] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [editText, setEditText] = useState('')
   const time = new Date(msg.timestamp).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+
+  const startEdit = () => { setEditing(true); setEditText(msg.content) }
+  const saveEdit = () => { if (editText.trim() && editText !== msg.content) onEdit?.(msg.id, editText.trim()); setEditing(false) }
 
   if (msg.role === 'user') {
     return (
@@ -434,15 +544,30 @@ const MessageBubble = memo(function MessageBubble({ msg, onDelete, onCopy }: {
                 <img src={msg.imageBase64} alt="" className="max-h-48 rounded-lg border border-accent/30" />
               </div>
             )}
-            <div className="flex items-center gap-1">
-              {showActions && (
-                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button onClick={() => onCopy(msg.content)} className="rounded p-1 text-[10px] text-content-subtle hover:bg-surface-overlay hover:text-content-muted">复制</button>
-                  <button onClick={() => onDelete(msg.id)} className="rounded p-1 text-[10px] text-content-subtle hover:bg-surface-overlay hover:text-danger">删除</button>
-                </div>
-              )}
-              <span className="inline-block max-w-[75%] rounded-2xl rounded-tr-sm bg-accent px-3 py-2 text-sm text-white shadow-sm">{msg.content}</span>
-            </div>
+            {editing ? (
+              <div className="flex max-w-[75%] items-center gap-1">
+                <input
+                  value={editText}
+                  onChange={(e) => setEditText(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') saveEdit(); if (e.key === 'Escape') setEditing(false) }}
+                  className="flex-1 rounded-lg border border-accent bg-surface-elevated px-2 py-1 text-sm text-content-heading outline-none"
+                  autoFocus
+                />
+                <button onClick={saveEdit} className="rounded bg-accent px-2 py-1 text-[10px] text-white">发送</button>
+                <button onClick={() => setEditing(false)} className="rounded px-2 py-1 text-[10px] text-content-subtle hover:bg-surface-overlay">取消</button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1">
+                {showActions && (
+                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onClick={() => onCopy(msg.content)} className="rounded p-1 text-[10px] text-content-subtle hover:bg-surface-overlay hover:text-content-muted">复制</button>
+                    <button onClick={startEdit} className="rounded p-1 text-[10px] text-content-subtle hover:bg-surface-overlay hover:text-accent-text">编辑</button>
+                    <button onClick={() => onDelete(msg.id)} className="rounded p-1 text-[10px] text-content-subtle hover:bg-surface-overlay hover:text-danger">删除</button>
+                  </div>
+                )}
+                <span className="inline-block max-w-[75%] rounded-2xl rounded-tr-sm bg-accent px-3 py-2 text-sm text-white shadow-sm">{msg.content}</span>
+              </div>
+            )}
             <span className="mt-0.5 text-[10px] text-content-subtle opacity-0 group-hover:opacity-100 transition-opacity">{time}</span>
           </div>
           <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent/20 text-accent-text"><UserIcon /></div>
@@ -580,6 +705,50 @@ function ExportDialog({ messages, sessionId, format, onFormatChange, onExport, o
           <button onClick={onClose} className="rounded-lg px-4 py-1.5 text-xs text-content-subtle hover:bg-surface-overlay hover:text-content-heading">取消</button>
           <button onClick={onExport} className="rounded-lg bg-accent px-4 py-1.5 text-xs font-medium text-white transition-colors hover:bg-accent-hover">
             保存文件
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function ChatApprovalBar({ summary, confidence, category, onApprove, onReject }: {
+  summary: string
+  confidence: 'high' | 'medium'
+  category: string
+  onApprove: () => void
+  onReject: () => void
+}) {
+  const categoryLabel = CATEGORY_LABELS[category as keyof typeof CATEGORY_LABELS] || category
+  return (
+    <div className="border-t border-warning/30 bg-warning-bg/30 px-4 py-2.5">
+      <div className="flex items-center gap-3">
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-warning/20">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-warning">
+            <path d="M12 9v4m0 4h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z" />
+          </svg>
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5">
+            <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${confidence === 'high' ? 'bg-danger/15 text-danger' : 'bg-warning/15 text-warning'}`}>
+              {confidence === 'high' ? '高风险' : '中风险'}
+            </span>
+            <span className="text-[10px] text-content-subtle">{categoryLabel}</span>
+          </div>
+          <p className="mt-0.5 text-xs text-content-secondary truncate">{summary}</p>
+        </div>
+        <div className="flex shrink-0 gap-2">
+          <button
+            onClick={onReject}
+            className="rounded-lg border border-border-default bg-surface-elevated px-3 py-1.5 text-xs font-medium text-content-muted transition-colors hover:bg-surface-inset"
+          >
+            拒绝
+          </button>
+          <button
+            onClick={onApprove}
+            className="rounded-lg bg-success px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-success/80"
+          >
+            批准执行
           </button>
         </div>
       </div>

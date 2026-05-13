@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import type { ChatMessage, ViewMode, ScheduleTask, Workflow, WorkflowNode, WorkflowEdge, WorkflowExecution, NodeExecutionStatus } from '../../../shared/types'
 import type { LayoutItem } from '../components/three/types'
 import { DEFAULT_LAYOUT } from '../components/three/constants'
+import type { DangerCategory } from '../lib/approvalDetection'
 
 export interface CanvasAgent {
   id: string
@@ -47,6 +48,18 @@ export interface ApprovalRequest {
   respondedAt?: number
 }
 
+export interface ChatApprovalRequest {
+  id: string
+  messageId: string
+  content: string
+  category: DangerCategory
+  summary: string
+  confidence: 'high' | 'medium'
+  matchedPattern: string | null
+  status: 'pending' | 'approved' | 'rejected'
+  createdAt: number
+}
+
 export type ThemeMode = 'dark' | 'light' | 'cyberpunk'
 
 export interface Profile {
@@ -87,6 +100,7 @@ interface AppState {
   isAiConfigMode: boolean
   projectRooms: ProjectRoom[]
   approvalRequests: ApprovalRequest[]
+  chatApproval: ChatApprovalRequest | null
 
   setView: (view: ViewMode) => void
   addMessage: (msg: ChatMessage) => void
@@ -126,6 +140,8 @@ interface AppState {
   updateMemberActivity: (roomId: string, memberId: string, activity: TeamMember['activity']) => void
   submitApproval: (request: Omit<ApprovalRequest, 'id' | 'status' | 'createdAt'>) => void
   respondApproval: (id: string, approved: boolean) => void
+  submitChatApproval: (req: Omit<ChatApprovalRequest, 'id' | 'status' | 'createdAt'>) => void
+  respondChatApproval: (approved: boolean) => void
   notify: (title: string, body: string) => void
 }
 
@@ -175,6 +191,7 @@ export const useAppStore = create<AppState>((set) => ({
   isAiConfigMode: false,
   projectRooms: [],
   approvalRequests: [],
+  chatApproval: null,
 
   setView: (view) => set({ view }),
 
@@ -212,7 +229,7 @@ export const useAppStore = create<AppState>((set) => ({
 
   appendReasoning: (text) => set((s) => ({ reasoningContent: s.reasoningContent + text })),
   clearReasoning: () => set({ reasoningContent: '' }),
-  clearMessages: () => set({ messages: [], isLoading: false, toolProgress: null, sessionId: null, reasoningContent: '' }),
+  clearMessages: () => set({ messages: [], isLoading: false, toolProgress: null, sessionId: null, reasoningContent: '', chatApproval: null }),
 
   switchProfile: (id) =>
     set((s) => {
@@ -461,6 +478,25 @@ export const useAppStore = create<AppState>((set) => ({
       r.id === id ? { ...r, status: approved ? 'approved' as const : 'rejected' as const, respondedAt: Date.now() } : r
     )
   })),
+
+  submitChatApproval: (req) => set({
+    chatApproval: {
+      ...req,
+      id: `chat-approval-${Date.now()}`,
+      status: 'pending' as const,
+      createdAt: Date.now()
+    }
+  }),
+
+  respondChatApproval: (approved) => set((s) => {
+    if (!s.chatApproval) return {}
+    return {
+      chatApproval: {
+        ...s.chatApproval,
+        status: approved ? 'approved' as const : 'rejected' as const
+      }
+    }
+  }),
 
   notify: (title, body) => {
     if (window.aiGui?.sendNotification) {
