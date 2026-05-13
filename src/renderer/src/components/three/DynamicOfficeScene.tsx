@@ -1,5 +1,6 @@
 import { useMemo, useState, useRef, useCallback } from 'react'
 import { useFrame } from '@react-three/fiber'
+import * as THREE from 'three'
 import { useAppStore, type ProjectRoom, type TeamMember, type ApprovalRequest } from '../../stores/app'
 import { AgentCharacter } from './AgentCharacter'
 import { AgentInfoPanel } from './AgentInfoPanel'
@@ -132,8 +133,11 @@ export function DynamicOfficeScene() {
   const respondApproval = useAppStore((s) => s.respondApproval)
   const updateMemberActivity = useAppStore((s) => s.updateMemberActivity)
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null)
+  const [returnEffect, setReturnEffect] = useState<{ memberId: string; approved: boolean } | null>(null)
 
   const pendingApproval = approvalRequests.find((r) => r.status === 'pending')
+  const lastRespondedIdRef = useRef<string | null>(null)
+  const deskPositionsRef = useRef<Map<string, [number, number, number]>>(new Map())
 
   const bossState = useMemo((): MemberState => ({
     id: 'boss',
@@ -158,7 +162,7 @@ export function DynamicOfficeScene() {
     membersRef.current = initialMembers.map((m) => ({ ...m }))
   }
 
-  // Handle approval submission: find the requesting member and walk them to boss
+  // Handle approval submission + return animation
   useFrame((state) => {
     const t = state.clock.elapsedTime
     const members = membersRef.current
@@ -166,8 +170,11 @@ export function DynamicOfficeScene() {
 
     // Trigger walking for submitting member
     if (pendingApproval) {
+      lastRespondedIdRef.current = null
       const submitter = members.find((m) => m.id === pendingApproval.fromMemberId)
       if (submitter && !submitter.walking && submitter.activity !== 'submitting') {
+        // Save desk position before walking to boss
+        deskPositionsRef.current.set(submitter.id, [...submitter.position] as [number, number, number])
         submitter.walking = {
           from: [...submitter.position] as [number, number, number],
           to: [BOSS_POSITION[0] + 1.2, 0, BOSS_POSITION[2] + 0.5],
@@ -176,6 +183,31 @@ export function DynamicOfficeScene() {
           targetActivity: 'submitting'
         }
         submitter.activity = 'walking'
+      }
+    }
+
+    // Detect approval response and trigger return walk
+    const responded = approvalRequests.find(
+      (r) => r.status !== 'pending' && r.id !== lastRespondedIdRef.current
+    )
+    if (responded) {
+      lastRespondedIdRef.current = responded.id
+      const returner = members.find((m) => m.id === responded.fromMemberId)
+      if (returner && !returner.walking) {
+        const deskPos = deskPositionsRef.current.get(returner.id)
+        if (deskPos) {
+          returner.walking = {
+            from: [...returner.position] as [number, number, number],
+            to: deskPos,
+            progress: 0,
+            speed: 0.35,
+            targetActivity: responded.status === 'approved' ? 'working' : 'idle'
+          }
+          returner.activity = 'walking'
+          setReturnEffect({ memberId: returner.id, approved: responded.status === 'approved' })
+          // Clean up stored desk position after a delay
+          setTimeout(() => deskPositionsRef.current.delete(returner.id), 3000)
+        }
       }
     }
 
@@ -209,6 +241,10 @@ export function DynamicOfficeScene() {
         agent.position = [...w.to] as [number, number, number]
         agent.activity = w.targetActivity as MemberState['activity']
         agent.walking = null
+        // Clear return effect when member arrives back
+        if (returnEffect && returnEffect.memberId === agent.id) {
+          setTimeout(() => setReturnEffect(null), 800)
+        }
       }
     }
   })
@@ -257,11 +293,73 @@ export function DynamicOfficeScene() {
 
       {/* Approval indicator - glowing ring around boss when pending */}
       {pendingApproval && (
-        <mesh position={[BOSS_POSITION[0], 0.05, BOSS_POSITION[2]]} rotation={[-Math.PI / 2, 0, 0]}>
-          <ringGeometry args={[0.6, 0.8, 32]} />
-          <meshStandardMaterial color="#f59e0b" emissive="#f59e0b" emissiveIntensity={0.8} transparent opacity={0.6} />
-        </mesh>
+        <ApprovalGlowRing position={[BOSS_POSITION[0], 0.05, BOSS_POSITION[2]]} />
       )}
+
+      {/* Return effect - color burst when member returns to desk */}
+      {returnEffect && (() => {
+        const member = members.find((m) => m.id === returnEffect.memberId)
+        if (!member) return null
+        return (
+          <ReturnBurst
+            position={member.position}
+            approved={returnEffect.approved}
+          />
+        )
+      })()}
     </>
+  )
+}
+
+function ApprovalGlowRing({ position }: { position: [number, number, number] }) {
+  const ref = useRef<THREE.Mesh>(null)
+
+  useFrame((state) => {
+    if (!ref.current) return
+    const t = state.clock.elapsedTime
+    ref.current.scale.setScalar(1 + Math.sin(t * 3) * 0.1)
+    const mat = ref.current.material as THREE.MeshStandardMaterial
+    mat.emissiveIntensity = 0.6 + Math.sin(t * 4) * 0.3
+  })
+
+  return (
+    <mesh ref={ref} position={position} rotation={[-Math.PI / 2, 0, 0]}>
+      <ringGeometry args={[0.6, 0.8, 32]} />
+      <meshStandardMaterial color="#f59e0b" emissive="#f59e0b" emissiveIntensity={0.8} transparent opacity={0.6} />
+    </mesh>
+  )
+}
+
+function ReturnBurst({ position, approved }: { position: [number, number, number]; approved: boolean }) {
+  const ref = useRef<THREE.Group>(null)
+  const color = approved ? '#10b981' : '#ef4444'
+
+  useFrame((state) => {
+    if (!ref.current) return
+    const t = state.clock.elapsedTime
+    // Rise and fade
+    ref.current.position.y = Math.min((t % 2) * 0.5, 1.5)
+    const scale = 1 + (t % 1) * 0.3
+    ref.current.scale.setScalar(scale)
+  })
+
+  return (
+    <group ref={ref} position={[position[0], 0.1, position[2]]}>
+      {/* Vertical beam */}
+      <mesh position={[0, 0.5, 0]}>
+        <cylinderGeometry args={[0.05, 0.15, 1, 8]} />
+        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={1} transparent opacity={0.5} />
+      </mesh>
+      {/* Ground ring */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.3, 0.45, 16]} />
+        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.8} transparent opacity={0.4} side={2} />
+      </mesh>
+      {/* Floating checkmark or X */}
+      <mesh position={[0, 1.2, 0]}>
+        <sphereGeometry args={[0.08, 8, 8]} />
+        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={1.5} />
+      </mesh>
+    </group>
   )
 }
