@@ -109,8 +109,10 @@ export function ChatPanel() {
     isStreamingRef.current = true
     agentBufferRef.current = ''
 
+    // Read latest messages from store to avoid stale closure
+    const currentMessages = useAppStore.getState().messages
     const apiMsgs = [
-      ...messages.filter((m) => m.role !== 'system' && m.role !== 'error').map((m) => ({
+      ...currentMessages.filter((m) => m.role !== 'system' && m.role !== 'error').map((m) => ({
         role: m.role === 'user' ? 'user' as const : 'assistant' as const,
         content: m.content
       })),
@@ -123,7 +125,7 @@ export function ChatPanel() {
       addMessage({ id: `error-${Date.now()}`, role: 'error', content: '发送后续消息失败', timestamp: Date.now() })
       setLoading(false)
     })
-  }, [messages, addMessage, setLoading])
+  }, [addMessage, setLoading])
 
   useEffect(() => {
     if (!window.aiGui) return
@@ -286,7 +288,8 @@ export function ChatPanel() {
         }
       } catch { /* silent */ }
 
-      const allMsgs = buildApiMessages(messages, userMsg)
+      const currentMsgs = useAppStore.getState().messages
+      const allMsgs = buildApiMessages(currentMsgs, userMsg)
       window.aiGui.chatSend({ messages: allMsgs }).catch(() => {
         addMessage({ id: `error-${Date.now()}`, role: 'error', content: '连接失败。请检查设置中的 API URL 和 Key。', timestamp: Date.now() })
         setLoading(false)
@@ -294,7 +297,7 @@ export function ChatPanel() {
     } else {
       setTimeout(() => { appendToLastAgent('Agent 后端尚未接入。'); setLoading(false) }, 600)
     }
-  }, [input, isLoading, messages, sessionId, pendingImage, addMessage, setLoading, appendToLastAgent, ensureSession, buildApiMessages])
+  }, [input, isLoading, sessionId, pendingImage, addMessage, setLoading, appendToLastAgent, ensureSession, buildApiMessages])
 
   const handleSlashCommand = useCallback((cmd: SlashCommand) => {
     setSlashMenuOpen(false); setInput('')

@@ -41,14 +41,14 @@ export function AgentNodeComponent({ data: rawData, selected }: NodeProps) {
         </div>
       )}
 
-      {(data.tools as string[]).length > 0 && (
+      {((data.tools as string[]) || []).length > 0 && (
         <div className="mt-1.5 flex flex-wrap gap-1">
-          {(data.tools as string[]).slice(0, 3).map((tool) => (
+          {((data.tools as string[]) || []).slice(0, 3).map((tool) => (
             <span key={tool} className="rounded bg-surface-overlay px-1.5 py-0.5 text-[10px] text-content-subtle">
               {tool}
             </span>
           ))}
-          {(data.tools as string[]).length > 3 && (
+          {((data.tools as string[]) || []).length > 3 && (
             <span className="rounded bg-surface-overlay px-1.5 py-0.5 text-[10px] text-content-subtle">
               +{(data.tools as string[]).length - 3}
             </span>

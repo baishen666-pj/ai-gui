@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { useAppStore } from '../stores/app'
 
 interface PersonaTemplate {
@@ -104,6 +104,13 @@ export function SoulEditorPanel() {
   const [prompt, setLocalPrompt] = useState(soulPrompt)
   const [activeTemplate, setActiveTemplate] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
+  const prevSoulRef = useRef(soulPrompt)
+
+  // Sync from store when soulPrompt changes externally (e.g. profile switch)
+  if (soulPrompt !== prevSoulRef.current) {
+    prevSoulRef.current = soulPrompt
+    setLocalPrompt(soulPrompt)
+  }
 
   const handleApplyTemplate = useCallback((template: PersonaTemplate) => {
     setActiveTemplate(template.id)

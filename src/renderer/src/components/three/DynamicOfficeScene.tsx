@@ -133,7 +133,8 @@ export function DynamicOfficeScene() {
   const respondApproval = useAppStore((s) => s.respondApproval)
   const updateMemberActivity = useAppStore((s) => s.updateMemberActivity)
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null)
-  const [returnEffect, setReturnEffect] = useState<{ memberId: string; approved: boolean } | null>(null)
+  const returnEffectRef = useRef<{ memberId: string; approved: boolean } | null>(null)
+  const [, forceUpdate] = useState(0)
 
   const pendingApproval = approvalRequests.find((r) => r.status === 'pending')
   const lastRespondedIdRef = useRef<string | null>(null)
@@ -204,7 +205,8 @@ export function DynamicOfficeScene() {
             targetActivity: responded.status === 'approved' ? 'working' : 'idle'
           }
           returner.activity = 'walking'
-          setReturnEffect({ memberId: returner.id, approved: responded.status === 'approved' })
+          returnEffectRef.current = { memberId: returner.id, approved: responded.status === 'approved' }
+          forceUpdate((n) => n + 1)
           // Clean up stored desk position after a delay
           setTimeout(() => deskPositionsRef.current.delete(returner.id), 3000)
         }
@@ -243,7 +245,7 @@ export function DynamicOfficeScene() {
         agent.walking = null
         // Clear return effect when member arrives back
         if (returnEffect && returnEffect.memberId === agent.id) {
-          setTimeout(() => setReturnEffect(null), 800)
+          setTimeout(() => { returnEffectRef.current = null; forceUpdate((n) => n + 1) }, 800)
         }
       }
     }
@@ -297,13 +299,14 @@ export function DynamicOfficeScene() {
       )}
 
       {/* Return effect - color burst when member returns to desk */}
-      {returnEffect && (() => {
-        const member = members.find((m) => m.id === returnEffect.memberId)
+      {returnEffectRef.current && (() => {
+        const effect = returnEffectRef.current
+        const member = members.find((m) => m.id === effect.memberId)
         if (!member) return null
         return (
           <ReturnBurst
             position={member.position}
-            approved={returnEffect.approved}
+            approved={effect.approved}
           />
         )
       })()}

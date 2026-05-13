@@ -50,11 +50,13 @@ function CodeBlock({ language, children }: CodeBlockProps) {
             { role: 'system', content: 'Execute this Python code and return ONLY the output. If there is an error, return the error message prefixed with "Error:".' },
             { role: 'user', content: `\`\`\`python\n${children}\n\`\`\`` }
           ]
-        }).catch(() => {})
+        }).catch(() => { setRunning(false); setOutput('Error: request failed') })
         let buf = ''
-        const unsubChunk = window.aiGui.onChatChunk((chunk: string) => { buf += chunk; setOutput(buf) })
-        const unsubDone = window.aiGui.onChatDone(() => { unsubChunk(); unsubDone(); unsubErr(); setRunning(false) })
-        const unsubErr = window.aiGui.onChatError((msg: string) => { unsubChunk(); unsubDone(); unsubErr(); setOutput(`Error: ${msg}`); setRunning(false) })
+        let cleaned = false
+        const cleanup = () => { if (cleaned) return; cleaned = true; unsubChunk(); unsubDone(); unsubErr(); setRunning(false) }
+        const unsubChunk = window.aiGui.onChatChunk((chunk: string) => { if (!cleaned) { buf += chunk; setOutput(buf) } })
+        const unsubDone = window.aiGui.onChatDone(cleanup)
+        const unsubErr = window.aiGui.onChatError((msg: string) => { if (!cleaned) { setOutput(`Error: ${msg}`) } cleanup() })
       }
       return
     }
