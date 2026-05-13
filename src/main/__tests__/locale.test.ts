@@ -31,16 +31,16 @@ vi.mock('fs', async (importOriginal) => {
   const actual = await importOriginal<typeof import('fs')>()
   return {
     ...actual,
-    readFileSync: vi.fn((filePath: string, encoding: string) => {
-      // Redirect any read of a file ending in 'locale' to our temp locale file
+    readFileSync: vi.fn(((filePath: string, options?: string | { encoding?: string }) => {
+      const enc = typeof options === 'string' ? options : options?.encoding ?? 'utf-8'
       if (typeof filePath === 'string' && filePath.endsWith('locale')) {
         if (!actual.existsSync(LOCALE_FILE)) {
           throw new Error('ENOENT: no such file')
         }
-        return actual.readFileSync(LOCALE_FILE, encoding)
+        return actual.readFileSync(LOCALE_FILE, enc as BufferEncoding)
       }
-      return actual.readFileSync(filePath, encoding)
-    })
+      return actual.readFileSync(filePath, options as BufferEncoding)
+    }) as typeof actual.readFileSync)
   }
 })
 

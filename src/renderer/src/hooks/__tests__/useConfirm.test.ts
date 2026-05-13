@@ -17,7 +17,7 @@ vi.mock('react', () => ({
     const setter = (val: T | ((prev: T) => T)) => {
       stateStore[key] = typeof val === 'function' ? (val as (prev: T) => T)(stateStore[key] as T) : val
     }
-    setters[key] = setter
+    setters[key] = setter as (val: unknown) => void
     return [stateStore[key] as T, setter]
   },
   useRef: <T>(initial: T) => {
