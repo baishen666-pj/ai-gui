@@ -1,10 +1,10 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
-import { useAppStore, type ProjectRoom, type TeamMember } from '../../stores/app'
+import { useState, useRef, useEffect, useCallback, type JSX } from 'react'
+import { useAppStore, type ProjectRoom, type TeamRole } from '../../stores/app'
 import type { AgentActivity } from './types'
 import { toIso, sortKey, easeInOutCubic } from './IsoEngine'
 import { IsoRoom } from './IsoRoom'
 import { IsoBossOffice, BOSS_POSITION } from './IsoBossOffice'
-import { IsoDesk, IsoMonitor, IsoChair } from './IsoFurniture'
+import { IsoDesk, IsoMonitor, FurnitureDefs } from './IsoFurniture'
 import { IsoCharacter } from './IsoCharacter'
 import { ApprovalGlow, ReturnBurst, WalkTrail } from './IsoEffects'
 
@@ -15,7 +15,7 @@ const ROLE_COLORS: Record<string, string> = {
 }
 
 interface MemberState {
-  id: string; name: string; role: string; color: string
+  id: string; name: string; role: TeamRole; color: string
   activity: AgentActivity
   worldX: number; worldZ: number
   facing: 'left' | 'right'
@@ -222,7 +222,6 @@ export function IsoScene() {
       const mrow = Math.floor(mi / 3)
       const fx = cx - 2.5 + mcol * 2.5
       const fz = cz - 2 + mrow * 2
-      const fpos = toIso(fx, fz)
       const sk = sortKey(fx, 0, fz)
       renderItems.push({ type: 'member', sortKey: sk, element: <IsoDesk key={`desk-${m.id}`} x={fx} z={fz} /> })
       renderItems.push({ type: 'member', sortKey: sk + 0.1, element: <IsoMonitor key={`mon-${m.id}`} x={fx} z={fz - 0.5} /> })
@@ -238,7 +237,7 @@ export function IsoScene() {
         <g key={m.id} transform={`translate(${pos.x},${pos.y})`}>
           <WalkTrail positions={m.trail} />
           <IsoCharacter
-            name={m.name} role={m.role as any} color={m.color}
+            name={m.name} role={m.role} color={m.color}
             activity={m.activity} facing={m.facing} animT={animTime}
             isWalking={!!m.walking}
             onClick={() => setSelectedId(m.id)}
@@ -250,7 +249,6 @@ export function IsoScene() {
 
   // Effects
   if (pendingApproval) {
-    const bpos = toIso(BOSS_POSITION.x, BOSS_POSITION.z)
     renderItems.push({ type: 'effect', sortKey: 0, element: <ApprovalGlow key="glow" cx={BOSS_POSITION.x} cz={BOSS_POSITION.z} /> })
   }
 
@@ -277,6 +275,7 @@ export function IsoScene() {
         onMouseLeave={handleMouseUp}
         style={{ cursor: panRef.current.dragging ? 'grabbing' : 'grab' }}
       >
+        <FurnitureDefs />
         <g transform={`translate(${pan.x / zoom},${pan.y / zoom}) scale(${zoom})`}>
           {renderItems.map((item, i) => <g key={i}>{item.element}</g>)}
         </g>
@@ -286,15 +285,16 @@ export function IsoScene() {
       {selectedId && (() => {
         const member = allMembers.find((m) => m.id === selectedId)
         if (!member) return null
+        const activityLabel: Record<string, string> = { idle: '空闲', working: '工作中', meeting: '会议中', walking: '行走中', submitting: '提交中' }
         return (
-          <div className="absolute right-4 top-4 rounded-lg border border-border-default bg-surface-elevated px-3 py-2 shadow-lg">
+          <div className="animate-slide-up absolute right-4 top-4 rounded-lg border border-border-default bg-surface-elevated px-3 py-2 shadow-lg">
             <div className="flex items-center gap-2">
               <div className="h-3 w-3 rounded-full" style={{ background: member.color }} />
               <span className="text-sm font-medium text-content-heading">{member.name}</span>
               <span className="text-[10px] text-content-subtle">{member.role}</span>
             </div>
-            <div className="mt-1 text-xs text-content-muted">状态: {member.activity}</div>
-            <button onClick={() => setSelectedId(null)} className="mt-1 text-[10px] text-content-subtle hover:text-content-heading">关闭</button>
+            <div className="mt-1 text-xs text-content-muted">状态: {activityLabel[member.activity] || member.activity}</div>
+            <button onClick={() => setSelectedId(null)} className="mt-1 rounded px-1 text-[10px] text-content-subtle hover:bg-surface-overlay hover:text-content-heading">关闭</button>
           </div>
         )
       })()}

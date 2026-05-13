@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type { AppLocale } from '../shared/i18n/types'
-import type { ConnectionConfig, ModelConfig } from '../shared/types'
+import type { ChatGPTSession, ConnectionConfig, ModelConfig, ProviderConfig, ScheduleTask, Workflow } from '../shared/types'
 
 const api = {
   getLocale: (): Promise<AppLocale> => ipcRenderer.invoke('get-locale'),
@@ -14,16 +14,16 @@ const api = {
   getModelConfig: (profile?: string): Promise<ModelConfig> =>
     ipcRenderer.invoke('get-model-config', profile),
 
-  getActiveProvider: (): Promise<any> =>
+  getActiveProvider: (): Promise<ProviderConfig> =>
     ipcRenderer.invoke('get-active-provider'),
   setActiveProvider: (id: string): Promise<void> =>
     ipcRenderer.invoke('set-active-provider', id),
-  updateProvider: (provider: any): Promise<void> =>
+  updateProvider: (provider: ProviderConfig): Promise<void> =>
     ipcRenderer.invoke('update-provider', provider),
   removeProvider: (id: string): Promise<void> =>
     ipcRenderer.invoke('remove-provider', id),
 
-  chatgptLogin: (): Promise<any> =>
+  chatgptLogin: (): Promise<ChatGPTSession> =>
     ipcRenderer.invoke('chatgpt-login'),
   chatgptLogout: (): Promise<void> =>
     ipcRenderer.invoke('chatgpt-logout'),
@@ -86,12 +86,12 @@ const api = {
 
   // Persistence — Tasks
   persistenceGetTasks: () => ipcRenderer.invoke('persistence-get-tasks'),
-  persistenceUpsertTask: (task: any) => ipcRenderer.invoke('persistence-upsert-task', task),
+  persistenceUpsertTask: (task: ScheduleTask) => ipcRenderer.invoke('persistence-upsert-task', task),
   persistenceDeleteTask: (id: string) => ipcRenderer.invoke('persistence-delete-task', id),
 
   // Persistence — Workflows
   persistenceGetWorkflows: () => ipcRenderer.invoke('persistence-get-workflows'),
-  persistenceUpsertWorkflow: (wf: any) => ipcRenderer.invoke('persistence-upsert-workflow', wf),
+  persistenceUpsertWorkflow: (wf: Workflow) => ipcRenderer.invoke('persistence-upsert-workflow', wf),
   persistenceDeleteWorkflow: (id: string) => ipcRenderer.invoke('persistence-delete-workflow', id),
 
   // Shell execution (for code block run)

@@ -42,6 +42,4 @@ linux:
     - AppImage
   maintainer: ai-gui
   category: Development
-publish:
-  provider: github
-  owner: ai-gui
+publish: null

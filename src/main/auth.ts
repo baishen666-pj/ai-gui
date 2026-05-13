@@ -1,11 +1,8 @@
 import { BrowserWindow, session } from 'electron'
 import { getActiveProvider, updateProvider } from './config'
+import type { ChatGPTSession } from '../shared/types'
 
-export interface ChatGPTSession {
-  accessToken: string
-  expires: string
-  user: { name: string; email: string }
-}
+export type { ChatGPTSession }
 
 let loginWindow: BrowserWindow | null = null
 

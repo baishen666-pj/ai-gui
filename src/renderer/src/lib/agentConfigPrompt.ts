@@ -1,3 +1,4 @@
+import { genId } from './genId'
 import type { FlowTemplate } from '../components/canvas/types'
 
 const AVAILABLE_MODELS = [
@@ -86,29 +87,29 @@ export function parseAgentConfigResponse(raw: string): FlowTemplate | null {
     const parsed = JSON.parse(jsonStr)
     if (!parsed.nodes || !Array.isArray(parsed.nodes)) return null
 
-    const nodes = parsed.nodes.map((n: any, i: number) => ({
+    const nodes = parsed.nodes.map((n: Record<string, unknown>, i: number) => ({
       type: 'agent' as const,
       data: {
-        label: n.data?.label || `Agent ${i + 1}`,
-        role: n.data?.role || '',
-        model: n.data?.model || 'gpt-4o',
-        color: n.data?.color || COLOR_PALETTE[i % COLOR_PALETTE.length],
-        tools: Array.isArray(n.data?.tools) ? n.data.tools : [],
+        label: (n.data as Record<string, unknown>)?.label || `Agent ${i + 1}`,
+        role: (n.data as Record<string, unknown>)?.role || '',
+        model: (n.data as Record<string, unknown>)?.model || 'gpt-4o',
+        color: (n.data as Record<string, unknown>)?.color || COLOR_PALETTE[i % COLOR_PALETTE.length],
+        tools: Array.isArray((n.data as Record<string, unknown>)?.tools) ? (n.data as Record<string, unknown>).tools : [],
         status: 'idle' as const
       },
-      position: n.position || { x: 250 + (i % 3) * 200, y: 100 + Math.floor(i / 3) * 150 }
+      position: (n.position as { x: number; y: number }) || { x: 250 + (i % 3) * 200, y: 100 + Math.floor(i / 3) * 150 }
     }))
 
     const edges = Array.isArray(parsed.edges)
-      ? parsed.edges.map((e: any) => ({
-          source: e.source || `agent-0`,
-          target: e.target || `agent-1`,
-          data: { label: e.data?.label || '', animated: e.data?.animated ?? false }
+      ? parsed.edges.map((e: Record<string, unknown>) => ({
+          source: (e.source as string) || `agent-0`,
+          target: (e.target as string) || `agent-1`,
+          data: { label: (e.data as Record<string, unknown>)?.label || '', animated: (e.data as Record<string, unknown>)?.animated ?? false }
         }))
       : []
 
     return {
-      id: `ai-${Date.now()}`,
+      id: genId('ai-'),
       name: parsed.name || 'AI 生成方案',
       description: parsed.description || '',
       nodes,

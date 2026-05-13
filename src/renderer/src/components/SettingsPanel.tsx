@@ -1,6 +1,7 @@
+import { genId } from '../lib/genId'
 import { useState, useEffect, useCallback } from 'react'
 import type { AppLocale } from '../../../shared/i18n/types'
-import type { ProviderConfig } from '../../../shared/types'
+import type { ConnectionConfig, ProviderConfig } from '../../../shared/types'
 
 const PROVIDER_ICONS: Record<string, string> = {
   zhipu: '🟣',
@@ -22,7 +23,7 @@ export function SettingsPanel() {
   useEffect(() => {
     if (!window.aiGui) return
     window.aiGui.getLocale().then(setLocalLocale).catch(() => {})
-    window.aiGui.getConnectionConfig().then((config: any) => {
+    window.aiGui.getConnectionConfig().then((config: ConnectionConfig) => {
       setProviders(config.providers ?? [])
       setActiveId(config.activeProviderId ?? 'zhipu')
     }).catch(() => {})
@@ -74,7 +75,7 @@ export function SettingsPanel() {
           {/* API Provider */}
           <section>
             <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-content-subtle">
-              API Provider
+              API 服务商
             </h3>
             <div className="space-y-3 rounded-lg border border-border-subtle bg-surface-elevated p-4">
               {/* Provider tabs */}
@@ -96,7 +97,7 @@ export function SettingsPanel() {
                 ))}
                 <button
                   onClick={() => setEditingProvider({
-                    id: `custom-${Date.now()}`, name: '自定义', type: 'custom',
+                    id: genId('custom-'), name: '自定义', type: 'custom',
                     baseUrl: '', apiKey: '', models: [''], defaultModel: ''
                   })}
                   className="rounded-lg border border-dashed border-border-default px-3 py-1.5 text-xs text-content-subtle hover:border-border-subtle hover:text-content-muted"
@@ -213,6 +214,8 @@ export function SettingsPanel() {
 
 function ProviderConfigForm({ provider, onChange }: { provider: ProviderConfig; onChange: (p: ProviderConfig) => void }) {
   const [loginStatus, setLoginStatus] = useState<'idle' | 'logging' | 'done' | 'error'>('idle')
+  const [showKey, setShowKey] = useState(false)
+  const [testResult, setTestResult] = useState<'idle' | 'testing' | 'ok' | 'fail'>('idle')
   const update = (field: keyof ProviderConfig, value: string) => {
     onChange({ ...provider, [field]: value })
   }
@@ -307,13 +310,23 @@ function ProviderConfigForm({ provider, onChange }: { provider: ProviderConfig; 
 
       <label className="flex items-center gap-3 text-sm">
         <span className="w-20 shrink-0 text-content-subtle">API Key</span>
-        <input
-          type="password"
-          value={provider.apiKey}
-          onChange={(e) => update('apiKey', e.target.value)}
-          placeholder={provider.type === 'ollama' ? '无需 Key' : '粘贴你的 API Key...'}
-          className="flex-1 rounded border border-border-default bg-surface-overlay px-3 py-1.5 text-content-heading outline-none focus:border-accent"
-        />
+        <div className="flex flex-1 items-center gap-1">
+          <input
+            type={showKey ? 'text' : 'password'}
+            value={provider.apiKey}
+            onChange={(e) => update('apiKey', e.target.value)}
+            placeholder={provider.type === 'ollama' ? '无需 Key' : '粘贴你的 API Key...'}
+            className="flex-1 rounded border border-border-default bg-surface-overlay px-3 py-1.5 text-content-heading outline-none focus:border-accent"
+          />
+          <button
+            type="button"
+            onClick={() => setShowKey(!showKey)}
+            className="rounded border border-border-default bg-surface-overlay px-2 py-1.5 text-xs text-content-subtle hover:text-content-heading"
+            title={showKey ? '隐藏' : '显示'}
+          >
+            {showKey ? '◉' : '○'}
+          </button>
+        </div>
       </label>
 
       <label className="flex items-center gap-3 text-sm">
@@ -334,6 +347,23 @@ function ProviderConfigForm({ provider, onChange }: { provider: ProviderConfig; 
         <span className="text-[10px] text-content-subtle">
           {provider.type === 'ollama' ? '本地运行 · 无需 API Key' : provider.type === 'zhipu' ? '按量计费 · flash 模型免费' : '按量计费'}
         </span>
+        <button
+          onClick={async () => {
+            setTestResult('testing')
+            try {
+              const res = await fetch(provider.baseUrl.replace(/\/$/, '') + '/models', {
+                headers: provider.apiKey ? { 'Authorization': `Bearer ${provider.apiKey}` } : {},
+                signal: AbortSignal.timeout(5000)
+              })
+              setTestResult(res.ok ? 'ok' : 'fail')
+            } catch { setTestResult('fail') }
+            setTimeout(() => setTestResult('idle'), 3000)
+          }}
+          disabled={testResult === 'testing'}
+          className="ml-auto rounded border border-border-default bg-surface-elevated px-2 py-0.5 text-[10px] text-content-subtle transition-colors hover:bg-surface-overlay hover:text-content-heading disabled:opacity-50"
+        >
+          {testResult === 'testing' ? '测试中...' : testResult === 'ok' ? '✓ 连接成功' : testResult === 'fail' ? '✗ 连接失败' : '测试连接'}
+        </button>
       </div>
     </div>
   )

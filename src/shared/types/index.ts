@@ -105,3 +105,9 @@ export interface Workflow {
 }
 
 export type ViewMode = 'chat' | 'canvas' | '3d' | 'memory' | 'tools' | 'soul' | 'schedule' | 'workflow' | 'settings'
+
+export interface ChatGPTSession {
+  accessToken: string
+  expires: string
+  user: { name: string; email: string }
+}
