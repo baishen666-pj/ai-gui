@@ -1,6 +1,6 @@
 {
   "name": "ai-gui",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "AI GUI — 多Agent桌面工作台 + 3D可视化",
   "main": "./out/main/index.js",
   "author": "ai-gui",
@@ -19,6 +19,7 @@
     "postinstall": "electron-builder install-app-deps",
     "build:unpack": "npm run build && electron-builder --dir",
     "build:win": "npm run build && electron-builder --win",
+    "build:win:signed": "npm run build && CSC_LINK=build/cert.pfx CSC_KEY_PASSWORD=ai-gui-test electron-builder --win",
     "build:mac": "electron-vite build && electron-builder --mac",
     "build:linux": "electron-vite build && electron-builder --linux"
   },

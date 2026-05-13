@@ -1,5 +1,5 @@
 import type { ClientRequest } from 'electron'
-import type { ProviderStrategy, ChatMessageInput, StreamDeltaResult } from './types'
+import type { ProviderStrategy, ChatMessageInput, StreamDeltaResult, ToolDefinition } from './types'
 
 export class ChatGPTSubscriptionStrategy implements ProviderStrategy {
   readonly protocolType = 'chatgpt'
@@ -10,7 +10,7 @@ export class ChatGPTSubscriptionStrategy implements ProviderStrategy {
     return 'https://chatgpt.com/backend-api/conversation'
   }
 
-  buildBody(model: string, messages: ChatMessageInput[], _stream: boolean): string {
+  buildBody(model: string, messages: ChatMessageInput[], _stream: boolean, _options?: { tools?: ToolDefinition[] }): string {
     const chatgptMessages = messages
       .filter((m) => m.role !== 'system')
       .map((m) => ({

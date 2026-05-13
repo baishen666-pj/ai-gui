@@ -24,7 +24,7 @@ interface WorkflowRow {
   updated_at: number
 }
 
-function rowToTask(row: TaskRow): ScheduleTask {
+export function rowToTask(row: TaskRow): ScheduleTask {
   return {
     id: row.id,
     name: row.name,
@@ -38,7 +38,7 @@ function rowToTask(row: TaskRow): ScheduleTask {
   }
 }
 
-function taskToRow(task: ScheduleTask): TaskRow {
+export function taskToRow(task: ScheduleTask): TaskRow {
   return {
     id: task.id,
     name: task.name,
@@ -52,7 +52,7 @@ function taskToRow(task: ScheduleTask): TaskRow {
   }
 }
 
-function rowToWorkflow(row: WorkflowRow): Workflow {
+export function rowToWorkflow(row: WorkflowRow): Workflow {
   return {
     id: row.id,
     name: row.name,
@@ -64,7 +64,7 @@ function rowToWorkflow(row: WorkflowRow): Workflow {
   }
 }
 
-function workflowToRow(wf: Workflow): WorkflowRow {
+export function workflowToRow(wf: Workflow): WorkflowRow {
   return {
     id: wf.id,
     name: wf.name,

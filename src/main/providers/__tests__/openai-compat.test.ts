@@ -64,4 +64,60 @@ describe('OpenAICompatibleStrategy', () => {
     strategy.applyExtraHeaders(mockRequest, 'https://api.openai.com/v1')
     expect(headers['HTTP-Referer']).toBeUndefined()
   })
+
+  it('buildBody without tools omits tools from body', () => {
+    const messages = [{ role: 'user', content: 'hello' }]
+    const body = JSON.parse(strategy.buildBody('gpt-4o', messages, true))
+    expect(body.tools).toBeUndefined()
+  })
+
+  it('buildBody with tools adds OpenAI function format', () => {
+    const messages = [{ role: 'user', content: 'hello' }]
+    const tools = [
+      {
+        name: 'get_weather',
+        description: 'Get current weather',
+        inputSchema: {
+          type: 'object' as const,
+          properties: { city: { type: 'string' as const } },
+          required: ['city']
+        }
+      }
+    ]
+    const body = JSON.parse(strategy.buildBody('gpt-4o', messages, true, { tools }))
+    expect(body.tools).toEqual([
+      {
+        type: 'function',
+        function: {
+          name: 'get_weather',
+          description: 'Get current weather',
+          parameters: {
+            type: 'object',
+            properties: { city: { type: 'string' } },
+            required: ['city']
+          }
+        }
+      }
+    ])
+  })
+
+  it('buildBody with multiple tools preserves order', () => {
+    const messages = [{ role: 'user', content: 'hello' }]
+    const tools = [
+      { name: 'tool_a', description: 'First tool', inputSchema: { type: 'object' } },
+      { name: 'tool_b', description: 'Second tool', inputSchema: { type: 'object' } },
+      { name: 'tool_c', description: 'Third tool', inputSchema: { type: 'object' } }
+    ]
+    const body = JSON.parse(strategy.buildBody('gpt-4o', messages, false, { tools }))
+    expect(body.tools).toHaveLength(3)
+    expect(body.tools[0].function.name).toBe('tool_a')
+    expect(body.tools[1].function.name).toBe('tool_b')
+    expect(body.tools[2].function.name).toBe('tool_c')
+  })
+
+  it('buildBody with empty tools array omits tools from body', () => {
+    const messages = [{ role: 'user', content: 'hello' }]
+    const body = JSON.parse(strategy.buildBody('gpt-4o', messages, true, { tools: [] }))
+    expect(body.tools).toBeUndefined()
+  })
 })

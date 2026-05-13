@@ -14,7 +14,7 @@ import type { ThemeMode } from './themeStore'
 import type { ChatApprovalRequest } from './chatStore'
 import type { TeamRole, TeamMember, ProjectRoom, ApprovalRequest } from './officeStore'
 import type { CanvasAgent, Profile } from './profileStore'
-import type { ChatMessage, ViewMode, ScheduleTask, Workflow, WorkflowNode, WorkflowEdge, WorkflowExecution, NodeExecutionStatus } from '../../../shared/types'
+import type { ChatMessage, ViewMode, ScheduleTask, Workflow, WorkflowNode, WorkflowEdge, WorkflowExecution, NodeExecutionStatus, ToolCall, ToolResult } from '../../../shared/types'
 import type { LayoutItem } from '../components/three/types'
 
 export interface AppState {
@@ -38,6 +38,8 @@ export interface AppState {
   projectRooms: ProjectRoom[]
   approvalRequests: ApprovalRequest[]
   chatApproval: ChatApprovalRequest | null
+  activeToolCalls: ToolCall[]
+  toolResults: ToolResult[]
 
   setView: (view: ViewMode) => void
   addMessage: (msg: ChatMessage) => void
@@ -79,6 +81,10 @@ export interface AppState {
   respondApproval: (id: string, approved: boolean) => void
   submitChatApproval: (req: Omit<ChatApprovalRequest, 'id' | 'status' | 'createdAt'>) => void
   respondChatApproval: (approved: boolean) => void
+  addToolCall: (call: ToolCall) => void
+  updateToolCallArguments: (id: string, chunk: string) => void
+  addToolResult: (result: ToolResult) => void
+  clearToolCalls: () => void
   notify: (title: string, body: string) => void
 }
 
@@ -111,6 +117,8 @@ function getCombinedState(): AppState {
     projectRooms: office.projectRooms,
     approvalRequests: office.approvalRequests,
     chatApproval: chat.chatApproval,
+    activeToolCalls: chat.activeToolCalls,
+    toolResults: chat.toolResults,
 
     setView: chat.setView,
     addMessage: chat.addMessage,
@@ -152,6 +160,10 @@ function getCombinedState(): AppState {
     respondApproval: office.respondApproval,
     submitChatApproval: chat.submitChatApproval,
     respondChatApproval: chat.respondChatApproval,
+    addToolCall: chat.addToolCall,
+    updateToolCallArguments: chat.updateToolCallArguments,
+    addToolResult: chat.addToolResult,
+    clearToolCalls: chat.clearToolCalls,
     notify: office.notify
   }
 }
@@ -189,6 +201,8 @@ export const useAppStore: UseAppStore = function useAppStore<T = AppState>(
   const chatReasoning = useChatStore((s) => s.reasoningContent)
   const chatAiConfigMode = useChatStore((s) => s.isAiConfigMode)
   const chatApproval = useChatStore((s) => s.chatApproval)
+  const chatActiveToolCalls = useChatStore((s) => s.activeToolCalls)
+  const chatToolResults = useChatStore((s) => s.toolResults)
   const profileCanvasAgents = useProfileStore((s) => s.canvasAgents)
   const profileOfficeLayout = useProfileStore((s) => s.officeLayout)
   const profileSoulPrompt = useProfileStore((s) => s.soulPrompt)
@@ -222,6 +236,8 @@ export const useAppStore: UseAppStore = function useAppStore<T = AppState>(
     projectRooms: officeRooms,
     approvalRequests: officeApprovals,
     chatApproval: chatApproval,
+    activeToolCalls: chatActiveToolCalls,
+    toolResults: chatToolResults,
 
     setView: useChatStore.getState().setView,
     addMessage: useChatStore.getState().addMessage,
@@ -263,6 +279,10 @@ export const useAppStore: UseAppStore = function useAppStore<T = AppState>(
     respondApproval: useOfficeStore.getState().respondApproval,
     submitChatApproval: useChatStore.getState().submitChatApproval,
     respondChatApproval: useChatStore.getState().respondChatApproval,
+    addToolCall: useChatStore.getState().addToolCall,
+    updateToolCallArguments: useChatStore.getState().updateToolCallArguments,
+    addToolResult: useChatStore.getState().addToolResult,
+    clearToolCalls: useChatStore.getState().clearToolCalls,
     notify: useOfficeStore.getState().notify
   }
 

@@ -240,7 +240,7 @@ export function SettingsPanel() {
             </h3>
             <div className="space-y-2 rounded-lg border border-border-subtle bg-surface-elevated p-4">
               {[
-                ['版本', '0.4.1'],
+                ['版本', '0.5.0'],
                 ['Electron', '39'],
                 ['React', '19'],
                 ['Three.js', '0.175']

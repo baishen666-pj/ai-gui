@@ -10,6 +10,8 @@ function makeCb(overrides?: Partial<SseCallbacks>): SseCallbacks {
     onToolProgress: vi.fn(),
     onUsage: vi.fn(),
     onReasoning: vi.fn(),
+    onToolCallStart: vi.fn(),
+    onToolCallDelta: vi.fn(),
     ...overrides,
   }
 }
@@ -184,5 +186,281 @@ describe('processSseData', () => {
       totalTokens: 0,
       cost: undefined,
     })
+  })
+
+  // --- OpenAI tool_calls tests ---
+
+  it('OpenAI tool_calls delta: new tool call start', () => {
+    const cb = makeCb()
+    const state = makeState()
+    const data = JSON.stringify({
+      choices: [{
+        delta: {
+          tool_calls: [{
+            index: 0,
+            id: 'call_abc123',
+            function: { name: 'get_weather', arguments: '' }
+          }]
+        }
+      }]
+    })
+    const result = processSseData(data, cb, state)
+    expect(result.done).toBe(false)
+    expect(cb.onToolCallStart).toHaveBeenCalledWith({
+      index: 0,
+      id: 'call_abc123',
+      name: 'get_weather'
+    })
+    expect(cb.onToolCallDelta).not.toHaveBeenCalled()
+  })
+
+  it('OpenAI tool_calls delta: arguments chunk', () => {
+    const cb = makeCb()
+    const state = makeState()
+    const data = JSON.stringify({
+      choices: [{
+        delta: {
+          tool_calls: [{
+            index: 0,
+            function: { arguments: '{"city": "Tokyo"}' }
+          }]
+        }
+      }]
+    })
+    processSseData(data, cb, state)
+    expect(cb.onToolCallDelta).toHaveBeenCalledWith(0, '{"city": "Tokyo"}')
+    expect(cb.onToolCallStart).not.toHaveBeenCalled()
+  })
+
+  it('OpenAI tool_calls delta: multiple tool calls', () => {
+    const cb = makeCb()
+    const state = makeState()
+    const data = JSON.stringify({
+      choices: [{
+        delta: {
+          tool_calls: [
+            { index: 0, id: 'call_001', function: { name: 'get_weather', arguments: '' } },
+            { index: 1, id: 'call_002', function: { name: 'search', arguments: '' } }
+          ]
+        }
+      }]
+    })
+    processSseData(data, cb, state)
+    expect(cb.onToolCallStart).toHaveBeenCalledTimes(2)
+    expect(cb.onToolCallStart).toHaveBeenCalledWith({ index: 0, id: 'call_001', name: 'get_weather' })
+    expect(cb.onToolCallStart).toHaveBeenCalledWith({ index: 1, id: 'call_002', name: 'search' })
+  })
+
+  it('OpenAI finish_reason tool_calls sets hasToolCalls', () => {
+    const cb = makeCb()
+    const state = makeState()
+    const data = JSON.stringify({
+      choices: [{ finish_reason: 'tool_calls', delta: {} }]
+    })
+    const result = processSseData(data, cb, state)
+    expect(result.hasToolCalls).toBe(true)
+    expect(result.done).toBe(false)
+  })
+
+  it('OpenAI finish_reason non-tool_calls does not set hasToolCalls', () => {
+    const cb = makeCb()
+    const state = makeState()
+    const data = JSON.stringify({
+      choices: [{ finish_reason: 'stop', delta: {} }]
+    })
+    const result = processSseData(data, cb, state)
+    expect(result.hasToolCalls).toBeUndefined()
+  })
+
+  // --- Claude format tool_use tests ---
+
+  it('Claude content_block_start tool_use triggers onToolCallStart', () => {
+    const cb = makeCb()
+    const state = makeState()
+    const data = JSON.stringify({
+      type: 'content_block_start',
+      index: 1,
+      content_block: {
+        type: 'tool_use',
+        id: 'toolu_01abc',
+        name: 'read_file'
+      }
+    })
+    const result = processSseData(data, cb, state)
+    expect(result.done).toBe(false)
+    expect(cb.onToolCallStart).toHaveBeenCalledWith({
+      index: 1,
+      id: 'toolu_01abc',
+      name: 'read_file'
+    })
+  })
+
+  it('Claude content_block_start defaults index to 0 when missing', () => {
+    const cb = makeCb()
+    const state = makeState()
+    const data = JSON.stringify({
+      type: 'content_block_start',
+      content_block: {
+        type: 'tool_use',
+        id: 'toolu_no_idx',
+        name: 'bash'
+      }
+    })
+    processSseData(data, cb, state)
+    expect(cb.onToolCallStart).toHaveBeenCalledWith({
+      index: 0,
+      id: 'toolu_no_idx',
+      name: 'bash'
+    })
+  })
+
+  it('Claude content_block_delta input_json_delta triggers onToolCallDelta', () => {
+    const cb = makeCb()
+    const state = makeState()
+    const data = JSON.stringify({
+      type: 'content_block_delta',
+      index: 0,
+      delta: {
+        type: 'input_json_delta',
+        partial_json: '{"path": "/src/mai'
+      }
+    })
+    const result = processSseData(data, cb, state)
+    expect(result.done).toBe(false)
+    expect(cb.onToolCallDelta).toHaveBeenCalledWith(0, '{"path": "/src/mai')
+    expect(cb.onChunk).not.toHaveBeenCalled()
+  })
+
+  it('Claude content_block_delta defaults index to 0 when missing', () => {
+    const cb = makeCb()
+    const state = makeState()
+    const data = JSON.stringify({
+      type: 'content_block_delta',
+      delta: {
+        type: 'input_json_delta',
+        partial_json: '{}'
+      }
+    })
+    processSseData(data, cb, state)
+    expect(cb.onToolCallDelta).toHaveBeenCalledWith(0, '{}')
+  })
+
+  it('Claude content_block_delta text_delta triggers onChunk', () => {
+    const cb = makeCb()
+    const state = makeState()
+    const data = JSON.stringify({
+      type: 'content_block_delta',
+      index: 0,
+      delta: {
+        type: 'text_delta',
+        text: 'Hello from Claude'
+      }
+    })
+    const result = processSseData(data, cb, state)
+    expect(cb.onChunk).toHaveBeenCalledWith('Hello from Claude')
+    expect(state.hasContent).toBe(true)
+    expect(cb.onToolCallDelta).not.toHaveBeenCalled()
+  })
+
+  it('Claude content_block_delta with unknown delta type does nothing', () => {
+    const cb = makeCb()
+    const state = makeState()
+    const data = JSON.stringify({
+      type: 'content_block_delta',
+      index: 0,
+      delta: {
+        type: 'thinking_delta',
+        thinking: 'hmm'
+      }
+    })
+    const result = processSseData(data, cb, state)
+    expect(cb.onChunk).not.toHaveBeenCalled()
+    expect(cb.onToolCallDelta).not.toHaveBeenCalled()
+    expect(result.done).toBe(false)
+  })
+
+  it('Claude message_delta stop_reason tool_use sets hasToolCalls', () => {
+    const cb = makeCb()
+    const state = makeState()
+    const data = JSON.stringify({
+      type: 'message_delta',
+      delta: { stop_reason: 'tool_use' }
+    })
+    const result = processSseData(data, cb, state)
+    expect(result.hasToolCalls).toBe(true)
+    expect(result.done).toBe(false)
+  })
+
+  it('Claude message_delta stop_reason end_turn does not set hasToolCalls', () => {
+    const cb = makeCb()
+    const state = makeState()
+    const data = JSON.stringify({
+      type: 'message_delta',
+      delta: { stop_reason: 'end_turn' }
+    })
+    const result = processSseData(data, cb, state)
+    expect(result.hasToolCalls).toBeUndefined()
+  })
+
+  // --- Mixed content + tool_calls stream ---
+
+  it('mixed content + tool_calls stream: text then tool call', () => {
+    const cb = makeCb()
+    const state = makeState()
+
+    // First chunk: text content
+    processSseData(JSON.stringify({
+      choices: [{ delta: { content: 'I will search for that.' } }]
+    }), cb, state)
+    expect(cb.onChunk).toHaveBeenCalledWith('I will search for that.')
+    expect(state.hasContent).toBe(true)
+
+    // Second chunk: tool call start
+    processSseData(JSON.stringify({
+      choices: [{ delta: { tool_calls: [{ index: 0, id: 'call_mixed', function: { name: 'search', arguments: '' } }] } }]
+    }), cb, state)
+    expect(cb.onToolCallStart).toHaveBeenCalledWith({ index: 0, id: 'call_mixed', name: 'search' })
+
+    // Third chunk: tool arguments
+    processSseData(JSON.stringify({
+      choices: [{ delta: { tool_calls: [{ index: 0, function: { arguments: '{"q":"test"}' } }] } }]
+    }), cb, state)
+    expect(cb.onToolCallDelta).toHaveBeenCalledWith(0, '{"q":"test"}')
+
+    // Fourth chunk: finish with tool_calls
+    const result = processSseData(JSON.stringify({
+      choices: [{ finish_reason: 'tool_calls', delta: {} }]
+    }), cb, state)
+    expect(result.hasToolCalls).toBe(true)
+    expect(result.hasContent).toBe(true)
+  })
+
+  it('does not call onToolCallStart when callback is undefined', () => {
+    const cb = makeCb({ onToolCallStart: undefined })
+    const state = makeState()
+    const data = JSON.stringify({
+      choices: [{
+        delta: {
+          tool_calls: [{ index: 0, id: 'call_x', function: { name: 'noop', arguments: '' } }]
+        }
+      }]
+    })
+    // Should not throw
+    const result = processSseData(data, cb, state)
+    expect(result.done).toBe(false)
+  })
+
+  it('does not call onToolCallDelta when callback is undefined', () => {
+    const cb = makeCb({ onToolCallDelta: undefined })
+    const state = makeState()
+    const data = JSON.stringify({
+      choices: [{
+        delta: {
+          tool_calls: [{ index: 0, function: { arguments: '{"a":1}' } }]
+        }
+      }]
+    })
+    const result = processSseData(data, cb, state)
+    expect(result.done).toBe(false)
   })
 })

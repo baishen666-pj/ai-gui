@@ -12,6 +12,8 @@ export interface SseCallbacks {
   onError?: (message: string) => void
   onDone?: () => void
   onReasoning?: (text: string) => void
+  onToolCallStart?: (call: { index: number; id: string; name: string }) => void
+  onToolCallDelta?: (index: number, argumentsChunk: string) => void
 }
 
 const toolProgressRe = /^`([^\s`]+)\s+([^`]+)`$/
@@ -37,6 +39,7 @@ export interface SseDataResult {
   done: boolean
   hasContent: boolean
   error?: string
+  hasToolCalls?: boolean
 }
 
 export function processSseData(
@@ -55,6 +58,34 @@ export function processSseData(
     if (parsed.error) {
       state.lastError = parsed.error.message || JSON.stringify(parsed.error)
       return { done: false, hasContent: state.hasContent }
+    }
+
+    // Claude format: content_block_start with tool_use
+    if (parsed.type === 'content_block_start' && parsed.content_block?.type === 'tool_use') {
+      cb.onToolCallStart?.({
+        index: parsed.index ?? 0,
+        id: parsed.content_block.id ?? '',
+        name: parsed.content_block.name ?? ''
+      })
+      return { done: false, hasContent: state.hasContent }
+    }
+
+    // Claude format: content_block_delta with input_json_delta
+    if (parsed.type === 'content_block_delta') {
+      const d = parsed.delta as Record<string, unknown> | undefined
+      if (d?.type === 'input_json_delta' && d.partial_json) {
+        cb.onToolCallDelta?.(parsed.index ?? 0, d.partial_json as string)
+      }
+      if (d?.type === 'text_delta' && d.text) {
+        state.hasContent = true
+        cb.onChunk(d.text as string)
+      }
+      return { done: false, hasContent: state.hasContent }
+    }
+
+    // Claude format: message_delta with stop_reason
+    if (parsed.type === 'message_delta' && parsed.delta?.stop_reason === 'tool_use') {
+      return { done: false, hasContent: state.hasContent, hasToolCalls: true }
     }
 
     const delta = parsed.choices?.[0]?.delta
@@ -81,6 +112,23 @@ export function processSseData(
 
     if (delta?.reasoning_content && cb.onReasoning) {
       cb.onReasoning(delta.reasoning_content)
+    }
+
+    // OpenAI format: delta.tool_calls
+    if (delta?.tool_calls && Array.isArray(delta.tool_calls)) {
+      for (const tc of delta.tool_calls) {
+        if (tc.id && cb.onToolCallStart) {
+          cb.onToolCallStart({ index: tc.index, id: tc.id, name: tc.function?.name || '' })
+        }
+        if (tc.function?.arguments && cb.onToolCallDelta) {
+          cb.onToolCallDelta(tc.index, tc.function.arguments)
+        }
+      }
+    }
+
+    // OpenAI format: finish_reason tool_calls
+    if (parsed.choices?.[0]?.finish_reason === 'tool_calls') {
+      return { done: false, hasContent: state.hasContent, hasToolCalls: true }
     }
   } catch { /* noop */ }
 

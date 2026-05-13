@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { genId } from '../lib/genId'
-import type { ChatMessage, ViewMode } from '../../../shared/types'
+import type { ChatMessage, ViewMode, ToolCall, ToolResult } from '../../../shared/types'
 import type { DangerCategory } from '../lib/approvalDetection'
 
 export interface ChatApprovalRequest {
@@ -24,6 +24,8 @@ interface ChatState {
   reasoningContent: string
   isAiConfigMode: boolean
   chatApproval: ChatApprovalRequest | null
+  activeToolCalls: ToolCall[]
+  toolResults: ToolResult[]
   setView: (view: ViewMode) => void
   addMessage: (msg: ChatMessage) => void
   appendToLastAgent: (chunk: string) => void
@@ -36,6 +38,10 @@ interface ChatState {
   setAiConfigMode: (mode: boolean) => void
   submitChatApproval: (req: Omit<ChatApprovalRequest, 'id' | 'status' | 'createdAt'>) => void
   respondChatApproval: (approved: boolean) => void
+  addToolCall: (call: ToolCall) => void
+  updateToolCallArguments: (id: string, chunk: string) => void
+  addToolResult: (result: ToolResult) => void
+  clearToolCalls: () => void
 }
 
 export const useChatStore = create<ChatState>((set) => ({
@@ -47,6 +53,8 @@ export const useChatStore = create<ChatState>((set) => ({
   reasoningContent: '',
   isAiConfigMode: false,
   chatApproval: null,
+  activeToolCalls: [],
+  toolResults: [],
 
   setView: (view) => set({ view }),
 
@@ -75,7 +83,7 @@ export const useChatStore = create<ChatState>((set) => ({
 
   appendReasoning: (text) => set((s) => ({ reasoningContent: s.reasoningContent + text })),
   clearReasoning: () => set({ reasoningContent: '' }),
-  clearMessages: () => set({ messages: [], isLoading: false, toolProgress: null, sessionId: null, reasoningContent: '', chatApproval: null }),
+  clearMessages: () => set({ messages: [], isLoading: false, toolProgress: null, sessionId: null, reasoningContent: '', chatApproval: null, activeToolCalls: [], toolResults: [] }),
 
   setAiConfigMode: (mode) => set({ isAiConfigMode: mode }),
 
@@ -96,5 +104,14 @@ export const useChatStore = create<ChatState>((set) => ({
         status: approved ? 'approved' as const : 'rejected' as const
       }
     }
-  })
+  }),
+
+  addToolCall: (call) => set((s) => ({ activeToolCalls: [...s.activeToolCalls, call] })),
+  updateToolCallArguments: (id, chunk) => set((s) => ({
+    activeToolCalls: s.activeToolCalls.map(tc =>
+      tc.id === id ? { ...tc, arguments: tc.arguments + chunk } : tc
+    )
+  })),
+  addToolResult: (result) => set((s) => ({ toolResults: [...s.toolResults, result] })),
+  clearToolCalls: () => set({ activeToolCalls: [], toolResults: [] })
 }))

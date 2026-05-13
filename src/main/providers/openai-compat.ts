@@ -1,5 +1,5 @@
 import type { ClientRequest } from 'electron'
-import type { ProviderStrategy, ChatMessageInput } from './types'
+import type { ProviderStrategy, ChatMessageInput, ToolDefinition } from './types'
 
 export class OpenAICompatibleStrategy implements ProviderStrategy {
   readonly protocolType = 'openai'
@@ -9,8 +9,15 @@ export class OpenAICompatibleStrategy implements ProviderStrategy {
     return `${baseUrl.replace(/\/$/, '')}/chat/completions`
   }
 
-  buildBody(model: string, messages: ChatMessageInput[], stream: boolean): string {
-    return JSON.stringify({ model, messages, stream })
+  buildBody(model: string, messages: ChatMessageInput[], stream: boolean, options?: { tools?: ToolDefinition[] }): string {
+    const body: Record<string, unknown> = { model, messages, stream }
+    if (options?.tools && options.tools.length > 0) {
+      body.tools = options.tools.map(t => ({
+        type: 'function',
+        function: { name: t.name, description: t.description, parameters: t.inputSchema }
+      }))
+    }
+    return JSON.stringify(body)
   }
 
   applyAuthHeaders(request: ClientRequest, apiKey: string): void {

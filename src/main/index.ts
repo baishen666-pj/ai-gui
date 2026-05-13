@@ -7,7 +7,7 @@ import { enableGpuFlags } from './gpu'
 import { getLocale, setLocale } from './locale'
 import { getConnectionConfig, setConnectionConfig, getActiveProvider, setActiveProvider, updateProvider, removeProvider, setProviderModel } from './config'
 import { discoverModels } from './model-discovery'
-import { sendMessage } from './chat'
+import { sendMessageWithLoop } from './chat'
 import { openChatGPTLogin, logoutChatGPT, openSubscriptionLogin } from './auth'
 import * as sessions from './sessions'
 import * as persistence from './persistence'
@@ -220,7 +220,7 @@ function registerIpcHandlers(): void {
     const win = mainWindow
     if (!win || win.isDestroyed()) return
 
-    activeChatController = sendMessage(opts, {
+    activeChatController = sendMessageWithLoop(opts, {
       onChunk(chunk) {
         if (!win.isDestroyed()) win.webContents.send('chat-chunk', chunk)
       },
@@ -238,6 +238,12 @@ function registerIpcHandlers(): void {
       },
       onReasoning(text) {
         if (!win.isDestroyed()) win.webContents.send('chat-reasoning', text)
+      },
+      onToolCallStart(call) {
+        if (!win.isDestroyed()) win.webContents.send('chat-tool-call-start', call)
+      },
+      onToolCallResult(result) {
+        if (!win.isDestroyed()) win.webContents.send('chat-tool-call-result', result)
       }
     })
   })
@@ -247,6 +253,11 @@ function registerIpcHandlers(): void {
       activeChatController.abort()
       activeChatController = null
     }
+  })
+
+  ipcMain.handle('list-tools', () => {
+    const { listToolSpecs } = require('./tools/registry') as typeof import('./tools/registry')
+    return listToolSpecs()
   })
 
   // Sessions

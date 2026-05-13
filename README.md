@@ -1,6 +1,6 @@
-# AI GUI v0.2.0
+# AI GUI v0.6.0
 
-AI Agent 可视化桌面工作台 — 支持 Multi-Agent 协同、DAG 工作流编排、2.5D 等轴测办公室可视化、MCP 协议双向对接。
+AI Agent 可视化桌面工作台 — 支持 Multi-Agent 协同、Tool Use 闭环、DAG 工作流编排、2.5D 等轴测办公室可视化、MCP 协议双向对接。
 
 ## 技术栈
 

@@ -70,6 +70,22 @@ const api = {
     ipcRenderer.on('chat-reasoning', handler)
     return () => ipcRenderer.removeListener('chat-reasoning', handler)
   },
+  onChatUsage: (cb: (usage: { promptTokens: number; completionTokens: number; totalTokens: number }) => void) => {
+    const handler = (_e: Electron.IpcRendererEvent, usage: { promptTokens: number; completionTokens: number; totalTokens: number }): void => cb(usage)
+    ipcRenderer.on('chat-usage', handler)
+    return () => ipcRenderer.removeListener('chat-usage', handler)
+  },
+  onToolCallStart: (cb: (call: { id: string; name: string }) => void) => {
+    const handler = (_e: Electron.IpcRendererEvent, call: { id: string; name: string }): void => cb(call)
+    ipcRenderer.on('chat-tool-call-start', handler)
+    return () => ipcRenderer.removeListener('chat-tool-call-start', handler)
+  },
+  onToolCallResult: (cb: (result: { id: string; name: string; ok: boolean; data: unknown }) => void) => {
+    const handler = (_e: Electron.IpcRendererEvent, result: { id: string; name: string; ok: boolean; data: unknown }): void => cb(result)
+    ipcRenderer.on('chat-tool-call-result', handler)
+    return () => ipcRenderer.removeListener('chat-tool-call-result', handler)
+  },
+  listTools: () => ipcRenderer.invoke('list-tools'),
 
   // Sessions
   sessionsList: (limit?: number) => ipcRenderer.invoke('sessions-list', limit),

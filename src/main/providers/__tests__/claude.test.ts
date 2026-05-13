@@ -72,4 +72,70 @@ describe('ClaudeStrategy', () => {
     strategy.applyAuthHeaders(mockRequest, '')
     expect(headers['x-api-key']).toBeUndefined()
   })
+
+  it('buildBody without tools omits tools from body', () => {
+    const messages = [{ role: 'user', content: 'hello' }]
+    const body = JSON.parse(strategy.buildBody('claude-sonnet-4-20250514', messages, true))
+    expect(body.tools).toBeUndefined()
+  })
+
+  it('buildBody with tools adds Claude format', () => {
+    const messages = [{ role: 'user', content: 'hello' }]
+    const tools = [
+      {
+        name: 'get_weather',
+        description: 'Get current weather',
+        inputSchema: {
+          type: 'object' as const,
+          properties: { city: { type: 'string' as const } },
+          required: ['city']
+        }
+      }
+    ]
+    const body = JSON.parse(strategy.buildBody('claude-sonnet-4-20250514', messages, true, { tools }))
+    expect(body.tools).toEqual([
+      {
+        name: 'get_weather',
+        description: 'Get current weather',
+        input_schema: {
+          type: 'object',
+          properties: { city: { type: 'string' } },
+          required: ['city']
+        }
+      }
+    ])
+  })
+
+  it('buildBody with multiple tools preserves order', () => {
+    const messages = [{ role: 'user', content: 'hello' }]
+    const tools = [
+      { name: 'tool_a', description: 'First tool', inputSchema: { type: 'object' } },
+      { name: 'tool_b', description: 'Second tool', inputSchema: { type: 'object' } }
+    ]
+    const body = JSON.parse(strategy.buildBody('claude-sonnet-4-20250514', messages, false, { tools }))
+    expect(body.tools).toHaveLength(2)
+    expect(body.tools[0].name).toBe('tool_a')
+    expect(body.tools[1].name).toBe('tool_b')
+  })
+
+  it('buildBody with empty tools array omits tools from body', () => {
+    const messages = [{ role: 'user', content: 'hello' }]
+    const body = JSON.parse(strategy.buildBody('claude-sonnet-4-20250514', messages, true, { tools: [] }))
+    expect(body.tools).toBeUndefined()
+  })
+
+  it('buildBody with tools and system message combines both', () => {
+    const messages = [
+      { role: 'system', content: 'You are helpful' },
+      { role: 'user', content: 'hello' }
+    ]
+    const tools = [
+      { name: 'search', description: 'Search the web', inputSchema: { type: 'object' as const } }
+    ]
+    const body = JSON.parse(strategy.buildBody('claude-sonnet-4-20250514', messages, true, { tools }))
+    expect(body.system).toBe('You are helpful')
+    expect(body.tools).toEqual([
+      { name: 'search', description: 'Search the web', input_schema: { type: 'object' } }
+    ])
+  })
 })

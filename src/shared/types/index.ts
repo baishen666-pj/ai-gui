@@ -1,10 +1,26 @@
+export interface ToolCall {
+  id: string
+  name: string
+  arguments: string
+}
+
+export interface ToolResult {
+  toolCallId: string
+  name: string
+  result: string
+  ok: boolean
+}
+
 export interface ChatMessage {
   id: string
-  role: 'user' | 'agent' | 'system' | 'error'
+  role: 'user' | 'agent' | 'system' | 'error' | 'tool_call' | 'tool_result'
   content: string
   timestamp: number
   toolProgress?: string
   imageBase64?: string
+  toolCalls?: ToolCall[]
+  toolCallId?: string
+  toolResults?: ToolResult[]
 }
 
 export interface ProviderConfig {

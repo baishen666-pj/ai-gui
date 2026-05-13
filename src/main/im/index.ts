@@ -6,25 +6,36 @@ import { FeishuConnector } from './feishu'
 import { WecomConnector } from './wecom'
 import { WecomWebhookConnector } from './wecom-webhook'
 import { getActiveProvider } from '../config'
+import { sendMessage } from '../chat'
 import { sendRequest, isRunning as isBridgeRunning } from '../computer-use/bridge'
 
 export function registerImIpc(mainWindow: BrowserWindow): void {
   // Chat command: forward to AI and reply
-  registerCommand('/chat', async (msg, text) => {
+  registerCommand('/chat', async (_msg, text) => {
     try {
       const provider = getActiveProvider()
       if (!provider.apiKey && provider.type !== 'ollama') {
         return { reply: '错误: 未配置 API Key' }
       }
 
-      const result = await sendRequest('ping', {}) // Just check bridge is alive
-      if (!result) {
-        return { reply: '错误: AI 服务不可用' }
-      }
+      const response = await new Promise<string>((resolve, reject) => {
+        let accumulated = ''
+        const controller = sendMessage(
+          { messages: [{ role: 'user', content: text }] },
+          {
+            onChunk(chunk) { accumulated += chunk },
+            onDone() { resolve(accumulated) },
+            onError(msg) { reject(new Error(msg)) }
+          }
+        )
+        setTimeout(() => {
+          controller.abort()
+          if (accumulated) resolve(accumulated)
+          else reject(new Error('AI 响应超时'))
+        }, 60000)
+      })
 
-      // Simple non-streaming completion for IM
-      const chatResult = await sendRequest('screenshot', {}) // placeholder
-      return { reply: `AI 收到: "${text}"\n(完整聊天集成待连接)` }
+      return { reply: response || '（AI 无回复）' }
     } catch (err: unknown) {
       const e = err instanceof Error ? err.message : String(err)
       return { reply: `错误: ${e}` }

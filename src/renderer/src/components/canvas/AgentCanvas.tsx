@@ -1,5 +1,5 @@
 import { genId } from '../../lib/genId'
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   ReactFlow,
   Controls,
@@ -22,6 +22,7 @@ import { TEMPLATES } from './templates'
 import type { AgentNodeData, FlowTemplate } from './types'
 import { useAppStore } from '../../stores/app'
 import type { CanvasAgent } from '../../stores/app'
+import { canvasToWorkflow } from '../../lib/canvasToWorkflow'
 
 const nodeTypes = { agent: AgentNodeComponent }
 
@@ -40,8 +41,17 @@ export function AgentCanvas() {
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([])
   const [editingNodeId, setEditingNodeId] = useState<string | null>(null)
   const [aiConfigOpen, setAiConfigOpen] = useState(false)
+  const [isCanvasRunning, setIsCanvasRunning] = useState(false)
   const syncTimerRef = useRef<number>(0)
   const setCanvasAgents = useAppStore((s) => s.setCanvasAgents)
+  const setView = useAppStore((s) => s.setView)
+  const setActiveWorkflow = useAppStore((s) => s.setActiveWorkflow)
+  const startWorkflowExecution = useAppStore((s) => s.startWorkflowExecution)
+  const workflowExecution = useAppStore((s) => s.workflowExecution)
+  const addMessage = useAppStore((s) => s.addMessage)
+  const notify = useAppStore((s) => s.notify)
+
+  const canvasWorkflowIdRef = useRef<string | null>(null)
 
   const syncToStore = useCallback((nds: Node[], eds: Edge[]) => {
     const agents: CanvasAgent[] = nds.map((n) => {
@@ -60,6 +70,84 @@ export function AgentCanvas() {
     })
     setCanvasAgents(agents)
   }, [setCanvasAgents])
+
+  // Sync workflow execution node statuses back to canvas agent statuses
+  useEffect(() => {
+    const wfId = canvasWorkflowIdRef.current
+    if (!wfId || !workflowExecution || workflowExecution.workflowId !== wfId) return
+
+    const nodeStatuses = workflowExecution.nodeStatuses
+    const isDone = workflowExecution.status === 'completed' || workflowExecution.status === 'failed'
+
+    setNodes((currentNodes) => {
+      const updated = currentNodes.map((n) => {
+        const status = nodeStatuses[n.id]
+        if (!status) return n
+        const mapped: AgentNodeData['status'] =
+          status === 'running' ? 'running' :
+          status === 'completed' ? 'success' :
+          status === 'failed' ? 'error' :
+          'idle'
+        return { ...n, data: { ...(n.data as AgentNodeData), status: mapped } }
+      })
+      syncToStore(updated, edges)
+      return updated
+    })
+
+    if (isDone) {
+      setIsCanvasRunning(false)
+      canvasWorkflowIdRef.current = null
+    }
+  }, [workflowExecution, setNodes, edges, syncToStore])
+
+  const handleRun = useCallback(() => {
+    const connections = new Map<string, string[]>()
+    for (const edge of edges) {
+      const existing = connections.get(edge.source) || []
+      existing.push(edge.target)
+      connections.set(edge.source, existing)
+    }
+
+    const currentAgents: CanvasAgent[] = nodes.map((n) => {
+      const d = n.data as AgentNodeData
+      return {
+        id: n.id,
+        label: (d.label as string) || 'Agent',
+        role: (d.role as string) || '',
+        model: (d.model as string) || 'gpt-4o',
+        color: (d.color as string) || 'var(--t-accent)',
+        position: n.position,
+        connections: edges.filter((e) => e.source === n.id).map((e) => e.target),
+        tools: (d.tools as string[]) || [],
+        status: (d.status as CanvasAgent['status']) || 'idle'
+      }
+    })
+
+    if (currentAgents.length === 0) return
+
+    const workflow = canvasToWorkflow(currentAgents, connections)
+    canvasWorkflowIdRef.current = workflow.id
+
+    // Add workflow to store by creating and updating it
+    const wfStore = useAppStore.getState()
+    const newWorkflows = [...wfStore.workflows, workflow]
+    useAppStore.setState({ workflows: newWorkflows })
+
+    setActiveWorkflow(workflow.id)
+    startWorkflowExecution(workflow.id)
+    setIsCanvasRunning(true)
+
+    // Switch to workflow view so user can see execution progress
+    setView('workflow')
+
+    addMessage({
+      id: genId('system-'),
+      role: 'system',
+      content: `画布工作流开始执行 (${currentAgents.length} agents)`,
+      timestamp: Date.now()
+    })
+    notify('画布工作流', `开始执行 ${currentAgents.length} 个 Agent`)
+  }, [nodes, edges, setActiveWorkflow, startWorkflowExecution, setView, addMessage, notify])
 
   const onConnect: OnConnect = useCallback(
     (params) => {
@@ -199,6 +287,13 @@ export function AgentCanvas() {
             className="rounded bg-accent px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-accent-hover"
           >
             + Agent
+          </button>
+          <button
+            onClick={handleRun}
+            disabled={isCanvasRunning || nodes.length === 0}
+            className="rounded bg-success px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-success/80 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {isCanvasRunning ? '运行中...' : '▶ 运行'}
           </button>
         </div>
       </header>

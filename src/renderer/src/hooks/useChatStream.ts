@@ -3,6 +3,7 @@ import { useAppStore } from '../stores/app'
 import { detectDangerousContent, CATEGORY_LABELS } from '../lib/approvalDetection'
 import { genId } from '../lib/genId'
 import type { ChatMessage } from '../../../shared/types'
+import type { ToolCall, ToolResult } from '../../../shared/types'
 
 export function useChatStream(
   appendToLastAgent: (chunk: string) => void,
@@ -102,8 +103,26 @@ export function useChatStream(
     const unsubChunkEvt = window.aiGui.onChatChunk(unsubChunk)
     const unsubToolEvt = window.aiGui.onToolProgress(unsubTool)
     const unsubReasoningEvt = window.aiGui.onChatReasoning(unsubReasoning)
+
+    // Tool call events
+    const unsubToolCallStart = window.aiGui.onToolCallStart?.((call: { id: string; name: string }) => {
+      if (isAiConfigMode) return
+      useAppStore.getState().addToolCall({ id: call.id, name: call.name, arguments: '' })
+    })
+    const unsubToolCallResult = window.aiGui.onToolCallResult?.((result: { id: string; name: string; ok: boolean; data: unknown }) => {
+      if (isAiConfigMode) return
+      const toolResult: ToolResult = {
+        toolCallId: result.id,
+        name: result.name,
+        result: typeof result.data === 'string' ? result.data : JSON.stringify(result.data),
+        ok: result.ok
+      }
+      useAppStore.getState().addToolResult(toolResult)
+    })
+
     return () => {
       unsubDoneEvt(); unsubErrorEvt(); unsubChunkEvt(); unsubToolEvt(); unsubReasoningEvt()
+      unsubToolCallStart?.(); unsubToolCallResult?.()
     }
   }, [appendToLastAgent, setLoading, setToolProgress, addMessage, appendReasoning, clearReasoning, flushStreamBuffer, scheduleFlush, isAiConfigMode])
 

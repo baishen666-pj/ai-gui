@@ -15,7 +15,7 @@ export function exportAsMarkdown(messages: ChatMessage[], title: string): string
 
   for (const msg of messages) {
     const time = new Date(msg.timestamp).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
-    const roleLabels: Record<ChatMessage['role'], string> = { user: '用户', agent: 'AI', system: '系统', error: '错误' }
+    const roleLabels: Record<ChatMessage['role'], string> = { user: '用户', agent: 'AI', system: '系统', error: '错误', tool_call: '工具调用', tool_result: '工具结果' }
     const roleLabel = roleLabels[msg.role]
 
     if (msg.role === 'system') {
@@ -65,7 +65,7 @@ export function exportAsTxt(messages: ChatMessage[], title: string): string {
 
   for (const msg of messages) {
     const time = new Date(msg.timestamp).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
-    const roleLabels: Record<ChatMessage['role'], string> = { user: '用户', agent: 'AI', system: '系统', error: '错误' }
+    const roleLabels: Record<ChatMessage['role'], string> = { user: '用户', agent: 'AI', system: '系统', error: '错误', tool_call: '工具调用', tool_result: '工具结果' }
     const roleLabel = roleLabels[msg.role]
     lines.push(`[${time}] ${roleLabel}:`)
     lines.push(msg.content)

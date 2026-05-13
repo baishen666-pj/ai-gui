@@ -1,5 +1,5 @@
 import { useState, memo } from 'react'
-import type { ChatMessage } from '../../../shared/types'
+import type { ChatMessage, ToolCall, ToolResult } from '../../../shared/types'
 import { AgentMarkdown } from './AgentMarkdown'
 
 const UserIcon = () => (
@@ -109,6 +109,52 @@ export const MessageBubble = memo(function MessageBubble({ msg, onDelete, onCopy
     </div>
   )
 })
+
+export function ToolCallCard({ calls, results }: { calls: ToolCall[]; results: ToolResult[] }) {
+  const [expanded, setExpanded] = useState(false)
+  if (calls.length === 0) return null
+
+  return (
+    <div className="mb-2 max-w-[85%]">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="flex items-center gap-1.5 rounded-lg border border-accent/30 bg-accent/5 px-3 py-1.5 text-xs text-accent-text transition-colors hover:bg-accent/10"
+      >
+        <span className={`transition-transform ${expanded ? 'rotate-90' : ''}`}>▸</span>
+        <span>{calls.length} 个工具调用</span>
+        {results.length > 0 && (
+          <span className="text-content-subtle">
+            ({results.filter(r => r.ok).length}/{results.length} 成功)
+          </span>
+        )}
+      </button>
+      {expanded && (
+        <div className="mt-1 space-y-1">
+          {calls.map((tc) => {
+            const result = results.find(r => r.toolCallId === tc.id)
+            return (
+              <div key={tc.id} className="rounded-lg border border-border-subtle bg-surface-elevated/80 p-2 text-xs">
+                <div className="flex items-center gap-2 font-medium text-content-muted">
+                  <span>{tc.name}</span>
+                  {result && (
+                    <span className={result.ok ? 'text-green-500' : 'text-danger'}>
+                      {result.ok ? '成功' : '失败'}
+                    </span>
+                  )}
+                </div>
+                {result && (
+                  <pre className="mt-1 max-h-32 overflow-auto whitespace-pre-wrap text-content-subtle">
+                    {result.result.slice(0, 500)}
+                  </pre>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
 
 export function ReasoningBlock({ content }: { content: string }) {
   const [expanded, setExpanded] = useState(false)

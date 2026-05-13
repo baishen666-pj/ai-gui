@@ -160,4 +160,57 @@ describe('chatStore', () => {
       expect(useChatStore.getState().chatApproval).toBeNull()
     })
   })
+
+  describe('toolCall state', () => {
+    beforeEach(() => {
+      useChatStore.getState().clearToolCalls()
+    })
+
+    it('addToolCall adds to activeToolCalls', () => {
+      useChatStore.getState().addToolCall({ id: 'tc-1', name: 'read_file', arguments: '{"path":"/tmp/a"}' })
+      expect(useChatStore.getState().activeToolCalls).toEqual([
+        { id: 'tc-1', name: 'read_file', arguments: '{"path":"/tmp/a"}' }
+      ])
+    })
+
+    it('updateToolCallArguments appends arguments chunk to matching tool call', () => {
+      useChatStore.getState().addToolCall({ id: 'tc-1', name: 'read_file', arguments: '' })
+      useChatStore.getState().updateToolCallArguments('tc-1', '{"path')
+      useChatStore.getState().updateToolCallArguments('tc-1', '":"/tmp/a"}')
+      expect(useChatStore.getState().activeToolCalls).toEqual([
+        { id: 'tc-1', name: 'read_file', arguments: '{"path":"/tmp/a"}' }
+      ])
+    })
+
+    it('updateToolCallArguments ignores non-matching id', () => {
+      useChatStore.getState().addToolCall({ id: 'tc-1', name: 'read_file', arguments: 'original' })
+      useChatStore.getState().updateToolCallArguments('tc-999', 'extra')
+      expect(useChatStore.getState().activeToolCalls).toEqual([
+        { id: 'tc-1', name: 'read_file', arguments: 'original' }
+      ])
+    })
+
+    it('addToolResult adds to toolResults', () => {
+      useChatStore.getState().addToolResult({ toolCallId: 'tc-1', name: 'read_file', result: 'file contents', ok: true })
+      expect(useChatStore.getState().toolResults).toEqual([
+        { toolCallId: 'tc-1', name: 'read_file', result: 'file contents', ok: true }
+      ])
+    })
+
+    it('clearToolCalls resets both activeToolCalls and toolResults', () => {
+      useChatStore.getState().addToolCall({ id: 'tc-1', name: 'read_file', arguments: '{}' })
+      useChatStore.getState().addToolResult({ toolCallId: 'tc-1', name: 'read_file', result: 'ok', ok: true })
+      useChatStore.getState().clearToolCalls()
+      expect(useChatStore.getState().activeToolCalls).toEqual([])
+      expect(useChatStore.getState().toolResults).toEqual([])
+    })
+
+    it('clearMessages also resets activeToolCalls and toolResults', () => {
+      useChatStore.getState().addToolCall({ id: 'tc-2', name: 'write_file', arguments: '{}' })
+      useChatStore.getState().addToolResult({ toolCallId: 'tc-2', name: 'write_file', result: 'done', ok: true })
+      useChatStore.getState().clearMessages()
+      expect(useChatStore.getState().activeToolCalls).toEqual([])
+      expect(useChatStore.getState().toolResults).toEqual([])
+    })
+  })
 })

@@ -1,5 +1,5 @@
 import type { ClientRequest } from 'electron'
-import type { ProviderStrategy, ChatMessageInput } from './types'
+import type { ProviderStrategy, ChatMessageInput, ToolDefinition } from './types'
 
 export class ClaudeStrategy implements ProviderStrategy {
   readonly protocolType = 'claude'
@@ -9,7 +9,7 @@ export class ClaudeStrategy implements ProviderStrategy {
     return `${baseUrl.replace(/\/$/, '')}/messages`
   }
 
-  buildBody(model: string, messages: ChatMessageInput[], stream: boolean): string {
+  buildBody(model: string, messages: ChatMessageInput[], stream: boolean, options?: { tools?: ToolDefinition[] }): string {
     const systemMsg = messages.find((m) => m.role === 'system')
     const otherMsgs = messages
       .filter((m) => m.role !== 'system')
@@ -18,13 +18,23 @@ export class ClaudeStrategy implements ProviderStrategy {
         content: m.content
       }))
 
-    return JSON.stringify({
+    const body: Record<string, unknown> = {
       model,
       max_tokens: 4096,
       stream,
       system: typeof systemMsg?.content === 'string' ? systemMsg.content : undefined,
       messages: otherMsgs
-    })
+    }
+
+    if (options?.tools && options.tools.length > 0) {
+      body.tools = options.tools.map(t => ({
+        name: t.name,
+        description: t.description,
+        input_schema: t.inputSchema
+      }))
+    }
+
+    return JSON.stringify(body)
   }
 
   applyAuthHeaders(request: ClientRequest, apiKey: string): void {
