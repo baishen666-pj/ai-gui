@@ -2,6 +2,8 @@ import { genId } from '../lib/genId'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useAppStore } from '../stores/app'
 import type { ScheduleTask } from '../../../shared/types'
+import { ConfirmDialog } from './ConfirmDialog'
+import { useConfirm } from '../hooks/useConfirm'
 
 const INTERVAL_PRESETS = [
   { label: '30秒', seconds: 30 },
@@ -24,7 +26,10 @@ interface TaskForm {
 const EMPTY_FORM: TaskForm = { name: '', prompt: '', intervalSeconds: 300 }
 
 export function SchedulePanel() {
-  const { scheduledTasks, addScheduledTask, updateScheduledTask, deleteScheduledTask } = useAppStore()
+  const scheduledTasks = useAppStore((s) => s.scheduledTasks)
+  const addScheduledTask = useAppStore((s) => s.addScheduledTask)
+  const updateScheduledTask = useAppStore((s) => s.updateScheduledTask)
+  const deleteScheduledTask = useAppStore((s) => s.deleteScheduledTask)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState<TaskForm>(EMPTY_FORM)
   const [showForm, setShowForm] = useState(false)
@@ -32,6 +37,7 @@ export function SchedulePanel() {
   const [customSeconds, setCustomSeconds] = useState(60)
   const timersRef = useRef<Map<string, ReturnType<typeof setInterval>>>(new Map())
   const [, setTick] = useState(0)
+  const { confirmState, requestConfirm, handleCancel } = useConfirm()
 
   // Tick every 10s to update countdowns
   useEffect(() => {
@@ -231,7 +237,7 @@ export function SchedulePanel() {
             countdown={getNextCountdown(task)}
             onToggle={() => toggleEnabled(task)}
             onEdit={() => startEdit(task)}
-            onDelete={() => { if (confirm(`确定删除任务「${task.name}」？`)) deleteScheduledTask(task.id) }}
+            onDelete={() => { requestConfirm('删除定时任务', `确定删除任务「${task.name}」？`).then((ok) => { if (ok) deleteScheduledTask(task.id) }) }}
             onRunNow={() => runNow(task)}
             formatTime={formatTime}
             formatInterval={formatInterval}
@@ -246,6 +252,7 @@ export function SchedulePanel() {
           </p>
         </div>
       )}
+      <ConfirmDialog {...confirmState} onCancel={handleCancel} />
     </div>
   )
 }

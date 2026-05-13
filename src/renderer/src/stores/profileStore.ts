@@ -2,7 +2,10 @@ import { create } from 'zustand'
 import { genId } from '../lib/genId'
 import type { LayoutItem } from '../components/three/types'
 import { DEFAULT_LAYOUT } from '../components/three/constants'
-import { useChatStore } from './chatStore'
+let _onProfileSwitch: (() => void) | null = null
+export function setProfileSwitchHandler(handler: () => void) {
+  _onProfileSwitch = handler
+}
 
 export interface CanvasAgent {
   id: string
@@ -66,7 +69,7 @@ export const useProfileStore = create<ProfileState>((set, _get) => ({
     set((s) => {
       const profile = s.profiles.find((p) => p.id === id)
       if (!profile) return {}
-      useChatStore.getState().clearMessages()
+      _onProfileSwitch?.()
       return {
         activeProfileId: id,
         soulPrompt: profile.soulPrompt,
@@ -86,7 +89,7 @@ export const useProfileStore = create<ProfileState>((set, _get) => ({
         activeProviderId: s.activeProfileId,
         canvasAgents: []
       }
-      useChatStore.getState().clearMessages()
+      _onProfileSwitch?.()
       return {
         profiles: [...s.profiles, newProfile],
         activeProfileId: id,
@@ -102,7 +105,7 @@ export const useProfileStore = create<ProfileState>((set, _get) => ({
       const profiles = s.profiles.filter((p) => p.id !== id)
       if (s.activeProfileId !== id) return { profiles }
       const first = profiles[0]
-      useChatStore.getState().clearMessages()
+      _onProfileSwitch?.()
       return {
         profiles,
         activeProfileId: first.id,

@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
 import type { ViewMode } from '../../../shared/types'
 import { useAppStore, type ThemeMode } from '../stores/app'
+import { ConfirmDialog } from './ConfirmDialog'
+import { useConfirm } from '../hooks/useConfirm'
 
 interface SidebarProps {
   activeView: ViewMode
@@ -105,6 +107,7 @@ function ProfileMenu({ onClose }: { onClose: () => void }) {
   const [newName, setNewName] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editName, setEditName] = useState('')
+  const { confirmState, requestConfirm, handleCancel } = useConfirm()
 
   const handleCreate = () => {
     if (!newName.trim()) return
@@ -165,7 +168,7 @@ function ProfileMenu({ onClose }: { onClose: () => void }) {
               </button>
               {profiles.length > 1 && (
                 <button
-                  onClick={() => { if (confirm(`确定删除配置文件「${p.name}」？`)) deleteProfile(p.id) }}
+                  onClick={() => { requestConfirm('删除配置文件', `确定删除配置文件「${p.name}」？`).then((ok) => { if (ok) deleteProfile(p.id) }) }}
                   className="rounded p-0.5 text-[10px] text-content-subtle hover:text-danger"
                   title="删除"
                 >
@@ -197,6 +200,7 @@ function ProfileMenu({ onClose }: { onClose: () => void }) {
           + 新建配置文件
         </button>
       )}
+      <ConfirmDialog {...confirmState} onCancel={handleCancel} />
     </div>
   )
 }

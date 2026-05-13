@@ -1,6 +1,8 @@
 import { useState, useEffect, lazy, Suspense } from 'react'
 import { ReactFlowProvider } from '@xyflow/react'
 import { useAppStore } from './stores/app'
+import { useChatStore } from './stores/chatStore'
+import { setProfileSwitchHandler } from './stores/profileStore'
 import type { ViewMode } from '../../shared/types'
 import { Sidebar } from './components/Sidebar'
 import { ChatPanel } from './components/ChatPanel'
@@ -31,9 +33,16 @@ const VIEW_KEYS: Record<number, ViewMode> = {
 }
 
 export function App() {
-  const { view, setView, clearMessages, theme } = useAppStore()
+  const view = useAppStore((s) => s.view)
+  const setView = useAppStore((s) => s.setView)
+  const clearMessages = useAppStore((s) => s.clearMessages)
+  const theme = useAppStore((s) => s.theme)
   const [showHelp, setShowHelp] = useState(false)
   usePersistence()
+
+  useEffect(() => {
+    setProfileSwitchHandler(() => useChatStore.getState().clearMessages())
+  }, [])
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme
@@ -94,7 +103,9 @@ export function App() {
 }
 
 function ChatView() {
-  const { sessionId, setSessionId, clearMessages } = useAppStore()
+  const sessionId = useAppStore((s) => s.sessionId)
+  const setSessionId = useAppStore((s) => s.setSessionId)
+  const clearMessages = useAppStore((s) => s.clearMessages)
 
   const handleNewChat = () => {
     clearMessages()

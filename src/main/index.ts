@@ -141,6 +141,13 @@ function registerIpcHandlers(): void {
   })
 
   ipcMain.handle('get-active-provider', () => getActiveProvider())
+
+  ipcMain.handle('get-model-config', () => {
+    const config = getConnectionConfig()
+    const provider = config.providers.find((p) => p.id === config.activeProviderId) ?? config.providers[0]
+    return { provider: provider.id, model: provider.defaultModel, baseUrl: provider.baseUrl }
+  })
+
   ipcMain.handle('set-active-provider', (_e, id: string) => setActiveProvider(id))
   ipcMain.handle('update-provider', (_e, provider) => updateProvider(provider))
   ipcMain.handle('remove-provider', (_e, id: string) => removeProvider(id))

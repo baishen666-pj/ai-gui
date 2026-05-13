@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
+import { ConfirmDialog } from './ConfirmDialog'
+import { useConfirm } from '../hooks/useConfirm'
 
 interface SessionInfo {
   id: string
@@ -31,6 +33,7 @@ export function SessionSidebar({ activeSessionId, onSelectSession, onNewChat }: 
   const [searchResults, setSearchResults] = useState<{ session_id: string; title: string; snippet: string }[]>([])
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editTitle, setEditTitle] = useState('')
+  const { confirmState, requestConfirm, handleCancel } = useConfirm()
 
   const loadSessions = useCallback(async () => {
     if (!window.aiGui) return
@@ -116,7 +119,7 @@ export function SessionSidebar({ activeSessionId, onSelectSession, onNewChat }: 
                 </span>
               )}
               <button
-                onClick={(e) => { e.stopPropagation(); if (confirm('确定删除此对话？')) handleDelete(s.id) }}
+                onClick={(e) => { e.stopPropagation(); requestConfirm('删除对话', '确定删除此对话？').then((ok) => { if (ok) handleDelete(s.id) }) }}
                 className="shrink-0 rounded p-0.5 text-[10px] text-content-subtle opacity-0 transition-opacity hover:text-danger group-hover:opacity-100"
               >
                 ✕
@@ -137,6 +140,7 @@ export function SessionSidebar({ activeSessionId, onSelectSession, onNewChat }: 
           </div>
         ))}
       </div>
+      <ConfirmDialog {...confirmState} onCancel={handleCancel} />
     </div>
   )
 }

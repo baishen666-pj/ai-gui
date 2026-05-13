@@ -10,57 +10,24 @@ import {
   buildSystemPromptForWorkflow,
   type AgentOutput
 } from '../../lib/contextManager'
+import { isApprovalCondition, evaluateCondition, waitForStoreValue } from '../../lib/workflowEngine'
 
 interface Props {
   workflow: Workflow
 }
 
-const APPROVAL_KEYWORDS = ['审批', '确认', '人工', '人工审批', 'approve', 'confirm', 'human']
-
-function isApprovalCondition(label: string, condition?: string): boolean {
-  if (!condition && APPROVAL_KEYWORDS.some((kw) => label.toLowerCase().includes(kw))) return true
-  if (condition && /{(human|approve|confirm)}/i.test(condition)) return true
-  return false
-}
-
-function waitForApproval(requestId: string): Promise<boolean> {
-  return new Promise((resolve) => {
-    const check = () => {
-      const req = useAppStore.getState().approvalRequests.find((r) => r.id === requestId)
-      if (!req || req.status === 'pending') {
-        setTimeout(check, 200)
-        return
-      }
-      resolve(req.status === 'approved')
-    }
-    check()
-  })
-}
-
 export function WorkflowExecutor({ workflow }: Props) {
-  const { workflowExecution, startWorkflowExecution, updateNodeExecution, completeWorkflowExecution,
-    addMessage, soulPrompt, notify, submitApproval, submitChatApproval } = useAppStore()
+  const workflowExecution = useAppStore((s) => s.workflowExecution)
+  const startWorkflowExecution = useAppStore((s) => s.startWorkflowExecution)
+  const updateNodeExecution = useAppStore((s) => s.updateNodeExecution)
+  const completeWorkflowExecution = useAppStore((s) => s.completeWorkflowExecution)
+  const addMessage = useAppStore((s) => s.addMessage)
+  const soulPrompt = useAppStore((s) => s.soulPrompt)
+  const notify = useAppStore((s) => s.notify)
+  const submitApproval = useAppStore((s) => s.submitApproval)
+  const submitChatApproval = useAppStore((s) => s.submitChatApproval)
   const isRunning = workflowExecution?.status === 'running' && workflowExecution?.workflowId === workflow.id
   const abortRef = useRef(false)
-
-  const evaluateCondition = (condition: string, output: string): boolean => {
-    if (!condition) return true
-    // Safe condition parser — no Function constructor
-    const c = condition.trim()
-    // Supported patterns: "yes", "no", "true", "false", "contains:xxx", "length>N", "length<N"
-    if (c === 'yes' || c === 'true' || c === '1') return true
-    if (c === 'no' || c === 'false' || c === '0') return false
-    const containsMatch = c.match(/^contains:(.+)$/i)
-    if (containsMatch) return output.toLowerCase().includes(containsMatch[1].toLowerCase())
-    const lengthGt = c.match(/^length\s*>\s*(\d+)$/)
-    if (lengthGt) return output.length > parseInt(lengthGt[1], 10)
-    const lengthLt = c.match(/^length\s*<\s*(\d+)$/)
-    if (lengthLt) return output.length < parseInt(lengthLt[1], 10)
-    const lengthEq = c.match(/^length\s*==?\s*(\d+)$/)
-    if (lengthEq) return output.length === parseInt(lengthEq[1], 10)
-    // Default: non-empty output = truthy
-    return output.length > 0
-  }
 
   const callAgentWithContext = async (
     node: WorkflowNode,
@@ -179,7 +146,11 @@ export function WorkflowExecutor({ workflow }: Props) {
             (r) => r.status === 'pending' && r.fromMemberId === `wf-${workflow.id}`
           )?.id
           if (pendingId) {
-            const approved = await waitForApproval(pendingId)
+            const resolved = await waitForStoreValue(
+              () => useAppStore.getState().approvalRequests.find((r) => r.id === pendingId),
+              (req) => !!req && req.status !== 'pending'
+            )
+            const approved = resolved?.status === 'approved'
             const resultText = approved ? '已批准' : '已拒绝'
             addMessage({
               id: genId('system-'), role: 'system',
@@ -259,19 +230,10 @@ export function WorkflowExecutor({ workflow }: Props) {
           })
 
           // Wait for chat approval resolution
-          await new Promise<void>((resolve) => {
-            const check = () => {
-              const ca = useAppStore.getState().chatApproval
-              if (!ca || ca.status === 'pending') {
-                setTimeout(check, 200)
-                return
-              }
-              resolve()
-            }
-            check()
-          })
-
-          const chatResult = useAppStore.getState().chatApproval
+          const chatResult = await waitForStoreValue(
+            () => useAppStore.getState().chatApproval,
+            (ca) => !!ca && ca.status !== 'pending'
+          )
           if (chatResult?.status === 'rejected') {
             addMessage({
               id: genId('system-'), role: 'system',

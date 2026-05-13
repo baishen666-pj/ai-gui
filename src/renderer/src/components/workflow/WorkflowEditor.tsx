@@ -6,11 +6,13 @@ import {
   Background,
   MiniMap,
   addEdge,
+  applyNodeChanges,
   useNodesState,
   useEdgesState,
   type OnConnect,
   type DefaultEdgeOptions,
   type Node,
+  type NodeChange,
   type Edge,
   type NodeMouseHandler
 } from '@xyflow/react'
@@ -32,9 +34,15 @@ const defaultEdgeOptions: DefaultEdgeOptions = {
 }
 
 export function WorkflowEditor() {
-  const { workflows, activeWorkflowId, createWorkflow, deleteWorkflow, setActiveWorkflow,
-    updateWorkflowNodes, updateWorkflowEdges, workflowExecution } = useAppStore()
-  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([])
+  const workflows = useAppStore((s) => s.workflows)
+  const activeWorkflowId = useAppStore((s) => s.activeWorkflowId)
+  const createWorkflow = useAppStore((s) => s.createWorkflow)
+  const deleteWorkflow = useAppStore((s) => s.deleteWorkflow)
+  const setActiveWorkflow = useAppStore((s) => s.setActiveWorkflow)
+  const updateWorkflowNodes = useAppStore((s) => s.updateWorkflowNodes)
+  const updateWorkflowEdges = useAppStore((s) => s.updateWorkflowEdges)
+  const workflowExecution = useAppStore((s) => s.workflowExecution)
+  const [nodes, setNodes] = useNodesState<Node>([])
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([])
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
 
@@ -103,29 +111,25 @@ export function WorkflowEditor() {
           ...params,
           label: params.sourceHandle === 'yes' ? '是' : params.sourceHandle === 'no' ? '否' : undefined
         }, eds)
-        setTimeout(() => syncToStore(nodes, updated), 0)
+        setNodes((currentNodes) => {
+          syncToStore(currentNodes, updated)
+          return currentNodes
+        })
         return updated
       })
     },
-    [setEdges, nodes, syncToStore]
+    [setEdges, setNodes, syncToStore]
   )
 
   const onNodeClick: NodeMouseHandler = useCallback((_e, node) => {
     setSelectedNodeId(node.id)
   }, [])
 
-  const onNodesChangeWrapped = useCallback((changes: Parameters<typeof onNodesChange>[0]) => {
-    onNodesChange(changes)
-    setTimeout(() => syncToStore(
-      nodes.map((n) => {
-        const posChange = changes.find((c): c is typeof c & { id: string; type: 'position'; position: { x: number; y: number } } =>
-          'id' in c && c.id === n.id && c.type === 'position' && 'position' in c && !!c.position
-        )
-        return posChange ? { ...n, position: posChange.position } : n
-      }),
-      edges
-    ), 0)
-  }, [onNodesChange, nodes, edges, syncToStore])
+  const onNodesChangeWrapped = useCallback((changes: NodeChange[]) => {
+    const updatedNodes = applyNodeChanges(changes, nodes)
+    setNodes(updatedNodes)
+    syncToStore(updatedNodes, edges)
+  }, [nodes, edges, setNodes, syncToStore])
 
   const addNode = useCallback((type: WFNode['type']) => {
     if (!activeWorkflowId) return
@@ -144,27 +148,36 @@ export function WorkflowEditor() {
         label: type === 'start' ? '开始' : type === 'end' ? '结束' : type === 'condition' ? '条件' : 'Agent'
       }
     }
-    setNodes((nds) => [...nds, newNode])
-    setTimeout(() => syncToStore([...nodes, newNode], edges), 0)
-  }, [activeWorkflowId, setNodes, nodes, edges, syncToStore])
+    setNodes((nds) => {
+      const updated = [...nds, newNode]
+      setEdges((currentEdges) => {
+        syncToStore(updated, currentEdges)
+        return currentEdges
+      })
+      return updated
+    })
+  }, [activeWorkflowId, setNodes, setEdges, syncToStore])
 
   const handleSaveNode = useCallback((nodeId: string, data: WFNode['data']) => {
     setNodes((nds) => {
       const updated = nds.map((n) =>
         n.id === nodeId ? { ...n, data: { ...n.data, ...data, executionStatus: (n.data as Record<string, unknown>).executionStatus } } : n
       )
-      setTimeout(() => syncToStore(updated, edges), 0)
+      setEdges((currentEdges) => {
+        syncToStore(updated, currentEdges)
+        return currentEdges
+      })
       return updated
     })
     setSelectedNodeId(null)
-  }, [setNodes, edges, syncToStore])
+  }, [setNodes, setEdges, syncToStore])
 
   const handleDeleteNode = useCallback((nodeId: string) => {
     setNodes((nds) => {
       const updated = nds.filter((n) => n.id !== nodeId)
       setEdges((eds) => {
         const updatedEdges = eds.filter((e) => e.source !== nodeId && e.target !== nodeId)
-        setTimeout(() => syncToStore(updated, updatedEdges), 0)
+        syncToStore(updated, updatedEdges)
         return updatedEdges
       })
       return updated

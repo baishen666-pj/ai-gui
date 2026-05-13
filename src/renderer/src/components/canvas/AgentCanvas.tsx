@@ -1,5 +1,5 @@
 import { genId } from '../../lib/genId'
-import { useCallback, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import {
   ReactFlow,
   Controls,
@@ -40,6 +40,7 @@ export function AgentCanvas() {
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([])
   const [editingNodeId, setEditingNodeId] = useState<string | null>(null)
   const [aiConfigOpen, setAiConfigOpen] = useState(false)
+  const syncTimerRef = useRef<number>(0)
   const setCanvasAgents = useAppStore((s) => s.setCanvasAgents)
 
   const syncToStore = useCallback((nds: Node[], eds: Edge[]) => {
@@ -61,8 +62,17 @@ export function AgentCanvas() {
   }, [setCanvasAgents])
 
   const onConnect: OnConnect = useCallback(
-    (params) => setEdges((eds) => addEdge({ ...params, data: { animated: true } }, eds)),
-    [setEdges]
+    (params) => {
+      setEdges((eds) => {
+        const updated = addEdge({ ...params, data: { animated: true } }, eds)
+        setNodes((currentNodes) => {
+          syncToStore(currentNodes, updated)
+          return currentNodes
+        })
+        return updated
+      })
+    },
+    [setEdges, setNodes, syncToStore]
   )
 
   const onNodeClick: NodeMouseHandler = useCallback((_e, node) => {
@@ -110,8 +120,12 @@ export function AgentCanvas() {
         tools: []
       } satisfies AgentNodeData
     }
-    setNodes((nds) => [...nds, newNode])
-  }, [setNodes])
+    setNodes((nds) => {
+      const updated = [...nds, newNode]
+      syncToStore(updated, edges)
+      return updated
+    })
+  }, [setNodes, edges, syncToStore])
 
   const loadFlowTemplate = useCallback((tpl: FlowTemplate) => {
     const newNodes: Node[] = tpl.nodes.map((n, i) => ({
@@ -132,10 +146,23 @@ export function AgentCanvas() {
   }, [setNodes, setEdges, syncToStore])
 
   const handleSaveNode = useCallback((nodeId: string, newData: AgentNodeData) => {
-    setNodes((nds) =>
-      nds.map((n) => (n.id === nodeId ? { ...n, data: { ...newData } } : n))
-    )
-  }, [setNodes])
+    setNodes((nds) => {
+      const updated = nds.map((n) => (n.id === nodeId ? { ...n, data: { ...newData } } : n))
+      syncToStore(updated, edges)
+      return updated
+    })
+  }, [setNodes, edges, syncToStore])
+
+  const onNodesChangeWrapped = useCallback((changes: Parameters<typeof onNodesChange>[0]) => {
+    onNodesChange(changes)
+    clearTimeout(syncTimerRef.current)
+    syncTimerRef.current = window.setTimeout(() => {
+      setNodes((currentNodes) => {
+        syncToStore(currentNodes, edges)
+        return currentNodes
+      })
+    }, 150)
+  }, [onNodesChange, edges, syncToStore, setNodes])
 
   const minimapNodeColor = useCallback((node: Node) => {
     return (node.data as AgentNodeData)?.color || '#6366f1'
@@ -203,7 +230,7 @@ export function AgentCanvas() {
           <ReactFlow
             nodes={nodes}
             edges={edges}
-            onNodesChange={onNodesChange}
+            onNodesChange={onNodesChangeWrapped}
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
             onNodeClick={onNodeClick}
