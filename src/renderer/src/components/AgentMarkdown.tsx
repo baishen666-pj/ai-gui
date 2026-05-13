@@ -1,6 +1,7 @@
 import { useState, useCallback, Suspense, lazy, memo } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import { EnhancedDiffViewer } from './ToolCallCard'
 
 const SyntaxHighlighter = lazy(() =>
   import('react-syntax-highlighter/dist/esm/prism-light').then(async (m) => {
@@ -91,27 +92,11 @@ function CodeBlock({ language, children }: CodeBlockProps) {
 
   if (isDiff) {
     return (
-      <div className="group relative my-2 overflow-hidden rounded-lg border border-border-default">
-        <div className="flex items-center justify-between bg-surface-overlay px-3 py-1 text-xs text-content-muted">
-          <span>diff</span>
+      <div className="group relative">
+        <div className="absolute right-1 top-1 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
           <CopyButton copied={copied} onClick={handleCopy} />
         </div>
-        <pre className="overflow-x-auto bg-surface-elevated p-3 text-sm">
-          {children.split('\n').map((line, i) => (
-            <div
-              key={i}
-              className={
-                line.startsWith('+')
-                  ? 'bg-success/10 text-success'
-                  : line.startsWith('-')
-                    ? 'bg-danger/10 text-danger'
-                    : 'text-content-heading'
-              }
-            >
-              {line}
-            </div>
-          ))}
-        </pre>
+        <EnhancedDiffViewer content={children} />
       </div>
     )
   }
