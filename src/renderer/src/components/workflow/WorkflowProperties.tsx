@@ -111,6 +111,12 @@ export function WorkflowProperties({ node, onSave, onClose, onDelete }: Props) {
               className="w-full rounded border border-border-default bg-surface-overlay px-2 py-1.5 text-xs text-content-secondary placeholder-content-subtle outline-none focus:border-accent resize-none"
             />
             <p className="mt-1 text-[10px] text-content-subtle">条件为真走"是"分支，否则走"否"分支</p>
+            <div className="mt-2 rounded-lg border border-warning/30 bg-warning-bg/20 px-2.5 py-2">
+              <p className="text-[10px] font-medium text-warning">人工审批模式</p>
+              <p className="mt-0.5 text-[10px] text-content-muted">
+                将名称改为「审批」/「确认」/「人工审批」，或留空条件表达式，即可触发人工审批弹窗。
+              </p>
+            </div>
           </div>
         )}
 
