@@ -104,7 +104,7 @@ export interface Workflow {
   updatedAt: number
 }
 
-export type ViewMode = 'chat' | 'canvas' | '3d' | 'memory' | 'tools' | 'soul' | 'schedule' | 'workflow' | 'settings'
+export type ViewMode = 'chat' | 'canvas' | '3d' | 'memory' | 'tools' | 'soul' | 'schedule' | 'workflow' | 'checkpoint' | 'settings'
 
 export interface ChatGPTSession {
   accessToken: string

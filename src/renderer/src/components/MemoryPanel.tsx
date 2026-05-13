@@ -1,5 +1,5 @@
+import { useState, useEffect, useCallback } from 'react'
 import { genId } from '../lib/genId'
-import { useState } from 'react'
 
 interface MemoryEntry {
   id: string
@@ -7,15 +7,6 @@ interface MemoryEntry {
   timestamp: number
   type: 'fact' | 'preference' | 'context' | 'instruction'
 }
-
-const MOCK_MEMORIES: MemoryEntry[] = [
-  { id: 'm1', content: '用户偏好简体中文交流', timestamp: Date.now() - 86400000, type: 'preference' },
-  { id: 'm2', content: '项目使用 React 19 + Electron 39 + Three.js 技术栈', timestamp: Date.now() - 72000000, type: 'fact' },
-  { id: 'm3', content: '当前任务：实现多Agent桌面工作台的 3D 可视化层', timestamp: Date.now() - 36000000, type: 'context' },
-  { id: 'm4', content: '代码风格偏好：不可变数据、小文件高内聚、无 console.log', timestamp: Date.now() - 18000000, type: 'instruction' },
-  { id: 'm5', content: 'Agent 画布使用 React Flow 实现拓扑可视化', timestamp: Date.now() - 7200000, type: 'fact' },
-  { id: 'm6', content: 'SSE 流式解析器已从 Hermes Desktop 移植完成', timestamp: Date.now() - 3600000, type: 'context' }
-]
 
 const TYPE_CONFIG: Record<string, { label: string; color: string }> = {
   fact: { label: '事实', color: 'bg-blue-500/20 text-blue-400' },
@@ -25,38 +16,88 @@ const TYPE_CONFIG: Record<string, { label: string; color: string }> = {
 }
 
 export function MemoryPanel() {
-  const [memories, setMemories] = useState<MemoryEntry[]>(MOCK_MEMORIES)
+  const [memories, setMemories] = useState<MemoryEntry[]>([])
   const [newContent, setNewContent] = useState('')
   const [newType, setNewType] = useState<MemoryEntry['type']>('fact')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editContent, setEditContent] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [userProfile, setUserProfile] = useState('')
+  const [editProfile, setEditProfile] = useState(false)
+  const [profileContent, setProfileContent] = useState('')
 
-  const handleAdd = () => {
-    if (!newContent.trim()) return
-    const entry: MemoryEntry = {
-      id: genId('m-'),
-      content: newContent.trim(),
-      timestamp: Date.now(),
-      type: newType
+  const loadEntries = useCallback(async () => {
+    if (!window.aiGui) return
+    try {
+      const entries = await window.aiGui.memoryReadEntries() as MemoryEntry[]
+      setMemories(entries)
+    } catch {
+      setMemories([])
     }
+    setLoading(false)
+  }, [])
+
+  const loadProfile = useCallback(async () => {
+    if (!window.aiGui) return
+    try {
+      const profile = await window.aiGui.memoryReadUserProfile()
+      setUserProfile(profile)
+      setProfileContent(profile)
+    } catch {
+      setUserProfile('')
+      setProfileContent('')
+    }
+  }, [])
+
+  useEffect(() => {
+    loadEntries()
+    loadProfile()
+  }, [loadEntries, loadProfile])
+
+  const handleAdd = useCallback(async () => {
+    if (!newContent.trim() || !window.aiGui) return
+    const entry = await window.aiGui.memoryAddEntry({
+      content: newContent.trim(),
+      type: newType,
+      timestamp: Date.now()
+    }) as MemoryEntry
     setMemories((prev) => [entry, ...prev])
     setNewContent('')
-  }
+  }, [newContent, newType])
 
-  const handleDelete = (id: string) => {
+  const handleDelete = useCallback(async (id: string) => {
+    if (!window.aiGui) return
+    await window.aiGui.memoryRemoveEntry(id)
     setMemories((prev) => prev.filter((m) => m.id !== id))
-  }
+  }, [])
 
-  const handleEdit = (entry: MemoryEntry) => {
+  const handleEdit = useCallback((entry: MemoryEntry) => {
     setEditingId(entry.id)
     setEditContent(entry.content)
-  }
+  }, [])
 
-  const handleSave = (id: string) => {
+  const handleSave = useCallback(async (id: string) => {
+    if (!window.aiGui) return
+    await window.aiGui.memoryUpdateEntry(id, editContent)
     setMemories((prev) =>
       prev.map((m) => (m.id === id ? { ...m, content: editContent } : m))
     )
     setEditingId(null)
+  }, [editContent])
+
+  const handleSaveProfile = useCallback(async () => {
+    if (!window.aiGui) return
+    await window.aiGui.memoryWriteUserProfile(profileContent)
+    setUserProfile(profileContent)
+    setEditProfile(false)
+  }, [profileContent])
+
+  if (loading) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <span className="text-sm text-content-subtle">加载记忆数据...</span>
+      </div>
+    )
   }
 
   return (
@@ -159,9 +200,54 @@ export function MemoryPanel() {
         </div>
       </div>
 
+      {/* User Profile Section */}
+      <div className="border-t border-border-subtle p-3">
+        {editProfile ? (
+          <div className="space-y-2">
+            <div className="text-xs font-medium text-content-heading">用户画像</div>
+            <textarea
+              value={profileContent}
+              onChange={(e) => setProfileContent(e.target.value)}
+              className="w-full resize-none rounded border border-border-subtle bg-surface-elevated p-2 text-xs text-content-secondary outline-none focus:border-accent"
+              rows={3}
+              placeholder="描述用户的偏好、习惯和背景..."
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setEditProfile(false)}
+                className="rounded px-2 py-1 text-xs text-content-subtle hover:bg-surface-overlay"
+              >
+                取消
+              </button>
+              <button
+                onClick={handleSaveProfile}
+                className="rounded bg-accent px-2 py-1 text-xs text-white"
+              >
+                保存
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between">
+            <div className="min-w-0 flex-1">
+              <div className="text-xs font-medium text-content-heading">用户画像</div>
+              <p className="mt-0.5 truncate text-[10px] text-content-subtle">
+                {userProfile || '未设置 — 点击编辑添加用户画像'}
+              </p>
+            </div>
+            <button
+              onClick={() => { setProfileContent(userProfile); setEditProfile(true) }}
+              className="ml-2 shrink-0 rounded px-2 py-1 text-xs text-content-subtle hover:bg-surface-overlay hover:text-content-heading"
+            >
+              编辑
+            </button>
+          </div>
+        )}
+      </div>
+
       <div className="border-t border-border-subtle px-4 py-2">
         <p className="text-xs text-content-subtle">
-          共 {memories.length} 条记忆 — 本地模拟数据，接入后端后自动同步
+          共 {memories.length} 条记忆 — 持久化存储至 MEMORY.md
         </p>
       </div>
     </div>

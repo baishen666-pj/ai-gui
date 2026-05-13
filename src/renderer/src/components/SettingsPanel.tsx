@@ -2,6 +2,8 @@ import { genId } from '../lib/genId'
 import { useState, useEffect, useCallback } from 'react'
 import type { AppLocale } from '../../../shared/i18n/types'
 import type { ConnectionConfig, ProviderConfig } from '../../../shared/types'
+import { useSandboxStore } from '../stores/sandboxStore'
+import type { SandboxLevel } from '../stores/sandboxStore'
 
 const PROVIDER_ICONS: Record<string, string> = {
   zhipu: '🟣',
@@ -19,6 +21,8 @@ export function SettingsPanel() {
   const [activeId, setActiveId] = useState('zhipu')
   const [editingProvider, setEditingProvider] = useState<ProviderConfig | null>(null)
   const [saved, setSaved] = useState(false)
+  const sandboxLevel = useSandboxStore((s) => s.level)
+  const setSandboxLevel = useSandboxStore((s) => s.setLevel)
 
   useEffect(() => {
     if (!window.aiGui) return
@@ -154,6 +158,46 @@ export function SettingsPanel() {
                   ))}
                 </div>
               </label>
+            </div>
+          </section>
+
+          {/* Sandbox Security */}
+          <section>
+            <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-content-subtle">
+              沙箱安全
+            </h3>
+            <div className="space-y-3 rounded-lg border border-border-subtle bg-surface-elevated p-4">
+              <div className="flex flex-col gap-2">
+                {([
+                  { level: 'read-only' as SandboxLevel, label: '只读', desc: 'AI 只能读取文件，不能修改或执行命令', color: 'bg-success' },
+                  { level: 'workspace-write' as SandboxLevel, label: '工作区写入', desc: 'AI 可在项目目录内写文件和执行命令', color: 'bg-warning' },
+                  { level: 'full-access' as SandboxLevel, label: '完全访问', desc: 'AI 拥有完全访问权限（需谨慎）', color: 'bg-danger' },
+                ]).map(({ level, label, desc, color }) => (
+                  <button
+                    key={level}
+                    onClick={() => setSandboxLevel(level)}
+                    className={`flex items-center gap-3 rounded-lg border px-3 py-2 text-left transition-colors ${
+                      sandboxLevel === level
+                        ? 'border-accent/50 bg-accent/10'
+                        : 'border-border-default hover:bg-surface-overlay'
+                    }`}
+                  >
+                    <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${color} ${
+                      sandboxLevel === level ? 'ring-2 ring-accent/30 ring-offset-1 ring-offset-surface-elevated' : ''
+                    }`} />
+                    <div className="min-w-0">
+                      <div className="text-xs font-medium text-content-heading">{label}</div>
+                      <div className="text-[10px] text-content-subtle">{desc}</div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+              <div className="rounded bg-surface-overlay/50 px-3 py-2 text-[10px] text-content-subtle">
+                当前级别：{sandboxLevel === 'read-only' ? '只读' : sandboxLevel === 'workspace-write' ? '工作区写入' : '完全访问'}
+                {sandboxLevel === 'full-access' && (
+                  <span className="ml-1 text-danger">-- 请确保你了解相关风险</span>
+                )}
+              </div>
             </div>
           </section>
 

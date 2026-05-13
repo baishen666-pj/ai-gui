@@ -95,7 +95,74 @@ const api = {
   persistenceDeleteWorkflow: (id: string) => ipcRenderer.invoke('persistence-delete-workflow', id),
 
   // Shell execution (for code block run)
-  runShell: (command: string): Promise<string> => ipcRenderer.invoke('run-shell', command)
+  runShell: (command: string): Promise<string> => ipcRenderer.invoke('run-shell', command),
+
+  // Checkpoint
+  checkpointCreate: (sessionId: string, description: string) =>
+    ipcRenderer.invoke('checkpoint-create', sessionId, description),
+  checkpointList: (sessionId?: string) =>
+    ipcRenderer.invoke('checkpoint-list', sessionId),
+  checkpointRestore: (checkpointId: string) =>
+    ipcRenderer.invoke('checkpoint-restore', checkpointId),
+  checkpointDelete: (checkpointId: string, sessionId: string) =>
+    ipcRenderer.invoke('checkpoint-delete', checkpointId, sessionId),
+
+  // Sandbox
+  sandboxGetLevel: (): Promise<string> =>
+    ipcRenderer.invoke('sandbox-get-level'),
+  sandboxSetLevel: (level: string): Promise<void> =>
+    ipcRenderer.invoke('sandbox-set-level', level),
+  sandboxCheckPermission: (operation: string): Promise<{ allowed: boolean; reason: string | null }> =>
+    ipcRenderer.invoke('sandbox-check-permission', operation),
+  sandboxValidateCommand: (command: string): Promise<{ allowed: boolean; reason: string | null }> =>
+    ipcRenderer.invoke('sandbox-validate-command', command),
+
+  // Memory System — MEMORY.md / USER.md / SOUL.md
+  memoryRead: (profile?: string): Promise<string> => ipcRenderer.invoke('memory-read', profile),
+  memoryReadEntries: (profile?: string) => ipcRenderer.invoke('memory-read-entries', profile),
+  memoryAddEntry: (entry: { content: string; type: string; timestamp: number }, profile?: string) =>
+    ipcRenderer.invoke('memory-add-entry', entry, profile),
+  memoryUpdateEntry: (id: string, content: string, profile?: string) =>
+    ipcRenderer.invoke('memory-update-entry', id, content, profile),
+  memoryRemoveEntry: (id: string, profile?: string) =>
+    ipcRenderer.invoke('memory-remove-entry', id, profile),
+  memoryReadUserProfile: (profile?: string): Promise<string> =>
+    ipcRenderer.invoke('memory-read-user-profile', profile),
+  memoryWriteUserProfile: (content: string, profile?: string): Promise<boolean> =>
+    ipcRenderer.invoke('memory-write-user-profile', content, profile),
+  memoryReadSoul: (profile?: string): Promise<string> =>
+    ipcRenderer.invoke('memory-read-soul', profile),
+  memoryWriteSoul: (content: string, profile?: string): Promise<boolean> =>
+    ipcRenderer.invoke('memory-write-soul', content, profile),
+  memoryResetSoul: (profile?: string): Promise<boolean> =>
+    ipcRenderer.invoke('memory-reset-soul', profile),
+
+  // Agents Config — AGENTS.md / AGENTS.override.md
+  agentsConfigResolve: (workDir: string): Promise<{ config: string; files: string[]; hasOverride: boolean }> =>
+    ipcRenderer.invoke('agents-config-resolve', workDir),
+
+  // MCP — Model Context Protocol
+  mcpGetStatus: (): Promise<{ running: boolean }> =>
+    ipcRenderer.invoke('mcp-get-status'),
+  mcpConnectServer: (config: {
+    id: string
+    name: string
+    transport: 'stdio' | 'sse'
+    command?: string
+    args?: string[]
+    env?: Record<string, string>
+    url?: string
+    enabled: boolean
+  }) => ipcRenderer.invoke('mcp-connect-server', config),
+  mcpDisconnectServer: (serverId: string): Promise<boolean> =>
+    ipcRenderer.invoke('mcp-disconnect-server', serverId),
+  mcpListConnected: (): Promise<Array<{
+    id: string
+    name: string
+    tools: Array<{ serverId: string; name: string; description?: string; inputSchema?: Record<string, unknown> }>
+  }>> => ipcRenderer.invoke('mcp-list-connected'),
+  mcpCallTool: (serverId: string, toolName: string, args: Record<string, unknown>) =>
+    ipcRenderer.invoke('mcp-call-tool', serverId, toolName, args)
 } as const
 
 export type AiGuiAPI = typeof api

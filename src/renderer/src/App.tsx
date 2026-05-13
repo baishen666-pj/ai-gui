@@ -10,6 +10,7 @@ import { SessionSidebar } from './components/SessionSidebar'
 import { MemoryPanel } from './components/MemoryPanel'
 import { ToolsPanel } from './components/ToolsPanel'
 import { SettingsPanel } from './components/SettingsPanel'
+import { CheckpointPanel } from './components/CheckpointPanel'
 import { ShortcutHelp } from './components/ShortcutHelp'
 import { ApprovalPanel } from './components/ApprovalPanel'
 import { usePersistence } from './hooks/usePersistence'
@@ -92,6 +93,7 @@ export function App() {
             </ReactFlowProvider>
           )}
           {view === 'soul' && <SoulEditorPanel />}
+          {view === 'checkpoint' && <CheckpointPanel />}
           {view === 'settings' && <SettingsPanel />}
           </div>
         </Suspense>

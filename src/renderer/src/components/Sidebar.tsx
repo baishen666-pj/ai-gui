@@ -17,6 +17,7 @@ const NAV_ITEMS: { view: ViewMode; icon: string; labelZh: string }[] = [
   { view: 'tools', icon: '🔧', labelZh: '工具' },
   { view: 'schedule', icon: '⏰', labelZh: '定时' },
   { view: 'workflow', icon: '🔀', labelZh: '工作流' },
+  { view: 'checkpoint', icon: '💾', labelZh: '检查点' },
   { view: 'soul', icon: '🎭', labelZh: '角色' },
   { view: 'settings', icon: '⚙️', labelZh: '设置' }
 ]

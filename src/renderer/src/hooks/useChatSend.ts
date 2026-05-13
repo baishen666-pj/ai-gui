@@ -33,7 +33,7 @@ export function useChatSend({
     return id
   }, [sessionId, setSessionId])
 
-  const buildApiMessages = useCallback((msgs: ChatMessage[], newUserMsg: ChatMessage) => {
+  const buildApiMessages = useCallback(async (msgs: ChatMessage[], newUserMsg: ChatMessage) => {
     const soul = useAppStore.getState().soulPrompt
     const allMsgs = [...msgs, newUserMsg]
     const compressed = compressChatContext(allMsgs)
@@ -49,7 +49,43 @@ export function useChatSend({
       }
       return { role: m.role === 'user' ? 'user' : 'assistant', content: m.content }
     })
-    return soul ? [{ role: 'system', content: soul }, ...apiMsgs] : apiMsgs
+
+    const systemParts: string[] = []
+
+    // Inject AGENTS.md config if available
+    if (window.aiGui) {
+      try {
+        const workDir = process.cwd?.() || '.'
+        const agentsResult = await window.aiGui.agentsConfigResolve(workDir)
+        if (agentsResult.config) {
+          systemParts.push(`[项目规则]\n${agentsResult.config}`)
+        }
+      } catch {
+        // Agents config not available, continue without it
+      }
+    }
+
+    // Inject memory entries if available
+    if (window.aiGui) {
+      try {
+        const memoryRaw = await window.aiGui.memoryRead()
+        if (memoryRaw) {
+          systemParts.push(`[记忆]\n${memoryRaw.slice(0, 500)}`)
+        }
+        const userProfile = await window.aiGui.memoryReadUserProfile()
+        if (userProfile) {
+          systemParts.push(`[用户画像]\n${userProfile}`)
+        }
+      } catch {
+        // Memory not available, continue without it
+      }
+    }
+
+    if (soul) systemParts.unshift(soul)
+
+    return systemParts.length > 0
+      ? [{ role: 'system', content: systemParts.join('\n\n') }, ...apiMsgs]
+      : apiMsgs
   }, [])
 
   const sendChat = useCallback(async (text: string, pendingImage: string | null, isLoading: boolean) => {
@@ -78,7 +114,7 @@ export function useChatSend({
       } catch { /* silent */ }
 
       const currentMsgs = useAppStore.getState().messages
-      const allMsgs = buildApiMessages(currentMsgs, userMsg)
+      const allMsgs = await buildApiMessages(currentMsgs, userMsg)
       window.aiGui.chatSend({ messages: allMsgs }).catch(() => {
         addMessage({ id: genId('error-'), role: 'error', content: '连接失败。请检查设置中的 API URL 和 Key。', timestamp: Date.now() })
         setLoading(false)

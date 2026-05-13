@@ -17,6 +17,7 @@ const COMMANDS: SlashCommand[] = [
   { key: 'tools', label: '/tools', description: '查看工具集', category: 'info' },
   { key: 'schedule', label: '/schedule', description: '定时任务管理', category: 'tools' },
   { key: 'workflow', label: '/workflow', description: '工作流引擎', category: 'agent' },
+  { key: 'checkpoint', label: '/checkpoint', description: '检查点管理', category: 'tools' },
   { key: 'soul', label: '/soul', description: '编辑角色 (SOUL)', category: 'info' },
   { key: 'settings', label: '/settings', description: '打开设置', category: 'info' },
   { key: 'reset', label: '/reset', description: '重置会话', category: 'agent' },

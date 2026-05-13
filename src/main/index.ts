@@ -10,6 +10,13 @@ import { sendMessage } from './chat'
 import { openChatGPTLogin, logoutChatGPT } from './auth'
 import * as sessions from './sessions'
 import * as persistence from './persistence'
+import * as memory from './memory'
+import * as checkpoint from './checkpoint'
+import * as sandbox from './sandbox'
+import { resolveAgentsConfig } from './agents-config'
+import { registerBuiltinTools } from './tools'
+import { startMcpServer, stopMcpServer } from './mcp'
+import { connectStdioServer, disconnectServer, getConnectedServers, callExternalTool, disconnectAll, type McpServerConfig } from './mcp/client'
 
 enableGpuFlags()
 
@@ -50,12 +57,19 @@ function createWindow(): void {
 
 app.whenReady().then(() => {
   setupMenu()
+  registerBuiltinTools()
   registerIpcHandlers()
   createWindow()
+  startMcpServer().catch(() => { /* MCP server is optional */ })
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
+})
+
+app.on('before-quit', async () => {
+  await stopMcpServer()
+  await disconnectAll()
 })
 
 function setupMenu(): void {
@@ -292,4 +306,138 @@ function registerIpcHandlers(): void {
   ipcMain.handle('persistence-get-workflows', () => persistence.getAllWorkflows())
   ipcMain.handle('persistence-upsert-workflow', (_e, wf) => persistence.upsertWorkflow(wf))
   ipcMain.handle('persistence-delete-workflow', (_e, id: string) => persistence.deleteWorkflow(id))
+
+  // Memory System — MEMORY.md / USER.md / SOUL.md
+  ipcMain.handle('memory-read', (_e, profile?: string) => {
+    if (profile !== undefined && typeof profile !== 'string') throw new Error('Invalid profile')
+    return memory.readMemory(profile)
+  })
+  ipcMain.handle('memory-read-entries', (_e, profile?: string) => {
+    if (profile !== undefined && typeof profile !== 'string') throw new Error('Invalid profile')
+    const raw = memory.readMemory(profile)
+    return memory.parseMemoryEntries(raw)
+  })
+  ipcMain.handle('memory-add-entry', (_e, entry: { content: string; type: string; timestamp: number }, profile?: string) => {
+    if (!entry || typeof entry.content !== 'string') throw new Error('Invalid entry')
+    const validTypes = ['fact', 'preference', 'context', 'instruction']
+    const type = validTypes.includes(entry.type) ? entry.type as memory.MemoryEntry['type'] : 'fact'
+    return memory.addMemoryEntry({ content: entry.content, type, timestamp: entry.timestamp }, profile)
+  })
+  ipcMain.handle('memory-update-entry', (_e, id: string, content: string, profile?: string) => {
+    if (typeof id !== 'string' || typeof content !== 'string') throw new Error('Invalid params')
+    return memory.updateMemoryEntry(id, content, profile)
+  })
+  ipcMain.handle('memory-remove-entry', (_e, id: string, profile?: string) => {
+    if (typeof id !== 'string') throw new Error('Invalid id')
+    return memory.removeMemoryEntry(id, profile)
+  })
+  ipcMain.handle('memory-read-user-profile', (_e, profile?: string) => {
+    if (profile !== undefined && typeof profile !== 'string') throw new Error('Invalid profile')
+    return memory.readUserProfile(profile)
+  })
+  ipcMain.handle('memory-write-user-profile', (_e, content: string, profile?: string) => {
+    if (typeof content !== 'string') throw new Error('Invalid content')
+    memory.writeUserProfile(content, profile)
+    return true
+  })
+  ipcMain.handle('memory-read-soul', (_e, profile?: string) => {
+    if (profile !== undefined && typeof profile !== 'string') throw new Error('Invalid profile')
+    return memory.readSoul(profile)
+  })
+  ipcMain.handle('memory-write-soul', (_e, content: string, profile?: string) => {
+    if (typeof content !== 'string') throw new Error('Invalid content')
+    memory.writeSoul(content, profile)
+    return true
+  })
+  ipcMain.handle('memory-reset-soul', (_e, profile?: string) => {
+    memory.resetSoul(profile)
+    return true
+  })
+
+  // Agents Config — AGENTS.md / AGENTS.override.md
+  ipcMain.handle('agents-config-resolve', (_e, workDir: string) => {
+    if (typeof workDir !== 'string' || !workDir) throw new Error('Invalid workDir')
+    return resolveAgentsConfig(workDir)
+  })
+
+  // Checkpoint — create / list / restore / delete
+  let currentProjectDir: string | null = null
+
+  ipcMain.handle('checkpoint-create', (_e, sessionId: string, description: string) => {
+    if (typeof sessionId !== 'string' || !sessionId) throw new Error('Invalid sessionId')
+    if (typeof description !== 'string') throw new Error('Invalid description')
+    if (!currentProjectDir) throw new Error('No project directory set')
+    return checkpoint.createCheckpoint(sessionId, description, currentProjectDir)
+  })
+  ipcMain.handle('checkpoint-list', (_e, sessionId?: string) => {
+    const sid = sessionId && typeof sessionId === 'string' ? sessionId : 'default'
+    return checkpoint.listCheckpoints(sid)
+  })
+  ipcMain.handle('checkpoint-restore', (_e, checkpointId: string) => {
+    if (typeof checkpointId !== 'string' || !checkpointId) throw new Error('Invalid checkpointId')
+    if (!currentProjectDir) throw new Error('No project directory set')
+    return checkpoint.restoreCheckpoint(checkpointId, currentProjectDir)
+  })
+  ipcMain.handle('checkpoint-delete', (_e, checkpointId: string, sessionId: string) => {
+    if (typeof checkpointId !== 'string' || !checkpointId) throw new Error('Invalid checkpointId')
+    if (typeof sessionId !== 'string' || !sessionId) throw new Error('Invalid sessionId')
+    return checkpoint.deleteCheckpoint(checkpointId, sessionId)
+  })
+
+  // Sandbox — level management and permission checks
+  let currentSandboxLevel: sandbox.SandboxLevel = 'read-only'
+
+  ipcMain.handle('sandbox-get-level', () => currentSandboxLevel)
+  ipcMain.handle('sandbox-set-level', (_e, level: string) => {
+    const validLevels: sandbox.SandboxLevel[] = ['read-only', 'workspace-write', 'full-access']
+    if (!validLevels.includes(level as sandbox.SandboxLevel)) {
+      throw new Error(`Invalid sandbox level: ${level}`)
+    }
+    currentSandboxLevel = level as sandbox.SandboxLevel
+  })
+  ipcMain.handle('sandbox-check-permission', (_e, operation: string) => {
+    if (typeof operation !== 'string') throw new Error('Invalid operation')
+    const validOps: sandbox.OperationType[] = ['read-file', 'write-file', 'execute-command', 'delete-file', 'access-system']
+    if (!validOps.includes(operation as sandbox.OperationType)) {
+      return { allowed: false, reason: `未知操作类型: ${operation}` }
+    }
+    return sandbox.checkPermission(currentSandboxLevel, operation as sandbox.OperationType)
+  })
+  ipcMain.handle('sandbox-validate-command', (_e, command: string) => {
+    if (typeof command !== 'string') throw new Error('Invalid command')
+    return sandbox.validateCommand(currentSandboxLevel, command)
+  })
+
+  // MCP — Server status
+  ipcMain.handle('mcp-get-status', () => {
+    const { getMcpServer } = require('./mcp') as typeof import('./mcp')
+    const srv = getMcpServer()
+    return { running: srv !== null }
+  })
+
+  // MCP — External client connections
+  ipcMain.handle('mcp-connect-server', async (_e, config: McpServerConfig) => {
+    if (!config || typeof config.id !== 'string') throw new Error('Invalid MCP server config')
+    if (config.transport !== 'stdio') throw new Error('Only stdio transport is supported currently')
+    return connectStdioServer(config)
+  })
+
+  ipcMain.handle('mcp-disconnect-server', async (_e, serverId: string) => {
+    if (typeof serverId !== 'string') throw new Error('Invalid serverId')
+    await disconnectServer(serverId)
+    return true
+  })
+
+  ipcMain.handle('mcp-list-connected', () => {
+    return getConnectedServers().map((s) => ({
+      id: s.config.id,
+      name: s.config.name,
+      tools: s.tools
+    }))
+  })
+
+  ipcMain.handle('mcp-call-tool', async (_e, serverId: string, toolName: string, args: Record<string, unknown>) => {
+    if (typeof serverId !== 'string' || typeof toolName !== 'string') throw new Error('Invalid params')
+    return callExternalTool(serverId, toolName, args)
+  })
 }

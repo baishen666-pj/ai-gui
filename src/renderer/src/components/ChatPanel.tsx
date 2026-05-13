@@ -112,6 +112,7 @@ export function ChatPanel() {
       case 'tools': setView('tools'); break
       case 'schedule': setView('schedule'); break
       case 'workflow': setView('workflow'); break
+      case 'checkpoint': setView('checkpoint'); break
       case 'soul': setView('soul'); break
       case 'settings': setView('settings'); break
       case 'approve': {

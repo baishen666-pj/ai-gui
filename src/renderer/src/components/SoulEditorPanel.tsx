@@ -106,7 +106,6 @@ export function SoulEditorPanel() {
   const [saved, setSaved] = useState(false)
   const prevSoulRef = useRef(soulPrompt)
 
-  // Sync from store when soulPrompt changes externally (e.g. profile switch)
   useEffect(() => {
     if (soulPrompt !== prevSoulRef.current) {
       prevSoulRef.current = soulPrompt
@@ -114,16 +113,47 @@ export function SoulEditorPanel() {
     }
   }, [soulPrompt])
 
+  // Load SOUL.md from backend on mount
+  useEffect(() => {
+    if (!window.aiGui) return
+    window.aiGui.memoryReadSoul().then((content: string) => {
+      if (content && !soulPrompt) {
+        setLocalPrompt(content)
+        setSoulPrompt(content)
+      }
+    }).catch(() => {})
+  }, [setSoulPrompt, soulPrompt])
+
   const handleApplyTemplate = useCallback((template: PersonaTemplate) => {
     setActiveTemplate(template.id)
     setLocalPrompt(template.prompt)
   }, [])
 
-  const handleSave = useCallback(() => {
+  const handleSave = useCallback(async () => {
     setSoulPrompt(prompt)
+    if (window.aiGui) {
+      try {
+        await window.aiGui.memoryWriteSoul(prompt)
+      } catch {
+        // Silently fail - local state is still updated
+      }
+    }
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }, [prompt, setSoulPrompt])
+
+  const handleReset = useCallback(async () => {
+    setLocalPrompt('')
+    setActiveTemplate(null)
+    setSoulPrompt('')
+    if (window.aiGui) {
+      try {
+        await window.aiGui.memoryResetSoul()
+      } catch {
+        // Silently fail
+      }
+    }
+  }, [setSoulPrompt])
 
   const charCount = prompt.length
   const charPercent = (charCount / MAX_CHARS) * 100
@@ -134,6 +164,14 @@ export function SoulEditorPanel() {
         <h2 className="text-sm font-medium text-content-heading">角色编辑器</h2>
         <div className="flex items-center gap-3">
           <span className="text-xs text-content-subtle">定义 AI 的性格和行为方式</span>
+          {prompt && (
+            <button
+              onClick={handleReset}
+              className="rounded px-2 py-1 text-xs text-content-subtle hover:bg-surface-overlay hover:text-danger"
+            >
+              重置
+            </button>
+          )}
           <button
             onClick={handleSave}
             className={`rounded px-3 py-1 text-xs font-medium transition-colors ${
