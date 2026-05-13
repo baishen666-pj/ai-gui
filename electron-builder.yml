@@ -1,28 +1,42 @@
 appId: com.ai-gui.desktop
 productName: AI GUI
+copyright: Copyright © 2025 AI GUI
 directories:
   buildResources: build
+  output: dist
 files:
   - '!**/.vscode/*'
   - '!src/*'
+  - '!docs/*'
   - '!electron.vite.config.*'
   - '!{.eslintignore,.eslintrc.cjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
+  - '!{package-lock.json}'
 asarUnpack:
   - resources/**
+  - '**/*.node'
+  - node_modules/better-sqlite3/**
 win:
   executableName: ai-gui
   target:
-    - nsis
+    - target: nsis
+      arch:
+        - x64
 nsis:
-  oneClick: true
+  oneClick: false
   perMachine: false
+  allowToChangeInstallationDirectory: true
+  deleteAppDataOnUninstall: false
+  shortcutName: AI GUI
+  artifactName: AI-GUI-Setup-${version}.${ext}
 mac:
+  icon: build/icon.svg
   entitlementsInherit: build/entitlements.mac.plist
   extendInfo:
     NSDocumentsFolderUsageDescription: "AI GUI needs access to the Documents folder to save and load agent configurations."
   notarize: false
 linux:
+  icon: build/icon.svg
   target:
     - AppImage
   maintainer: ai-gui
