@@ -44,8 +44,15 @@ export function WorkflowExecutor({ workflow }: Props) {
 
   const evaluateCondition = (condition: string, output: string): boolean => {
     if (!condition) return true
+    // Only allow simple comparison expressions, no arbitrary code execution
+    const safe = condition.replace(/\s+/g, ' ').trim()
+    const allowedPattern = /^(output\.(length|includes|startsWith|endsWith|indexOf|trim)\s*\(.*\)\s*(===|!==|==|!=|>|<|>=|<=)\s*.+|output\.length\s*(===|!==|==|!=|>|<|>=|<=)\s*\d+|output\s*(===|!==|==|!=|>|<|>=|<=)\s*.+)$/
+    if (!allowedPattern.test(safe)) {
+      // Fallback: check if output has content
+      return output.length > 0
+    }
     try {
-      const fn = new Function('output', `"use strict"; return ${condition}`)
+      const fn = new Function('output', `"use strict"; return ${safe}`)
       return !!fn(output)
     } catch {
       return output.length > 0

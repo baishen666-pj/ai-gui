@@ -1,6 +1,6 @@
 import { app, BrowserWindow, ipcMain, shell, Notification, dialog } from 'electron'
-import { exec } from 'child_process'
-import { join } from 'path'
+import { execFile } from 'child_process'
+import { join, resolve } from 'path'
 import { writeFile } from 'fs/promises'
 
 import { enableGpuFlags } from './gpu'
@@ -84,7 +84,11 @@ function registerIpcHandlers(): void {
 
   // Shell
   ipcMain.handle('open-external', (_e, url: string) => {
-    shell.openExternal(url)
+    try {
+      const parsed = new URL(url)
+      if (!['http:', 'https:'].includes(parsed.protocol)) return
+      shell.openExternal(url)
+    } catch { /* invalid URL */ }
   })
 
   // Chat
@@ -151,8 +155,9 @@ function registerIpcHandlers(): void {
 
   // Export
   ipcMain.handle('save-export', async (_e, opts: { content: string; fileName: string }) => {
+    const safeName = opts.fileName.replace(/[/\\]/g, '_')
     const result = await dialog.showSaveDialog(mainWindow!, {
-      defaultPath: join(app.getPath('documents'), opts.fileName),
+      defaultPath: join(app.getPath('documents'), safeName),
       filters: [
         { name: '所有文件', extensions: ['*'] },
         { name: 'Markdown', extensions: ['md'] },
@@ -165,11 +170,21 @@ function registerIpcHandlers(): void {
     return true
   })
 
-  // Shell execution for code block run
+  // Shell execution for code block run (restricted)
+  const ALLOWED_SHELL_COMMANDS = ['node', 'python', 'python3', 'pip', 'npm', 'npx', 'echo', 'dir', 'ls', 'cat', 'pwd', 'whoami', 'date', 'git', 'curl']
   ipcMain.handle('run-shell', async (_e, command: string) => {
+    const trimmed = command.trim()
+    const baseCmd = trimmed.split(/\s+/)[0].toLowerCase()
+    // On Windows, strip common extensions for matching
+    const baseName = baseCmd.replace(/\.(exe|cmd|bat|ps1)$/, '')
+    if (!ALLOWED_SHELL_COMMANDS.includes(baseName)) {
+      return `Error: command "${baseCmd}" is not allowed. Allowed: ${ALLOWED_SHELL_COMMANDS.join(', ')}`
+    }
     return new Promise<string>((resolve) => {
       const isWindows = process.platform === 'win32'
-      exec(command, { timeout: 10000, shell: isWindows ? 'powershell.exe' : '/bin/bash' }, (error, stdout, stderr) => {
+      const shell = isWindows ? 'powershell.exe' : '/bin/bash'
+      const shellArg = isWindows ? `/c ${trimmed}` : `-c ${trimmed}`
+      execFile(shell, [shellArg], { timeout: 10000 }, (error, stdout, stderr) => {
         if (error) resolve(`Error: ${error.message}\n${stderr}`)
         else resolve(stdout || stderr || '(no output)')
       })

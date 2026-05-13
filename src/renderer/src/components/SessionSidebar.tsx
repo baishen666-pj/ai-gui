@@ -123,9 +123,11 @@ export function SessionSidebar({ activeSessionId, onSelectSession, onNewChat }: 
               </button>
             </div>
             {'snippet' in s && (s.snippet as string | undefined) && (
-              <p className="mt-1 text-[10px] text-content-subtle line-clamp-2" dangerouslySetInnerHTML={{
-                __html: (s.snippet as string).replace(/<</g, '<span class="text-accent-text">').replace(/>>/g, '</span>')
-              }} />
+              <p className="mt-1 line-clamp-2 text-[10px] text-content-subtle">
+                {(s.snippet as string).split(/<<(.*?)>>/g).map((part, i) =>
+                  i % 2 === 1 ? <span key={i} className="text-accent-text">{part}</span> : <span key={i}>{part}</span>
+                )}
+              </p>
             )}
             {'started_at' in s && s.started_at ? (
               <span className="text-[10px] text-content-subtle">
