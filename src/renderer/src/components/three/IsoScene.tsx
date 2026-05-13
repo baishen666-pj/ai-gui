@@ -272,7 +272,7 @@ export function IsoScene() {
 
   renderItems.sort((a, b) => a.sortKey - b.sortKey)
 
-  const bgColor = theme === 'cyberpunk' ? '#0a0014' : theme === 'light' ? '#f9fafb' : '#09090b'
+  const bgColor = 'var(--t-surface-base)'
   const palette = getPalette(theme)
 
   return (

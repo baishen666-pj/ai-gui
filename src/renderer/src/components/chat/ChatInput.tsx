@@ -66,7 +66,7 @@ export function ChatInput({
           onPaste={onPaste}
           placeholder={pendingImage ? '添加图片描述...' : '输入消息，/ 查看命令...'}
           rows={1}
-          className="auto-resize flex-1 rounded-lg border border-border-default bg-surface-elevated px-3 py-2 text-sm text-content-secondary placeholder-content-subtle outline-none focus:border-accent"
+          className="auto-resize flex-1 rounded-lg border border-border-default bg-surface-elevated px-3 py-2 text-sm text-content-secondary placeholder-content-subtle outline-none transition-colors focus:border-accent"
         />
         <button
           onClick={onSend}

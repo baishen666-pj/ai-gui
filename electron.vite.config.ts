@@ -24,10 +24,37 @@ export default defineConfig({
       rollupOptions: {
         input: resolve('src/renderer/index.html'),
         output: {
-          manualChunks: {
-            'vendor-react': ['react', 'react-dom'],
-            'vendor-markdown': ['react-markdown', 'remark-gfm'],
-            'vendor-xyflow': ['@xyflow/react']
+          manualChunks(id) {
+            if (id.includes('node_modules')) {
+              if (id.includes('@xyflow') || id.includes('@reactflow')) {
+                return 'vendor-xyflow'
+              }
+              if (
+                id.includes('react-markdown') ||
+                id.includes('remark-gfm') ||
+                id.includes('remark') ||
+                id.includes('unified') ||
+                id.includes('micromark') ||
+                id.includes('mdast') ||
+                id.includes('unist')
+              ) {
+                return 'vendor-markdown'
+              }
+              if (
+                id.includes('react-syntax-highlighter') ||
+                id.includes('prismjs') ||
+                id.includes('refractor')
+              ) {
+                return 'vendor-syntax'
+              }
+              if (
+                id.includes('/react/') ||
+                id.includes('/react-dom/') ||
+                id.includes('/scheduler/')
+              ) {
+                return 'vendor-react'
+              }
+            }
           }
         }
       }

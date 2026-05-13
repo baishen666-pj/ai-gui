@@ -29,7 +29,7 @@ export function ApprovalGlow({ cx, cz }: { cx: number; cz: number }) {
 export function ReturnBurst({ x, z, approved }: { x: number; z: number; approved: boolean }) {
   const { palette } = usePalette()
   const pos = toIso(x, z)
-  const color = approved ? palette.glowColor : '#ef4444'
+  const color = approved ? palette.glowColor : 'var(--t-danger)'
 
   const particles = [
     { dx: -12, dy: -6, dur: '0.7s' },

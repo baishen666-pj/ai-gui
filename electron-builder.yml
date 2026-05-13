@@ -6,12 +6,24 @@ directories:
   output: dist
 files:
   - '!**/.vscode/*'
+  - '!**/.claude/*'
   - '!src/*'
   - '!docs/*'
+  - '!out/*'
+  - '!dist/*'
   - '!electron.vite.config.*'
-  - '!{.eslintignore,.eslintrc.cjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
+  - '!vitest.config.*'
+  - '!playwright.config.*'
+  - '!{.eslintignore,.eslintrc.cjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md,CLAUDE.md}'
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
   - '!{package-lock.json}'
+  - '!**/__tests__/*'
+  - '!**/*.test.ts'
+  - '!**/*.test.tsx'
+  - '!**/*.spec.ts'
+  - '!**/*.spec.tsx'
+  - '!node_modules/.vite/*'
+  - '!node_modules/.cache/*'
 asarUnpack:
   - resources/**
   - '**/*.node'

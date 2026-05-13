@@ -71,7 +71,7 @@ export function App() {
   }, [setView, clearMessages])
 
   return (
-    <div className="flex h-screen bg-surface-base text-content-primary">
+    <div className="flex h-screen min-w-[640px] bg-surface-base text-content-primary">
       <Sidebar activeView={view} onViewChange={setView} />
       <main className="flex-1 overflow-hidden" key={view}>
         <Suspense fallback={<LoadingSpinner />}>
@@ -132,11 +132,13 @@ function ChatView() {
 
   return (
     <div className="flex h-full">
-      <SessionSidebar
-        activeSessionId={sessionId}
-        onSelectSession={handleSelectSession}
-        onNewChat={handleNewChat}
-      />
+      <div className="hidden lg:block">
+        <SessionSidebar
+          activeSessionId={sessionId}
+          onSelectSession={handleSelectSession}
+          onNewChat={handleNewChat}
+        />
+      </div>
       <div className="flex-1 bg-surface-base">
         <ChatPanel />
       </div>

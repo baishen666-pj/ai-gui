@@ -51,7 +51,7 @@ export function AgentCanvas() {
         label: (d.label as string) || 'Agent',
         role: (d.role as string) || '',
         model: (d.model as string) || 'gpt-4o',
-        color: (d.color as string) || '#6366f1',
+        color: (d.color as string) || 'var(--t-accent)',
         position: n.position,
         connections: eds.filter((e) => e.source === n.id).map((e) => e.target),
         tools: (d.tools as string[]) || [],
@@ -106,7 +106,7 @@ export function AgentCanvas() {
   )
 
   const addAgent = useCallback(() => {
-    const colors = ['#6366f1', '#8b5cf6', '#a78bfa', '#f59e0b', '#10b981', '#ec4899', '#3b82f6', '#ef4444']
+    const colors = ['#6366f1', '#8b5cf6', '#a78bfa', '#f59e0b', '#10b981', '#ec4899', '#3b82f6', '#ef4444'] // agent palette — intentionally fixed for visual identity
     const newNode: Node = {
       id: genId('agent-'),
       type: 'agent',
@@ -165,7 +165,7 @@ export function AgentCanvas() {
   }, [onNodesChange, edges, syncToStore, setNodes])
 
   const minimapNodeColor = useCallback((node: Node) => {
-    return (node.data as AgentNodeData)?.color || '#6366f1'
+    return (node.data as AgentNodeData)?.color || 'var(--t-accent)'
   }, [])
 
   const isEmpty = nodes.length === 0

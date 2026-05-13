@@ -42,7 +42,7 @@ export function AgentEditPanel({ data, onSave, onClose }: AgentEditPanelProps) {
             type="text"
             value={form.label as string}
             onChange={(e) => setForm((f) => ({ ...f, label: e.target.value }))}
-            className="w-full rounded border border-border-default bg-surface-overlay px-3 py-1.5 text-sm text-content-secondary outline-none focus:border-accent"
+            className="w-full rounded border border-border-default bg-surface-overlay px-3 py-1.5 text-sm text-content-secondary outline-none transition-colors focus:border-accent"
           />
         </div>
 
@@ -52,7 +52,7 @@ export function AgentEditPanel({ data, onSave, onClose }: AgentEditPanelProps) {
             type="text"
             value={form.role as string}
             onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}
-            className="w-full rounded border border-border-default bg-surface-overlay px-3 py-1.5 text-sm text-content-secondary outline-none focus:border-accent"
+            className="w-full rounded border border-border-default bg-surface-overlay px-3 py-1.5 text-sm text-content-secondary outline-none transition-colors focus:border-accent"
           />
         </div>
 

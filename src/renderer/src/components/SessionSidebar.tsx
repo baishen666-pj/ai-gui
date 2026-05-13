@@ -84,7 +84,7 @@ export function SessionSidebar({ activeSessionId, onSelectSession, onNewChat }: 
         <input
           type="text" value={searchQuery} onChange={(e) => handleSearch(e.target.value)}
           placeholder="搜索历史..."
-          className="w-full rounded border border-border-subtle bg-surface-elevated px-2 py-1 text-xs text-content-muted placeholder-content-subtle outline-none focus:border-border-default"
+          className="w-full rounded border border-border-subtle bg-surface-elevated px-2 py-1 text-xs text-content-muted placeholder-content-subtle outline-none transition-colors focus:border-border-default"
         />
       </div>
 

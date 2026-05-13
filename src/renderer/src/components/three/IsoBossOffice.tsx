@@ -14,17 +14,11 @@ const BOSS_D = 10
 const WALL_H = 3
 const BASEBOARD_H = 5
 
-const BOSS_FLOOR: Record<string, string> = {
-  light: '#fef3c7',
-  dark: '#3f3f46',
-  cyberpunk: '#1f0035',
-}
-
-function getBossColors(palette: ThemePalette, theme: string) {
+function getBossColors(palette: ThemePalette, _theme: string) {
   return {
-    floor: BOSS_FLOOR[theme] ?? palette.floorFill,
-    wall: theme === 'light' ? '#fde68a' : palette.wallFill,
-    wall2: theme === 'light' ? '#fcd34d' : palette.wallFill2,
+    floor: palette.floorFill,
+    wall: palette.wallFill,
+    wall2: palette.wallFill2,
     stroke: palette.wallStroke,
     label: palette.glowColor,
     whiteboard: palette.topFill,

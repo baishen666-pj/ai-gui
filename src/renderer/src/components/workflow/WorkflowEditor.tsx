@@ -305,10 +305,10 @@ export function WorkflowEditor() {
             className="!border-border-default !bg-surface-elevated"
             maskColor="rgba(0,0,0,0.7)"
             nodeColor={(n) => {
-              if (n.type === 'start') return '#10b981'
-              if (n.type === 'end') return '#ef4444'
-              if (n.type === 'condition') return '#f59e0b'
-              return '#6366f1'
+              if (n.type === 'start') return 'var(--t-success)'
+              if (n.type === 'end') return 'var(--t-danger)'
+              if (n.type === 'condition') return 'var(--t-warning)'
+              return 'var(--t-accent)'
             }}
           />
           <Background color="var(--t-border-subtle)" gap={20} size={1} />

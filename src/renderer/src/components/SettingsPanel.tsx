@@ -304,7 +304,7 @@ function ProviderConfigForm({ provider, onChange }: { provider: ProviderConfig; 
           type="text"
           value={provider.baseUrl}
           onChange={(e) => update('baseUrl', e.target.value)}
-          className="flex-1 rounded border border-border-default bg-surface-overlay px-3 py-1.5 text-content-heading outline-none focus:border-accent"
+          className="flex-1 rounded border border-border-default bg-surface-overlay px-3 py-1.5 text-content-heading outline-none transition-colors focus:border-accent"
         />
       </label>
 
@@ -316,7 +316,7 @@ function ProviderConfigForm({ provider, onChange }: { provider: ProviderConfig; 
             value={provider.apiKey}
             onChange={(e) => update('apiKey', e.target.value)}
             placeholder={provider.type === 'ollama' ? '无需 Key' : '粘贴你的 API Key...'}
-            className="flex-1 rounded border border-border-default bg-surface-overlay px-3 py-1.5 text-content-heading outline-none focus:border-accent"
+            className="flex-1 rounded border border-border-default bg-surface-overlay px-3 py-1.5 text-content-heading outline-none transition-colors focus:border-accent"
           />
           <button
             type="button"
