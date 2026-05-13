@@ -22,7 +22,14 @@ export default defineConfig({
     root: resolve('src/renderer'),
     build: {
       rollupOptions: {
-        input: resolve('src/renderer/index.html')
+        input: resolve('src/renderer/index.html'),
+        output: {
+          manualChunks: {
+            'vendor-react': ['react', 'react-dom'],
+            'vendor-markdown': ['react-markdown', 'remark-gfm'],
+            'vendor-xyflow': ['@xyflow/react']
+          }
+        }
       }
     },
     resolve: {
