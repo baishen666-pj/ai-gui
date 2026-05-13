@@ -85,7 +85,10 @@ export function WorkflowProperties({ node, onSave, onClose, onDelete }: Props) {
                 rows={4}
                 className="w-full rounded border border-border-default bg-surface-overlay px-2 py-1.5 text-xs text-content-secondary placeholder-content-subtle outline-none focus:border-accent resize-none"
               />
-              <p className="mt-1 text-[10px] text-content-subtle">{'{{input}}'} = 上游节点输出 · {'{{$1}}'} = 指定节点输出</p>
+              <div className="mt-1 space-y-0.5">
+                <p className="text-[10px] text-content-subtle">{'{{input}}'} 上游输出 · {'{{$nodeId}}'} 指定节点 · {'{{summary}}'} 全局摘要</p>
+                <p className="text-[10px] text-content-subtle">{'{{context}}'} 完整 JSON · {'{{node:id.label}}'} 节点元数据</p>
+              </div>
             </div>
 
             <div>

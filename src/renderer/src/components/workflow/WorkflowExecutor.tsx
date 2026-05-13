@@ -2,6 +2,13 @@ import { useCallback, useRef } from 'react'
 import { useAppStore } from '../../stores/app'
 import type { Workflow, WorkflowNode, WorkflowEdge } from '../../../../shared/types'
 import { detectDangerousContent, CATEGORY_LABELS } from '../../lib/approvalDetection'
+import {
+  createAgentOutput,
+  buildWorkflowContext,
+  resolvePromptWithContext,
+  buildSystemPromptForWorkflow,
+  type AgentOutput
+} from '../../lib/contextManager'
 
 interface Props {
   workflow: Workflow
@@ -45,23 +52,29 @@ export function WorkflowExecutor({ workflow }: Props) {
     }
   }
 
-  const resolvePrompt = (template: string, outputs: Record<string, string>, input: string): string => {
-    let result = template.replace(/\{\{input\}\}/g, input)
-    result = result.replace(/\{\{\$(\w+)\}\}/g, (_, id) => outputs[id] || '')
-    return result
-  }
+  const callAgentWithContext = async (
+    node: WorkflowNode,
+    prompt: string,
+    agentOutputs: AgentOutput[]
+  ): Promise<string> => {
+    const context = buildWorkflowContext(workflow.name, node.data.label, agentOutputs)
 
-  const callAgent = async (node: WorkflowNode, prompt: string): Promise<string> => {
     if (!window.aiGui) {
-      return `[模拟] Agent "${node.data.label}" 回复: 收到指令「${prompt.slice(0, 50)}...」`
+      return `[模拟] Agent "${node.data.label}" 回复: 收到指令「${prompt.slice(0, 50)}...」\n上下文: ${agentOutputs.length} 个上游节点`
     }
+
+    const systemPrompt = buildSystemPromptForWorkflow(node.data.systemPrompt, soulPrompt, context)
 
     return new Promise((resolve) => {
       let buffer = ''
-      const msgs: { role: string; content: string }[] = []
+      const msgs: { role: string; content: string }[] = [{ role: 'system', content: systemPrompt }]
 
-      if (soulPrompt) msgs.push({ role: 'system', content: soulPrompt })
-      if (node.data.systemPrompt) msgs.push({ role: 'system', content: node.data.systemPrompt })
+      // Include last 2 agent outputs as conversation history for context continuity
+      const recentOutputs = agentOutputs.slice(-2)
+      for (const out of recentOutputs) {
+        msgs.push({ role: 'assistant', content: out.content })
+      }
+
       msgs.push({ role: 'user', content: prompt })
 
       const unsubChunk = window.aiGui.onChatChunk((chunk: string) => { buffer += chunk })
@@ -94,7 +107,7 @@ export function WorkflowExecutor({ workflow }: Props) {
     }
 
     startWorkflowExecution(workflow.id)
-    const outputs: Record<string, string> = {}
+    const agentOutputs: AgentOutput[] = []
     let input = ''
 
     addMessage({
@@ -192,18 +205,21 @@ export function WorkflowExecutor({ workflow }: Props) {
 
       if (node.type === 'agent') {
         updateNodeExecution(node.id, 'running')
+        const context = buildWorkflowContext(workflow.name, node.data.label, agentOutputs)
         const prompt = node.data.prompt
-          ? resolvePrompt(node.data.prompt, outputs, currentInput)
+          ? resolvePromptWithContext(node.data.prompt, agentOutputs, currentInput, context)
           : currentInput || '请执行任务'
 
         addMessage({
           id: `system-${Date.now()}`, role: 'system',
-          content: `▶ Agent「${node.data.label}」执行中...`,
+          content: `▶ Agent「${node.data.label}」执行中... (上下文: ${agentOutputs.length} 个上游节点, ~${context.totalTokens} tokens)`,
           timestamp: Date.now()
         })
 
-        const output = await callAgent(node, prompt)
-        outputs[node.id] = output
+        const startTime = Date.now()
+        const output = await callAgentWithContext(node, prompt, agentOutputs)
+        const agentOutput = createAgentOutput(node.id, node.data.label, output, startTime)
+        agentOutputs.push(agentOutput)
         updateNodeExecution(node.id, 'completed', output)
 
         // Check for dangerous content in agent output
@@ -252,7 +268,7 @@ export function WorkflowExecutor({ workflow }: Props) {
 
         addMessage({
           id: `agent-${Date.now()}`, role: 'agent',
-          content: `**${node.data.label}**: ${output}`,
+          content: `**${node.data.label}** (${(agentOutput.durationMs / 1000).toFixed(1)}s, ~${agentOutput.tokenEstimate} tokens): ${output}`,
           timestamp: Date.now()
         })
 

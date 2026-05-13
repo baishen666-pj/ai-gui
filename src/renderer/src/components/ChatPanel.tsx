@@ -6,6 +6,7 @@ import type { SlashCommand } from './SlashCommandMenu'
 import type { ChatMessage } from '../../../shared/types'
 import { getExportContent, getExportFileName, type ExportFormat } from '../lib/export'
 import { detectDangerousContent, CATEGORY_LABELS } from '../lib/approvalDetection'
+import { compressChatContext, getContextUsageInfo } from '../lib/contextManager'
 
 export function ChatPanel() {
   const {
@@ -232,7 +233,12 @@ export function ChatPanel() {
 
   const buildApiMessages = useCallback((msgs: ChatMessage[], newUserMsg: ChatMessage) => {
     const soul = useAppStore.getState().soulPrompt
-    const apiMsgs = [...msgs, newUserMsg].map((m) => {
+    const allMsgs = [...msgs, newUserMsg]
+
+    // Compress long conversation context
+    const compressed = compressChatContext(allMsgs)
+
+    const apiMsgs = compressed.map((m) => {
       if (m.imageBase64) {
         return {
           role: m.role === 'user' ? 'user' : 'assistant',
@@ -383,6 +389,7 @@ export function ChatPanel() {
               角色已启用
             </button>
           )}
+          <ContextIndicator messages={messages} />
           <div className="flex gap-2">
           {isLoading && (
             <button onClick={() => window.aiGui?.chatAbort()} className="rounded px-2 py-1 text-xs text-danger hover:bg-surface-overlay">停止</button>
@@ -752,6 +759,25 @@ function ChatApprovalBar({ summary, confidence, category, onApprove, onReject }:
           </button>
         </div>
       </div>
+    </div>
+  )
+}
+
+function ContextIndicator({ messages }: { messages: ChatMessage[] }) {
+  const info = getContextUsageInfo(messages)
+  if (info.messageCount === 0) return null
+
+  const usagePercent = Math.min(100, Math.round((info.estimatedTokens / 10000) * 100))
+  const barColor = usagePercent > 80 ? 'bg-danger' : usagePercent > 50 ? 'bg-warning' : 'bg-success'
+
+  return (
+    <div className="flex items-center gap-1.5" title={`${info.estimatedTokens} tokens · ${info.messageCount} 条消息`}>
+      <div className="h-1 w-12 rounded-full bg-surface-inset overflow-hidden">
+        <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${usagePercent}%` }} />
+      </div>
+      <span className="text-[10px] text-content-subtle">
+        {info.estimatedTokens > 1000 ? `${(info.estimatedTokens / 1000).toFixed(1)}k` : info.estimatedTokens}
+      </span>
     </div>
   )
 }
