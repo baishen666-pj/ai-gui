@@ -13,6 +13,7 @@ const PROVIDER_ICONS: Record<string, string> = {
   openrouter: '🌐',
   chatgpt: '💬',
   deepseek: '🔵',
+  hermes: '⚡',
   custom: '⚙️'
 }
 
@@ -362,6 +363,9 @@ function ProviderConfigForm({ provider, onChange }: { provider: ProviderConfig; 
 
   return (
     <div className="space-y-3 border-t border-border-subtle pt-3">
+      {/* Hermes Gateway status */}
+      {provider.gatewayManaged && <HermesGatewayCard />}
+
       <label className="flex items-center gap-3 text-sm">
         <span className="w-20 shrink-0 text-content-subtle">API URL</span>
         <input
@@ -433,7 +437,7 @@ function ProviderConfigForm({ provider, onChange }: { provider: ProviderConfig; 
       <div className="flex items-center gap-2 rounded bg-accent/10 px-3 py-2">
         <span className="text-xs text-accent-text">{PROVIDER_ICONS[provider.type]} {provider.name}</span>
         <span className="text-[10px] text-content-subtle">
-          {provider.type === 'ollama' ? '本地运行 · 无需 API Key' : provider.type === 'zhipu' ? '按量计费 · flash 模型免费' : '按量计费'}
+          {provider.type === 'ollama' ? '本地运行 · 无需 API Key' : provider.type === 'zhipu' ? '按量计费 · flash 模型免费' : provider.type === 'hermes' ? '本地 Agent · OpenAI 兼容' : '按量计费'}
         </span>
         <button
           onClick={async () => {
@@ -453,6 +457,94 @@ function ProviderConfigForm({ provider, onChange }: { provider: ProviderConfig; 
           {testResult === 'testing' ? '测试中...' : testResult === 'ok' ? '✓ 连接成功' : testResult === 'fail' ? '✗ 连接失败' : '测试连接'}
         </button>
       </div>
+    </div>
+  )
+}
+
+function HermesGatewayCard() {
+  const [status, setStatus] = useState<{ running: boolean; apiKeyConfigured: boolean; cliAvailable: boolean } | null>(null)
+  const [busy, setBusy] = useState<'start' | 'stop' | 'key' | null>(null)
+
+  useEffect(() => {
+    if (!window.aiGui) return
+    window.aiGui.hermesGetStatus().then(setStatus).catch(() => {})
+    const unsub = window.aiGui.onHermesStatusChanged((s: { running: boolean }) => {
+      if (s.running) {
+        window.aiGui.hermesGetStatus().then(setStatus).catch(() => {})
+      } else {
+        setStatus((prev) => prev ? { ...prev, running: false } : null)
+      }
+    })
+    return unsub
+  }, [])
+
+  const handleStart = async () => {
+    if (!window.aiGui) return
+    setBusy('start')
+    await window.aiGui.hermesStartGateway()
+    const s = await window.aiGui.hermesGetStatus()
+    setStatus(s)
+    setBusy(null)
+  }
+
+  const handleStop = async () => {
+    if (!window.aiGui) return
+    setBusy('stop')
+    await window.aiGui.hermesStopGateway()
+    const s = await window.aiGui.hermesGetStatus()
+    setStatus(s)
+    setBusy(null)
+  }
+
+  const handleReadKey = async () => {
+    if (!window.aiGui) return
+    setBusy('key')
+    await window.aiGui.hermesResolveApiKey('hermes')
+    const s = await window.aiGui.hermesGetStatus()
+    setStatus(s)
+    setBusy(null)
+  }
+
+  return (
+    <div className="rounded-lg border border-border-subtle bg-surface-overlay/30 p-3 space-y-2">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className={`h-2.5 w-2.5 rounded-full ${status?.running ? 'bg-success' : 'bg-content-subtle/40'}`} />
+          <span className="text-xs text-content-heading">
+            {status?.running ? '网关运行中' : status === null ? '检测中...' : '网关已停止'}
+          </span>
+        </div>
+        <span className="text-[10px] text-content-subtle">本地 Agent · OpenAI 兼容</span>
+      </div>
+      <div className="flex gap-2">
+        {status?.running ? (
+          <button
+            onClick={handleStop}
+            disabled={busy === 'stop'}
+            className="rounded border border-border-default bg-surface-elevated px-3 py-1 text-xs text-content-subtle hover:text-danger disabled:opacity-50"
+          >
+            {busy === 'stop' ? '停止中...' : '停止网关'}
+          </button>
+        ) : (
+          <button
+            onClick={handleStart}
+            disabled={busy === 'start' || !status?.cliAvailable}
+            className="rounded border border-accent/30 bg-accent/10 px-3 py-1 text-xs text-accent-text hover:bg-accent/20 disabled:opacity-50"
+          >
+            {busy === 'start' ? '启动中...' : '启动网关'}
+          </button>
+        )}
+        <button
+          onClick={handleReadKey}
+          disabled={busy === 'key'}
+          className="rounded border border-border-default bg-surface-elevated px-3 py-1 text-xs text-content-subtle hover:text-content-heading disabled:opacity-50"
+        >
+          {busy === 'key' ? '读取中...' : '从配置读取密钥'}
+        </button>
+      </div>
+      {!status?.cliAvailable && status !== null && (
+        <p className="text-[10px] text-danger">Hermes CLI 未找到，请确认已安装 Hermes Agent</p>
+      )}
     </div>
   )
 }

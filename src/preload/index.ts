@@ -252,6 +252,25 @@ const api = {
     const handler = (_e: Electron.IpcRendererEvent, statuses: Array<{ platform: string; running: boolean }>): void => cb(statuses)
     ipcRenderer.on('im-status', handler)
     return () => ipcRenderer.removeListener('im-status', handler)
+  },
+
+  // Hermes Gateway
+  hermesHealthCheck: (): Promise<{ ok: boolean; platform: string }> =>
+    ipcRenderer.invoke('hermes-health-check'),
+  hermesReadApiKey: (): Promise<{ configured: boolean; key: string }> =>
+    ipcRenderer.invoke('hermes-read-api-key'),
+  hermesStartGateway: (): Promise<boolean> =>
+    ipcRenderer.invoke('hermes-start-gateway'),
+  hermesStopGateway: (): Promise<boolean> =>
+    ipcRenderer.invoke('hermes-stop-gateway'),
+  hermesGetStatus: (): Promise<{ running: boolean; apiKeyConfigured: boolean; cliAvailable: boolean }> =>
+    ipcRenderer.invoke('hermes-get-status'),
+  hermesResolveApiKey: (providerId: string): Promise<boolean> =>
+    ipcRenderer.invoke('hermes-resolve-api-key', providerId),
+  onHermesStatusChanged: (cb: (status: { running: boolean }) => void) => {
+    const handler = (_e: Electron.IpcRendererEvent, status: { running: boolean }): void => cb(status)
+    ipcRenderer.on('hermes-status-changed', handler)
+    return () => ipcRenderer.removeListener('hermes-status-changed', handler)
   }
 } as const
 

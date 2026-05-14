@@ -2,6 +2,7 @@ import { app, BrowserWindow, Menu, ipcMain, shell, Notification, dialog } from '
 import { execFile } from 'child_process'
 import { join } from 'path'
 import { writeFile } from 'fs/promises'
+import { checkGatewayHealth, readHermesApiKey, startGateway, stopGateway, getGatewayStatus } from './hermes'
 
 import { enableGpuFlags } from './gpu'
 import { getLocale, setLocale } from './locale'
@@ -68,6 +69,21 @@ app.whenReady().then(() => {
 
   if (mainWindow) initUpdater(mainWindow)
   if (mainWindow) registerImIpc(mainWindow)
+
+  // Auto-detect Hermes gateway on startup
+  checkGatewayHealth().then(({ ok }) => {
+    if (ok && mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('hermes-status-changed', { running: true })
+    }
+    if (ok) {
+      const config = getConnectionConfig()
+      const hermesProvider = config.providers.find((p) => p.id === 'hermes')
+      if (hermesProvider && !hermesProvider.apiKey) {
+        const key = readHermesApiKey()
+        if (key) updateProvider({ ...hermesProvider, apiKey: key })
+      }
+    }
+  }).catch(() => { /* gateway not running, normal */ })
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
@@ -485,4 +501,26 @@ function registerIpcHandlers(): void {
 
   // Computer Use — requires mainWindow for confirmation dialogs
   registerComputerUseIpc(mainWindow!)
+
+  // Hermes Gateway
+  ipcMain.handle('hermes-health-check', async () => checkGatewayHealth())
+  ipcMain.handle('hermes-read-api-key', () => {
+    const key = readHermesApiKey()
+    return { configured: key.length > 0, key }
+  })
+  ipcMain.handle('hermes-start-gateway', async () => startGateway())
+  ipcMain.handle('hermes-stop-gateway', async () => stopGateway())
+  ipcMain.handle('hermes-get-status', async () => getGatewayStatus())
+  ipcMain.handle('hermes-resolve-api-key', (_e, providerId: string) => {
+    if (typeof providerId !== 'string') throw new Error('Invalid providerId')
+    const { readHermesApiKey } = require('./hermes') as typeof import('./hermes')
+    const config = getConnectionConfig()
+    const provider = config.providers.find((p) => p.id === providerId)
+    if (!provider) throw new Error('Provider not found')
+    if (!provider.apiKey) {
+      const key = readHermesApiKey()
+      if (key) updateProvider({ ...provider, apiKey: key })
+    }
+    return true
+  })
 }

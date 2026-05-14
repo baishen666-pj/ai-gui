@@ -44,6 +44,19 @@ export const zhCN: LocaleMessages = {
       loggedIn: '已登录',
       loginFailed: '登录失败，请重试',
       description: '使用你的订阅直接登录，无需 API Key'
+    },
+    hermes: {
+      gatewayRunning: '网关运行中',
+      gatewayStopped: '网关已停止',
+      gatewayStarting: '正在启动...',
+      gatewayStopping: '正在停止...',
+      startGateway: '启动网关',
+      stopGateway: '停止网关',
+      readApiKey: '从配置读取密钥',
+      apiKeyRead: '密钥已读取',
+      apiKeyNotFound: '未找到密钥',
+      cliNotAvailable: 'Hermes CLI 未找到',
+      localAgent: '本地 Agent · OpenAI 兼容'
     }
   },
   common: {

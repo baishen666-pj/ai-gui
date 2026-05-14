@@ -33,6 +33,7 @@ export interface ProviderConfig {
   models: string[]
   defaultModel: string
   discoverable?: boolean
+  gatewayManaged?: boolean
 }
 
 export interface ConnectionConfig {

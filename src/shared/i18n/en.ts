@@ -44,6 +44,19 @@ export const en: LocaleMessages = {
       loggedIn: 'Logged in',
       loginFailed: 'Login failed, please retry',
       description: 'Login with your subscription, no API Key needed'
+    },
+    hermes: {
+      gatewayRunning: 'Gateway Running',
+      gatewayStopped: 'Gateway Stopped',
+      gatewayStarting: 'Starting...',
+      gatewayStopping: 'Stopping...',
+      startGateway: 'Start Gateway',
+      stopGateway: 'Stop Gateway',
+      readApiKey: 'Read Key from Config',
+      apiKeyRead: 'Key Read',
+      apiKeyNotFound: 'Key Not Found',
+      cliNotAvailable: 'Hermes CLI not found',
+      localAgent: 'Local Agent · OpenAI Compatible'
     }
   },
   common: {
